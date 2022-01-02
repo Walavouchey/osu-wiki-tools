@@ -131,6 +131,8 @@ def iterate(walk):
 exit_code = 0
 for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
     filename = filename.replace("\\", '/')
+    if filename.startswith("./"):
+        filename = filename[2:]
     if not filename.endswith(".md"):
         continue
     if "TEMPLATE" in filename:
