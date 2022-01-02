@@ -62,7 +62,7 @@ def check_link(directory, link):
     else:
         # external link; don't care
         return True
-    
+
 def is_in_comment(s, start, end):
     return s.rfind("<!--", 0, start) != -1 and s.find("-->", end, -1)
 
