@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 
 def red(s):
     return f"\x1b[31m{s}\x1b[0m" if sys.stdout.isatty() else s
@@ -126,6 +125,7 @@ def find_links(s):
         match = find_link(s, match["pos"][3] + 1)
     return results
 
+exit_code = 0
 for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
     filename = filename.replace("\\", "/")
     if not filename.endswith(".md"):
@@ -137,9 +137,11 @@ for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
         for linenumber, line in enumerate(lines, start=1):
             for match in find_links(line):
                 if not check_link(filename[filename.find("/") + 1:filename.rfind("/")], match["link"]):
+                    exit_code = 1
                     print(f"{yellow(filename)}:{linenumber}:{match['pos'][1] + 1}: {red(match['link'])}")
                     if sys.stdout.isatty():
                         if len(note) > 0:
                             print(note)
                         print(line.replace(match["whole"], f"{green(line[match['pos'][0]:match['pos'][1] + 1])}{red(line[match['pos'][1] + 1:match['pos'][2]])}{blue(line[match['pos'][2]:match['pos'][3]])}{green(line[match['pos'][3]])}"))
                         print()
+sys.exit(exit_code)
