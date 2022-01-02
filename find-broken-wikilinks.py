@@ -132,10 +132,14 @@ for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
         continue
     if "TEMPLATE" in filename:
         continue
+    if "Article_styling_criteria" in filename:
+        continue
     with open(filename, "r", encoding="utf-8") as file:
         lines = file.read().split("\n")
         for linenumber, line in enumerate(lines, start=1):
             for match in find_links(line):
+                if line[match["pos"][1] + 1:match["pos"][3]] == "/wiki/Sitemap":
+                    continue
                 if not check_link(filename[filename.find("/") + 1:filename.rfind("/")], match["link"]):
                     exit_code = 1
                     print(f"{yellow(filename)}:{linenumber}:{match['pos'][1] + 1}: {red(match['link'])}")
