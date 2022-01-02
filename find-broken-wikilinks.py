@@ -2,16 +2,16 @@ import os
 import sys
 
 def red(s):
-    return f"\x1b[31m{s}\x1b[0m" if sys.stdout.isatty() else s
+    return f"\x1b[31m{s}\x1b[0m"
 
 def green(s):
-    return f"\x1b[32m{s}\x1b[0m" if sys.stdout.isatty() else s
+    return f"\x1b[32m{s}\x1b[0m"
 
 def yellow(s):
-    return f"\x1b[33m{s}\x1b[0m" if sys.stdout.isatty() else s
+    return f"\x1b[33m{s}\x1b[0m"
 
 def blue(s):
-    return f"\x1b[34m{s}\x1b[0m" if sys.stdout.isatty() else s
+    return f"\x1b[34m{s}\x1b[0m"
 
 redirects = {}
 with open("wiki/redirect.yaml", 'r', encoding='utf-8') as file:
@@ -148,13 +148,12 @@ for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
                 if not check_link(directory(filename), match["link"]):
                     exit_code = 1
                     print(f"{yellow(filename)}:{linenumber}:{match['pos'][1] + 1}: {red(match['link'])}")
-                    if sys.stdout.isatty():
-                        if len(note) > 0:
-                            print(note)
-                        bracket = green(line[match['pos'][0]:match['pos'][1] + 1])
-                        link = red(line[match['pos'][1] + 1:match['pos'][2]])
-                        extra = blue(line[match['pos'][2]:match['pos'][3]])
-                        end = green(line[match['pos'][3]])
-                        print(line.replace(match['whole'], bracket + link + extra + end))
-                        print()
+                    if len(note) > 0:
+                        print(note)
+                    bracket = green(line[match['pos'][0]:match['pos'][1] + 1])
+                    link = red(line[match['pos'][1] + 1:match['pos'][2]])
+                    extra = blue(line[match['pos'][2]:match['pos'][3]])
+                    end = green(line[match['pos'][3]])
+                    print(line.replace(match['whole'], bracket + link + extra + end))
+                    print()
 sys.exit(exit_code)
