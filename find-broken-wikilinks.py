@@ -124,7 +124,7 @@ def find_links(s):
         match = find_link(s, match["pos"][3] + 1)
     return results
 
-for filename in iterate(os.walk("wiki")):
+for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
     filename = filename.replace("\\", "/")
     if not filename.endswith(".md"):
         continue
