@@ -1,7 +1,7 @@
 import os
-import regex
 import sys
 import subprocess
+
 def red(s):
     return f"\x1b[31m{s}\x1b[0m" if sys.stdout.isatty() else s
 
@@ -25,9 +25,7 @@ with open("wiki/redirect.yaml", "r", encoding="utf-8") as file:
         except Exception:
             pass
 
-def sanitise(link):
-    return link.split(" ")[0].split("#")[0].split("?")[0]
-
+# pops the first directory from the path string (wiki)
 def child(path):
     return path[path.find("/", 1) + 1:]
 
@@ -46,21 +44,20 @@ def check_redirect(link):
 def check_link(directory, link):
     global note
     note = ""
-    path = sanitise(link)
-    if path.startswith("/wiki/"):
+    if link.startswith("/wiki/"):
         # absolute wikilink
-        if os.path.exists(path[1:]):
+        if os.path.exists(link[1:]):
             return True
         else:
             # may have a redirect
-            return check_redirect(child(path))
-    elif not (path.startswith("http") or path.startswith("mailto:") or path.startswith("irc:")):
+            return check_redirect(child(link))
+    elif not (link.startswith("http") or link.startswith("mailto:") or link.startswith("irc:")):
         # relative wikilink
-        if os.path.exists(f"wiki/{directory}/{path}"):
+        if os.path.exists(f"wiki/{directory}/{link}"):
             return True
         else:
             # may have a redirect
-            return check_redirect(f"{directory}/{path}")
+            return check_redirect(f"{directory}/{link}")
     else:
         # external link; don't care
         return True
@@ -69,6 +66,9 @@ def iterate(walk):
     for tuple in walk:
         for filename in tuple[2]:
             yield f"{tuple[0]}/{filename}"
+
+def is_in_comment(s, start, end):
+    return s.rfind("<!--", 0, start) != -1 and s.find("-->", end, -1)
 
 def find_link(s, index=0):
     found_brackets = False
@@ -105,6 +105,8 @@ def find_link(s, index=0):
             parenthesis_level -= 1
             if parenthesis_level == 0:
                 end = i
+                if is_in_comment(s, start, end):
+                    return None
                 if extra is None:
                     extra = end
                 return {
@@ -127,6 +129,8 @@ def find_links(s):
 for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
     filename = filename.replace("\\", "/")
     if not filename.endswith(".md"):
+        continue
+    if "TEMPLATE" in filename:
         continue
     with open(filename, "r", encoding="utf-8") as file:
         lines = file.read().split("\n")
