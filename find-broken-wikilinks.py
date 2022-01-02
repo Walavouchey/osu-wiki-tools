@@ -14,20 +14,22 @@ def blue(s):
     return f"\x1b[34m{s}\x1b[0m" if sys.stdout.isatty() else s
 
 redirects = {}
-note = ""
-with open("wiki/redirect.yaml", "r", encoding="utf-8") as file:
+with open("wiki/redirect.yaml", 'r', encoding='utf-8') as file:
     content = file.read()
-    for linenumber, line in enumerate(content.split("\n"), start=1):
+    for linenumber, line in enumerate(content.split('\n'), start=1):
         split = line.split('"')
         try:
             redirects[split[1]] = (split[3], linenumber)
         except Exception:
             pass
 
-# pops the first directory from the path string (wiki)
 def child(path):
-    return path[path.find("/", 1) + 1:]
+    return path[path.find('/', 1) + 1:]
 
+def directory(filename):
+    return filename[filename.find('/') + 1:filename.rfind('/')]
+
+note = ""
 def check_redirect(link):
     global note
     link = link.lower()
@@ -61,11 +63,6 @@ def check_link(directory, link):
         # external link; don't care
         return True
     
-def iterate(walk):
-    for tuple in walk:
-        for filename in tuple[2]:
-            yield f"{tuple[0]}/{filename}"
-
 def is_in_comment(s, start, end):
     return s.rfind("<!--", 0, start) != -1 and s.find("-->", end, -1)
 
@@ -109,9 +106,10 @@ def find_link(s, index=0):
                 if extra is None:
                     extra = end
                 return {
-                    "whole": s[start:end + 1],
-                    "link": s[mid + 1: extra],
-                    "pos": (start, mid, extra, end)
+                    'whole': s[start:end + 1],
+                    'link': s[mid + 1: extra],
+                    'link+': s[mid + 1: end],
+                    'pos': (start, mid, extra, end)
                 }
             continue
     return None
@@ -122,30 +120,39 @@ def find_links(s):
     match = find_link(s, index)
     while match:
         results.append(match)
-        match = find_link(s, match["pos"][3] + 1)
+        match = find_link(s, match['pos'][3] + 1)
     return results
+
+def iterate(walk):
+    for tuple in walk:
+        for filename in tuple[2]:
+            yield f"{tuple[0]}/{filename}"
 
 exit_code = 0
 for filename in iterate(os.walk("wiki")) if len(sys.argv) < 2 else sys.argv[1:]:
-    filename = filename.replace("\\", "/")
+    filename = filename.replace("\\", '/')
     if not filename.endswith(".md"):
         continue
     if "TEMPLATE" in filename:
         continue
     if "Article_styling_criteria" in filename:
         continue
-    with open(filename, "r", encoding="utf-8") as file:
+    with open(filename, 'r', encoding='utf-8') as file:
         lines = file.read().split("\n")
         for linenumber, line in enumerate(lines, start=1):
             for match in find_links(line):
-                if line[match["pos"][1] + 1:match["pos"][3]] == "/wiki/Sitemap":
+                if match['link+'] == "/wiki/Sitemap":
                     continue
-                if not check_link(filename[filename.find("/") + 1:filename.rfind("/")], match["link"]):
+                if not check_link(directory(filename), match["link"]):
                     exit_code = 1
                     print(f"{yellow(filename)}:{linenumber}:{match['pos'][1] + 1}: {red(match['link'])}")
                     if sys.stdout.isatty():
                         if len(note) > 0:
                             print(note)
-                        print(line.replace(match["whole"], f"{green(line[match['pos'][0]:match['pos'][1] + 1])}{red(line[match['pos'][1] + 1:match['pos'][2]])}{blue(line[match['pos'][2]:match['pos'][3]])}{green(line[match['pos'][3]])}"))
+                        bracket = green(line[match['pos'][0]:match['pos'][1] + 1])
+                        link = red(line[match['pos'][1] + 1:match['pos'][2]])
+                        extra = blue(line[match['pos'][2]:match['pos'][3]])
+                        end = green(line[match['pos'][3]])
+                        print(line.replace(match['whole'], bracket + link + extra + end))
                         print()
 sys.exit(exit_code)
