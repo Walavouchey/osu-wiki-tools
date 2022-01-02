@@ -2,7 +2,6 @@ import os
 import regex
 import sys
 import subprocess
-
 def red(s): # important
     return f"\x1b[31m{s}\x1b[0m" if sys.stdout.isatty() else s
 
@@ -82,6 +81,7 @@ def find_link(s, index=0):
     started = False
     start = None
     mid = None
+    extra = None
     end = None
     square_bracket_level = 0
     parenthesis_level = 0
@@ -100,6 +100,10 @@ def find_link(s, index=0):
                     found_brackets = True
                     mid = i + 1
             continue
+        if found_brackets and (c == ' ' or c == '#' or c == '?'):
+            if extra is None:
+                extra = i
+            continue
         if found_brackets and c == '(':
             parenthesis_level += 1
             continue
@@ -107,10 +111,12 @@ def find_link(s, index=0):
             parenthesis_level -= 1
             if parenthesis_level == 0:
                 end = i
+                if extra is None:
+                    extra = end
                 return {
                     "whole": s[start:end + 1],
-                    "link": s[mid + 1: end],
-                    "pos": (start, mid, end)
+                    "link": s[mid + 1: extra],
+                    "pos": (start, mid, extra, end)
                 }
             continue
     return None
@@ -121,7 +127,7 @@ def find_links(s):
     match = find_link(s, index)
     while match:
         results.append(match)
-        match = find_link(s, match["pos"][2] + 1)
+        match = find_link(s, match["pos"][3] + 1)
     return results
 
 for filename in iterate(os.walk("wiki")):
@@ -135,5 +141,5 @@ for filename in iterate(os.walk("wiki")):
                 if not check_link(filename[filename.find("/") + 1:filename.rfind("/")], match["link"]):
                     print(f"{yellow(filename)}:{linenumber}:{match['pos'][1] + 1}: {red(match['link'])}")
                     if sys.stdout.isatty():
-                        print(line.replace(match["whole"], f"{green(line[match['pos'][0]:match['pos'][1] + 1])}{red(line[match['pos'][1] + 1:match['pos'][2]])}{green(line[match['pos'][2]])}"))
+                        print(line.replace(match["whole"], f"{green(line[match['pos'][0]:match['pos'][1] + 1])}{red(line[match['pos'][1] + 1:match['pos'][2]])}{blue(line[match['pos'][2]:match['pos'][3]])}{green(line[match['pos'][3]])}"))
                         print()
