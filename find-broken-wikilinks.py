@@ -2,39 +2,26 @@ import os
 import regex
 import sys
 import subprocess
-def red(s): # important
+def red(s):
     return f"\x1b[31m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def green(s): # info
+def green(s):
     return f"\x1b[32m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def yellow(s): # debug
+def yellow(s):
     return f"\x1b[33m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def blue(s): # command run
+def blue(s):
     return f"\x1b[34m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def error(msg):
-    print(red(msg))
-    sys.exit(1)
-
-def shell(cmd):
-    result = subprocess.run(cmd.split(" "), stdout=subprocess.PIPE)
-    return result.stdout.decode("utf-8")
-
-def print_and_run(cmd):
-    print(blue(cmd))
-    subprocess.run(cmd.split(" "))
-
-
-
 redirects = {}
+note = ""
 with open("wiki/redirect.yaml", "r", encoding="utf-8") as file:
     content = file.read()
-    for line in content.split("\n"):
+    for linenumber, line in enumerate(content.split("\n"), start=1):
         split = line.split('"')
         try:
-            redirects[split[1]] = split[3]
+            redirects[split[1]] = (split[3], linenumber)
         except Exception:
             pass
 
@@ -45,13 +32,20 @@ def child(path):
     return path[path.find("/", 1) + 1:]
 
 def check_redirect(link):
+    global note
+    link = link.lower()
     try:
-        redirect = redirects[link.lower()]
+        redirect = redirects[link]
     except KeyError:
         return False
-    return os.path.exists(f"wiki/{redirect}")
+    if not os.path.exists(f"wiki/{redirect[0]}"):
+        note = f"{blue('Note:')} Broken redirect (redirect.yaml:{redirect[1]}: {link} --> {redirect[0]})"
+        return False
+    return True
 
 def check_link(directory, link):
+    global note
+    note = ""
     path = sanitise(link)
     if path.startswith("/wiki/"):
         # absolute wikilink
@@ -141,5 +135,7 @@ for filename in iterate(os.walk("wiki")):
                 if not check_link(filename[filename.find("/") + 1:filename.rfind("/")], match["link"]):
                     print(f"{yellow(filename)}:{linenumber}:{match['pos'][1] + 1}: {red(match['link'])}")
                     if sys.stdout.isatty():
+                        if len(note) > 0:
+                            print(note)
                         print(line.replace(match["whole"], f"{green(line[match['pos'][0]:match['pos'][1] + 1])}{red(line[match['pos'][1] + 1:match['pos'][2]])}{blue(line[match['pos'][2]:match['pos'][3]])}{green(line[match['pos'][3]])}"))
                         print()
