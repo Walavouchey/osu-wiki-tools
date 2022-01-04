@@ -211,18 +211,34 @@ def print_clean():
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
+    parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     return parser.parse_args(args)
 
+def file_iterator(roots: list):
+    for item in roots:
+        if os.path.isdir(item):
+            for root, _, filenames in os.walk(item):
+                for f in filenames:
+                    filepath = os.path.join(root, f)
+                    yield filepath
+        elif os.path.isfile(item):
+            yield item
 
 def main():
     args = parse_args(sys.argv[1:])
-    if not args.target:
+    if not args.target and not args.all:
         print("Notice: No articles to check.")
         sys.exit(0)
 
+    filenames = []
+    if args.all:
+        filenames = file_iterator(["wiki", "news"])
+    else:
+        filenames = args.target
+
     redirects = load_redirects("wiki/redirect.yaml")
     exit_code = 0
-    for filename in args.target:
+    for filename in filenames:
         filename = filename.replace('\\', '/')
         if filename.startswith("./"):
             filename = filename[2:]
