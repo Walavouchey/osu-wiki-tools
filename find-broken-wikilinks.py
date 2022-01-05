@@ -287,12 +287,12 @@ def print_clean():
     print("Notice: No broken wiki or image links detected.")
 
 
-def s(i: int) -> str:
-    return 's' if i != 1 else ''
+def s(i: int, s: str) -> str:
+    return f"{i} {s}{'s' if i != 1 else ''}"
 
 
-def print_count(errors: int, matches: int, files: int):
-    print(f"{blue('Note:')} Found {errors} error{s(errors)} in {matches} link{s(matches)} across {files} file{s(files)}.")
+def print_count(errors: int, matches: int, error_files: int, files: int):
+    print(f"{blue('Note:')} Found {s(errors, 'error')} in {s(error_files, 'file')} ({s(matches, 'link')} in {s(files, 'file')} checked).")
 
 
 def highlight_links(s: str, links: typing.List[Link]) -> str:
@@ -341,6 +341,7 @@ def main():
     exit_code = 0
     error_count = 0
     match_count = 0
+    error_file_count = 0
     file_count = 0
     for filename in filenames:
         file_count += 1
@@ -387,6 +388,7 @@ def main():
                         print(note)
 
                 if bad_links:
+                    error_file_count += 1
                     if args.separate:
                         for link in bad_links:
                             print(highlight_links(line, [link]), end="\n\n")
@@ -396,7 +398,7 @@ def main():
     if exit_code == 0:
         print_clean()
     else:
-        print_count(error_count, match_count, file_count)
+        print_count(error_count, match_count, error_file_count, file_count)
     sys.exit(exit_code)
 
 
