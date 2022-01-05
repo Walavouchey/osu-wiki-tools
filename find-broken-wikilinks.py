@@ -295,6 +295,17 @@ def print_count(errors: int, matches: int):
     print(f"{blue('Note:')} Found {errors} error{s(errors)} in {matches} link{s(matches)}.")
 
 
+def highlight_links(s: str, links: typing.List[Link]) -> str:
+    highlighted_line = ""
+    prev_index = 0
+    for link in links:
+        highlighted_line += s[prev_index:link.link_start]
+        highlighted_line += link.full_coloured_link
+        prev_index = link.link_end + 1
+    highlighted_line += s[prev_index:-1]
+    return highlighted_line
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
@@ -348,7 +359,9 @@ def main():
                 if comments:
                     in_multiline = comments[-1].end == -1
 
-                for match in find_links(line):
+                matches = find_links(line)
+                bad_links = []
+                for match in matches:
                     if is_in_comment(match.link_start, comments):
                         continue
                     match_count += 1
@@ -360,6 +373,7 @@ def main():
                     if success:
                         continue
                     error_count += 1
+                    bad_links.append(match)
 
                     if exit_code == 0:
                         print_error()
@@ -369,7 +383,8 @@ def main():
                     if note:
                         print(note)
 
-                    print("{}{}{}".format(line[:match.link_start], match.full_coloured_link, line[match.link_end + 1:]), end="\n\n")
+                if bad_links:
+                    print(highlight_links(line, bad_links), end="\n\n")
 
     if exit_code == 0:
         print_clean()
