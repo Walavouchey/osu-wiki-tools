@@ -310,6 +310,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
+    parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
     return parser.parse_args(args)
 
 
@@ -384,7 +385,11 @@ def main():
                         print(note)
 
                 if bad_links:
-                    print(highlight_links(line, bad_links), end="\n\n")
+                    if args.separate:
+                        for link in bad_links:
+                            print(highlight_links(line, [link]), end="\n\n")
+                    else:
+                        print(highlight_links(line, bad_links), end="\n\n")
 
     if exit_code == 0:
         print_clean()
