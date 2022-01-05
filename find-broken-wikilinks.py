@@ -144,7 +144,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     for i, c in enumerate(s[index:]):
         i += index
         if not found_brackets and c == '[':
-            if not start:
+            if not started:
                 start = i
                 started = True
             square_bracket_level += 1
