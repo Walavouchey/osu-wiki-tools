@@ -291,8 +291,8 @@ def s(i: int) -> str:
     return 's' if i != 1 else ''
 
 
-def print_count(errors: int, matches: int):
-    print(f"{blue('Note:')} Found {errors} error{s(errors)} in {matches} link{s(matches)}.")
+def print_count(errors: int, matches: int, files: int):
+    print(f"{blue('Note:')} Found {errors} error{s(errors)} in {matches} link{s(matches)} across {files} file{s(files)}.")
 
 
 def highlight_links(s: str, links: typing.List[Link]) -> str:
@@ -341,7 +341,9 @@ def main():
     exit_code = 0
     error_count = 0
     match_count = 0
+    file_count = 0
     for filename in filenames:
+        file_count += 1
         filename = filename.replace('\\', '/')
         if filename.startswith("./"):
             filename = filename[2:]
@@ -394,7 +396,7 @@ def main():
     if exit_code == 0:
         print_clean()
     else:
-        print_count(error_count, match_count)
+        print_count(error_count, match_count, file_count)
     sys.exit(exit_code)
 
 
