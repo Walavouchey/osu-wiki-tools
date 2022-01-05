@@ -161,7 +161,7 @@ def check_link(redirects: Redirects, directory: str, link: str) -> typing.Tuple[
         return (True, "")
 
 
-def find_comments(line: str, in_multiline: bool) -> typing.List[Comment]:
+def find_comments(line: str, in_multiline: bool=False) -> typing.List[Comment]:
     comments = []
     index = 0
     start = None
