@@ -24,10 +24,6 @@ class Link(typing.NamedTuple):
     - extra: ' "Player is away from keyboard"'
     """
 
-    title: str
-    location: str
-    extra: str
-
     # Link position within the line. Example:
     #   See also: [Difficulty names](/wiki/Beatmap/Difficulty#naming-conventions)
     #             ^ link_start                                                  ^ link_end
@@ -36,17 +32,22 @@ class Link(typing.NamedTuple):
 
     # Sections of a link. Example:
     #    ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
+    #      ^ - title - ^
     #                     ^ ----- location ----- ^
     #                                             ^ ---------- extra ---------- ^
     #                     ^ --------------------- content --------------------- ^
     #     ^ ------------------ full_link / full_coloured_link ------------------ ^
+    title: str
+    location: str
+    extra: str
+
     @property
     def content(self):
         return self.location + self.extra
 
     @property
     def full_link(self):
-        return f"[{self.title}]{self.content}"
+        return f"[{self.title}]({self.content})"
 
     @property
     def full_coloured_link(self):
