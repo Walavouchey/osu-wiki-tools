@@ -344,7 +344,6 @@ def main():
     error_file_count = 0
     file_count = 0
     for filename in filenames:
-        file_count += 1
         filename = filename.replace('\\', '/')
         if filename.startswith("./"):
             filename = filename[2:]
@@ -356,6 +355,7 @@ def main():
         )):
             continue
 
+        file_count += 1
         with open(filename, 'r', encoding='utf-8') as fd:
             in_multiline = False
             for linenumber, line in enumerate(fd, start=1):
