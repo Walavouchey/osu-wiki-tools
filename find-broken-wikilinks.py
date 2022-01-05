@@ -287,11 +287,20 @@ def print_clean():
     print("Notice: No broken wiki or image links detected.")
 
 
+def s(i: int) -> str:
+    return 's' if i != 1 else ''
+
+
+def print_count(errors: int, matches: int):
+    print(f"{blue('Note:')} Found {errors} error{s(errors)} in {matches} link{s(matches)}.")
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     return parser.parse_args(args)
+
 
 def file_iterator(roots: list):
     for item in roots:
@@ -302,6 +311,7 @@ def file_iterator(roots: list):
                     yield filepath
         elif os.path.isfile(item):
             yield item
+
 
 def main():
     args = parse_args(sys.argv[1:])
@@ -317,6 +327,8 @@ def main():
 
     redirects = load_redirects("wiki/redirect.yaml")
     exit_code = 0
+    error_count = 0
+    match_count = 0
     for filename in filenames:
         filename = filename.replace('\\', '/')
         if filename.startswith("./"):
@@ -339,12 +351,15 @@ def main():
                 for match in find_links(line):
                     if is_in_comment(match.link_start, comments):
                         continue
+                    match_count += 1
 
                     if match.content == "/wiki/Sitemap":
                         continue
+
                     success, note = check_link(redirects, directory(filename), match.location)
                     if success:
                         continue
+                    error_count += 1
 
                     if exit_code == 0:
                         print_error()
@@ -358,6 +373,8 @@ def main():
 
     if exit_code == 0:
         print_clean()
+    else:
+        print_count(error_count, match_count)
     sys.exit(exit_code)
 
 
