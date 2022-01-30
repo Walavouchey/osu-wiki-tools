@@ -146,35 +146,51 @@ def directory(filename: str) -> str:
 
 
 def check_redirect(redirects: Redirects, link: str):
-    link = link.lower()
+    link_lower = link.lower()
     try:
-        destination, line_no = redirects[link]
+        destination, line_no = redirects[link_lower]
     except KeyError:
-        return (False, "")
+        note = f"{blue('Note:')} \"{link}\" was not found"
+        return (False, note)
     if not os.path.exists(f"wiki/{destination}"):
-        note = f"{blue('Note:')} Broken redirect (redirect.yaml:{line_no}: {link} --> {destination})"
+        note = f"{blue('Note:')} Broken redirect (redirect.yaml:{line_no}: {link_lower} --> {destination})"
         return (False, note)
     return (True, "")
 
 
-def check_link(redirects: Redirects, directory: str, link: str) -> typing.Tuple[bool, str]:
-    if link.startswith("/wiki/"):
+def check_link(redirects: Redirects, references: References, directory: str, link: Link) -> typing.Tuple[bool, typing.List[str]]:
+    notes = []
+
+    location = link.location
+    if link.is_reference and link.location in references:
+        linenumber = references[link.location][1]
+        r = references[link.location][0]
+        location = r.split(' ')[0].split('#')[0].split('?')[0]
+        notes.append(f"{blue('Note:')} Reference at line {linenumber}: [{link.location}]: {r}")
+    elif link.is_reference:
+        notes.append(f"{blue('Note:')} No corresponding reference found for \"{link.location}\"")
+
+    if location.startswith("/wiki/"):
         # absolute wikilink
-        if os.path.exists(link[1:]):
-            return (True, "")
+        if os.path.exists(location[1:]):
+            return (True, notes)
         else:
             # may have a redirect
-            return check_redirect(redirects, child(link))
-    elif not any(link.startswith(prefix) for prefix in ("http://", "https://", "mailto:")):
+            value, redir_note = check_redirect(redirects, child(location))
+            notes.append(redir_note)
+            return (value, notes)
+    elif not any(location.startswith(prefix) for prefix in ("http://", "https://", "mailto:")):
         # relative wikilink
-        if os.path.exists(f"wiki/{directory}/{link}"):
-            return (True, "")
+        if os.path.exists(f"wiki/{directory}/{location}"):
+            return (True, notes)
         else:
             # may have a redirect
-            return check_redirect(redirects, f"{directory}/{link}")
+            value, redir_note = check_redirect(redirects, f"{directory}/{location}")
+            notes.append(redir_note)
+            return (value, notes)
     else:
         # some other link; don't care
-        return (True, "")
+        return (True, notes)
 
 
 def find_comments(line: str, in_multiline: bool=False) -> typing.List[Comment]:
@@ -455,6 +471,7 @@ def main():
 
                 matches = find_links(line)
                 bad_links = []
+                all_notes = []
                 for match in matches:
                     if is_in_comment(match.link_start, comments):
                         continue
@@ -463,21 +480,25 @@ def main():
                     if match.content == "/wiki/Sitemap":
                         continue
 
-                    success, note = check_link(redirects, directory(filename), match.location)
+                    success, notes = check_link(redirects, references, directory(filename), match)
                     if success:
                         continue
                     error_count += 1
                     bad_links.append(match)
+                    all_notes += notes
 
                     if exit_code == 0:
                         print_error()
                     exit_code = 1
 
                     print(f"{yellow(filename)}:{linenumber}:{match.link_start + 1}: {red(match.location)}")
-                    if note:
-                        print(note)
+
+                if all_notes:
+                    print('\n'.join(all_notes))
+
 
                 if bad_links:
+                    print()
                     error_file_count += 1
                     if args.separate:
                         for link in bad_links:
