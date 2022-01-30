@@ -6,6 +6,7 @@ import typing
 
 
 Redirects = typing.Dict[str, typing.Tuple[str, int]]
+References = typing.Dict[str, typing.Tuple[str, int]]
 
 
 class Comment(typing.NamedTuple):
@@ -341,6 +342,24 @@ def find_links(s: str) -> typing.List[Link]:
     return results
 
 
+def find_reference(s: str) -> typing.Optional[typing.Tuple[str, str]]:
+    split = s.find(':')
+    if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
+        return (s[1:split - 1], s[split + 2:-1])
+    return
+
+
+def find_references(file) -> References:
+    seek = file.tell()
+    references = {}
+    for linenumber, line in enumerate(file, start=1):
+        reference = find_reference(line)
+        if reference:
+            references[reference[0]] = (reference[1], linenumber)
+    file.seek(seek)
+    return references
+
+
 def print_error():
     print(f"{red('Error:')} Some wiki or image links in the files you've changed have errors.\n")
     print("This can happen in one of the following ways:\n")
@@ -426,6 +445,8 @@ def main():
 
         file_count += 1
         with open(filename, 'r', encoding='utf-8') as fd:
+            references = find_references(fd)
+
             in_multiline = False
             for linenumber, line in enumerate(fd, start=1):
                 comments = find_comments(line, in_multiline)
