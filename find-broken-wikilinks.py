@@ -1,4 +1,5 @@
 import argparse
+from enum import Enum
 import os
 import sys
 import typing
@@ -226,50 +227,104 @@ def is_in_comment(index: int, comments: typing.List[Comment]) -> bool:
     return False
 
 
+class Brackets():
+    # Helper class keeping track of when brackets open and close
+    def __init__(self, left: str, right: str):
+        self.left = left
+        self.right = right
+        self.depth = 0
+
+    left: str
+    right: str
+    depth: int
+
+    def closed(self, c: str):
+        if c == self.left:
+            self.depth += 1
+        elif c == self.right:
+            self.depth -= 1
+        if self.depth == 0:
+            return True
+        return False
+
+class State(Enum):
+    IDLE = 0
+    START = 1
+    INLINE = 2
+    REFERENCE = 3
+
 def find_link(s: str, index=0) -> typing.Optional[Link]:
-    found_brackets = False
-    started = False
+    state = State.IDLE
+
     start = None
-    mid = None
+    location = None
     extra = None
     end = None
-    square_bracket_level = 0
-    parenthesis_level = 0
+
+    parens = Brackets('(', ')')
+    brackets = Brackets('[', ']')
+
     for i, c in enumerate(s[index:]):
         i += index
-        if not found_brackets and c == '[':
-            if not started:
-                start = i
-                started = True
-            square_bracket_level += 1
+
+        if state == State.IDLE and c == '[':
+            # potential start of a link
+            brackets.depth += 1
+            state = State.START
+            start = i
             continue
-        if started and not found_brackets and c == ']':
-            square_bracket_level -= 1
-            if square_bracket_level == 0:
-                if len(s) > i + 1 and s[i + 1] == '(':
-                    found_brackets = True
-                    mid = i + 1
+
+        if state == State.START:
+            if brackets.closed(c):
+                # the end of a bracket. the link may continue
+                # to be inline- or reference-style
+                if len(s) <= i + 1:
+                    state = state.IDLE
+                    continue
+
+                if s[i + 1] == '(':
+                    state = State.INLINE
+                    location = i + 2
+                elif s[i + 1] == '[':
+                    state = State.REFERENCE
+                    location = i + 2
+                else:
+                    state = state.IDLE
             continue
-        if found_brackets and (c == ' ' or c == '#' or c == '?'):
-            if extra is None:
-                extra = i
-            continue
-        if found_brackets and c == '(':
-            parenthesis_level += 1
-            continue
-        if found_brackets and c == ')':
-            parenthesis_level -= 1
-            if parenthesis_level == 0:
+
+        if state == State.INLINE:
+            if (c == ' ' or c == '#' or c == '?'):
+                if extra is None:
+                    # start of extra part
+                    extra = i
+
+            if parens.closed(c):
+                # end of a complete link
                 end = i
                 if extra is None:
                     extra = end
 
                 return Link(
-                    location=s[mid + 1: extra],
-                    title=s[start + 1: mid - 1],
+                    location=s[location: extra],
+                    title=s[start + 1: location - 2],
                     extra=s[extra: end],
                     link_start=start,
                     link_end=end,
+                    is_reference=False
+                )
+            continue
+
+        if state == State.REFERENCE:
+            if brackets.closed(c):
+                # end of a complete reference-style link
+                end = i
+                return Link(
+                    location=s[location: end],
+                    title=s[start + 1: location - 2],
+                    extra="",
+                    link_start=start,
+                    link_end=end,
+                    is_reference=True
                 )
             continue
 
