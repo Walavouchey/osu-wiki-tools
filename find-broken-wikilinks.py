@@ -40,7 +40,8 @@ class Comment(typing.NamedTuple):
 
 class Link(typing.NamedTuple):
     """
-    A Markdown link, external or internal. May be relative. Example:
+    A Markdown link, inline- or reference-style, external or internal.
+    May be relative. Example:
 
         See [Difficulty Names](/wiki/Beatmap/Difficulty#naming-conventions)
 
@@ -80,17 +81,30 @@ class Link(typing.NamedTuple):
 
     @property
     def full_link(self):
-        return f"[{self.title}]({self.content})"
+        if self.is_reference:
+            return f"[{self.title}][{self.content}]"
+        else:
+            return f"[{self.title}]({self.content})"
 
     @property
     def full_coloured_link(self):
         return "{title_in_braces}{left_brace}{location}{extra}{right_brace}".format(
             title_in_braces=green(f"[{self.title}]"),
-            left_brace=green('('),
+            left_brace= green('[') if self.is_reference else green('('),
             location=red(self.location),
             extra=blue(self.extra),
-            right_brace=green(')'),
+            right_brace=green(']') if self.is_reference else green(')'),
         )
+
+    # Whether the link is a reference-style link. The only difference is that
+    # `location` is a reference and needs to be resolved later.
+    #
+    # The syntax for such links is the same as regular links:
+    #    [text][reference]
+    #
+    # The reference can then later be defined at the start of a new line:
+    #    [reference]: link
+    is_reference: bool
 
 
 def red(s):
