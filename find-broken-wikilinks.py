@@ -509,9 +509,8 @@ def main():
     if exit_code == 0:
         print_clean()
         print()
-        print_count(error_count, match_count, error_file_count, file_count)
-    else:
-        print_count(error_count, match_count, error_file_count, file_count)
+
+    print_count(error_count, match_count, error_file_count, file_count)
     sys.exit(exit_code)
 
 
