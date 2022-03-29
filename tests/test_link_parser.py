@@ -1,3 +1,5 @@
+from urllib import parse
+
 from wikitools import link_parser
 
 
@@ -9,7 +11,8 @@ class TestInlinePlainLinks:
             link_start=3,
             link_end=26,
             title="example",
-            location="/wiki/Example",
+            raw_location="/wiki/Example",
+            parsed_location=parse.urlparse("/wiki/Example"),
             extra="",
             is_reference=False,
         )
@@ -21,7 +24,8 @@ class TestInlinePlainLinks:
             link_start=3,
             link_end=37,
             title="example",
-            location="/wiki/Example",
+            raw_location="/wiki/Example",
+            parsed_location=parse.urlparse("/wiki/Example"),
             extra=' "Alt text"',
             is_reference=False,
         )
@@ -41,20 +45,22 @@ class TestInlinePlainLinks:
                 link_start=16,
                 link_end=29,
                 title="a",
-                location="/wiki/[A]",
+                raw_location="/wiki/[A]",
+                parsed_location=parse.urlparse("/wiki/[A]"),
                 extra="",
                 is_reference=False,
             )
         ]
 
-    def test__link__identifier(self):
+    def test__link__fragment(self):
         example = "RTF[M](/wiki/M#manual)."
         assert link_parser.find_link(example) == link_parser.Link(
             link_start=3,
             link_end=21,
             title="M",
-            location="/wiki/M",
-            extra="#manual",
+            raw_location="/wiki/M#manual",
+            parsed_location=parse.urlparse("/wiki/M#manual"),
+            extra="",
             is_reference=False,
         )
 
@@ -64,8 +70,9 @@ class TestInlinePlainLinks:
             link_start=0,
             link_end=41,
             title="example.com",
-            location="https://example.com/",
-            extra="?test=1",
+            raw_location="https://example.com/?test=1",
+            parsed_location=parse.urlparse("https://example.com/?test=1"),
+            extra="",
             is_reference=False,
         )
 
@@ -78,7 +85,8 @@ class TestInlineImageLinks:
             link_start=17,
             link_end=35,
             title="",
-            location="/wiki/crown.png",
+            raw_location="/wiki/crown.png",
+            parsed_location=parse.urlparse("/wiki/crown.png"),
             extra="",
             is_reference=False,
         )
@@ -90,7 +98,8 @@ class TestInlineImageLinks:
             link_start=17,
             link_end=40,
             title="Crown",
-            location="/wiki/crown.png",
+            raw_location="/wiki/crown.png",
+            parsed_location=parse.urlparse("/wiki/crown.png"),
             extra="",
             is_reference=False,
         )
@@ -102,7 +111,8 @@ class TestInlineImageLinks:
             link_start=17,
             link_end=46,
             title="",
-            location="/wiki/crown.png",
+            raw_location="/wiki/crown.png",
+            parsed_location=parse.urlparse("/wiki/crown.png"),
             extra=' "Alt text"',
             is_reference=False,
         )
@@ -114,7 +124,8 @@ class TestInlineImageLinks:
             link_start=17,
             link_end=51,
             title="Crown",
-            location="/wiki/crown.png",
+            raw_location="/wiki/crown.png",
+            parsed_location=parse.urlparse("/wiki/crown.png"),
             extra=' "Alt text"',
             is_reference=False,
         )
@@ -129,7 +140,8 @@ class TestInlineMultipleLinks:
                 link_start=16,
                 link_end=27,
                 title="a",
-                location="/wiki/A",
+                raw_location="/wiki/A",
+                parsed_location=parse.urlparse("/wiki/A"),
                 extra="",
                 is_reference=False,
             ),
@@ -137,7 +149,8 @@ class TestInlineMultipleLinks:
                 link_start=33,
                 link_end=44,
                 title="b",
-                location="/wiki/B",
+                raw_location="/wiki/B",
+                parsed_location=parse.urlparse("/wiki/B"),
                 extra="",
                 is_reference=False,
             )
@@ -152,7 +165,8 @@ class TestReferenceLinks:
             link_start=8,
             link_end=28,
             title="yourself",
-            location="reference",
+            raw_location="reference",
+            parsed_location=parse.urlparse("reference"),
             extra="",
             is_reference=True,
         )
@@ -164,7 +178,8 @@ class TestReferenceLinks:
             link_start=17,
             link_end=33,
             title="Sweden",
-            location="SE_flag",
+            raw_location="SE_flag",
+            parsed_location=parse.urlparse("SE_flag"),
             extra="",
             is_reference=True,
         )

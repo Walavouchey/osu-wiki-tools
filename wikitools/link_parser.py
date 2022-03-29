@@ -1,6 +1,7 @@
 import enum
 import os
 import typing
+from urllib import parse
 
 from wikitools import console, redirect_parser
 
@@ -43,16 +44,17 @@ class Link(typing.NamedTuple):
         See [Difficulty Names](/wiki/Beatmap/Difficulty#naming-conventions)
 
     - title: 'Difficulty Names'
-    - location: '/wiki/Beatmap/Difficulty'
-    - extra: '#naming-conventions'
+    - raw_location: '/wiki/Beatmap/Difficulty#naming-conventions'
+    - parsed_location: urllib.parse.ParseResult with all of its fields
 
     Another example:
 
         ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
 
     - title: 'Player is AFK'
-    - location: 'img/chat-console-afk.png'
-    - extra: ' "Player is away from keyboard"'
+    - raw_location: 'img/chat-console-afk.png'
+    - parsed_location: urllib.parse.ParseResult with all of its fields
+    - alt_text: 'Player is away from keyboard'
     """
 
     # Link position within the line. Example:
@@ -65,16 +67,17 @@ class Link(typing.NamedTuple):
     #    ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
     #      ^ - title - ^
     #                     ^ ----- location ----- ^
-    #                                             ^ ---------- extra ---------- ^
+    #                                               ^ ------- alt_text ------- ^
     #                     ^ --------------------- content --------------------- ^
     #     ^ ------------------ full_link / full_coloured_link ------------------ ^
     title: str
-    location: str
+    raw_location: str
+    parsed_location: parse.ParseResult
     extra: str
 
     @property
     def content(self):
-        return self.location + self.extra
+        return self.raw_location if not self.extra else f"{self.raw_location} {self.extra}"
 
     @property
     def full_link(self):
@@ -88,7 +91,7 @@ class Link(typing.NamedTuple):
         return "{title_in_braces}{left_brace}{location}{extra}{right_brace}".format(
             title_in_braces=console.green(f"[{self.title}]"),
             left_brace= console.green('[') if self.is_reference else console.green('('),
-            location=console.red(self.location),
+            location=console.red(self.raw_location),
             extra=console.blue(self.extra),
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
@@ -111,36 +114,36 @@ def child(path: str) -> str:
 def check_link(redirects: redirect_parser.Redirects, references: References, directory: str, link: Link) -> typing.Tuple[bool, typing.List[str]]:
     notes = []
 
-    location = link.location
-    if link.is_reference and link.location in references:
-        linenumber = references[link.location][1]
-        r = references[link.location][0]
-        location = r.split(' ')[0].split('#')[0].split('?')[0]
-        notes.append(f"{console.blue('Note:')} Reference at line {linenumber}: [{link.location}]: {r}")
+    # dereference the location, if possible
+    location = link.parsed_location.path
+    parsed_location = link.parsed_location
+    if link.is_reference and location in references:
+        ref, lineno = references[location]
+        location = ref.split(' ')[0].split('#')[0].split('?')[0]
+        parsed_location = parse.urlparse(location)
+        notes.append(f"{console.blue('Note:')} Reference at line {lineno}: [{location}]: {ref}")
     elif link.is_reference:
-        notes.append(f"{console.blue('Note:')} No corresponding reference found for \"{link.location}\"")
+        notes.append(f"{console.blue('Note:')} No corresponding reference found for \"{link.raw_location}\"")
 
-    if location.startswith("/wiki/"):
-        # absolute wikilink
+    # some external link; don't care
+    if parsed_location.scheme:
+        return (True, notes)
+
+    # internal link (domain is empty)
+    if parsed_location.netloc == '':
+        # convert a relative wikilink to absolute
+        if not location.startswith("/wiki/"):
+            location = f"/wiki/{directory}/{location}"
+
+        # article file exists -> quick win
+        # TODO(TicClick): check if a section exists
         if os.path.exists(location[1:]):
             return (True, notes)
-        else:
-            # may have a redirect
-            value, redir_note = redirect_parser.check_redirect(redirects, child(location))
-            notes.append(redir_note)
-            return (value, notes)
-    elif not any(location.startswith(prefix) for prefix in ("http://", "https://", "mailto:")):
-        # relative wikilink
-        if os.path.exists(f"wiki/{directory}/{location}"):
-            return (True, notes)
-        else:
-            # may have a redirect
-            value, redir_note = redirect_parser.check_redirect(redirects, f"{directory}/{location}")
-            notes.append(redir_note)
-            return (value, notes)
-    else:
-        # some other link; don't care
-        return (True, notes)
+
+        # may have a redirect
+        value, redir_note = redirect_parser.check_redirect(redirects, child(location))
+        notes.append(redir_note)
+        return (value, notes)
 
 
 def find_link(s: str, index=0) -> typing.Optional[Link]:
@@ -154,9 +157,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     parens = Brackets('(', ')')
     brackets = Brackets('[', ']')
 
-    for i, c in enumerate(s[index:]):
-        i += index
-
+    for i, c in enumerate(s[index:], start=index):
         if state == State.IDLE and c == '[':
             # potential start of a link
             brackets.depth += 1
@@ -183,7 +184,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
             continue
 
         if state == State.INLINE:
-            if (c == ' ' or c == '#' or c == '?'):
+            if c == ' ':
                 if extra is None:
                     # start of extra part
                     extra = i
@@ -195,7 +196,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                     extra = end
 
                 return Link(
-                    location=s[location: extra],
+                    raw_location=s[location: extra],
+                    parsed_location=parse.urlparse(s[location: extra]),
                     title=s[start + 1: location - 2],
                     extra=s[extra: end],
                     link_start=start,
@@ -209,7 +211,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                 # end of a complete reference-style link
                 end = i
                 return Link(
-                    location=s[location: end],
+                    raw_location=s[location: end],
+                    parsed_location=parse.urlparse(s[location: end]),
                     title=s[start + 1: location - 2],
                     extra="",
                     link_start=start,

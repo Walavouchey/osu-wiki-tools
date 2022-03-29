@@ -125,7 +125,7 @@ def main():
                         print_error()
                     exit_code = 1
 
-                    print(f"{console.yellow(filename)}:{linenumber}:{match.link_start + 1}: {console.red(match.location)}")
+                    print(f"{console.yellow(filename)}:{linenumber}:{match.link_start + 1}: {console.red(match.raw_location)}")
 
                 if all_notes:
                     print('\n'.join(all_notes))
