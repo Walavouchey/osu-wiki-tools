@@ -37,9 +37,9 @@ def highlight_links(s: str, links: typing.List[link_parser.Link]) -> str:
     highlighted_line = ""
     prev_index = 0
     for link in links:
-        highlighted_line += s[prev_index:link.link_start]
+        highlighted_line += s[prev_index:link.start]
         highlighted_line += link.full_coloured_link
-        prev_index = link.link_end + 1
+        prev_index = link.end + 1
     highlighted_line += s[prev_index:-1]
     return highlighted_line
 
@@ -107,7 +107,7 @@ def main():
                 bad_links = []
                 all_notes = []
                 for match in matches:
-                    if comment_parser.is_in_comment(match.link_start, comments):
+                    if comment_parser.is_in_comment(match.start, comments):
                         continue
                     match_count += 1
 
@@ -125,7 +125,7 @@ def main():
                         print_error()
                     exit_code = 1
 
-                    print(f"{console.yellow(filename)}:{linenumber}:{match.link_start + 1}: {console.red(match.raw_location)}")
+                    print(f"{console.yellow(filename)}:{linenumber}:{match.start + 1}: {console.red(match.raw_location)}")
 
                 if all_notes:
                     print('\n'.join(all_notes))

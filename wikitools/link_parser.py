@@ -59,9 +59,9 @@ class Link(typing.NamedTuple):
 
     # Link position within the line. Example:
     #   See also: [Difficulty names](/wiki/Beatmap/Difficulty#naming-conventions)
-    #             ^ link_start                                                  ^ link_end
-    link_start: int
-    link_end: int
+    #             ^ start                                                  ^ end
+    start: int
+    end: int
 
     # Sections of a link. Example:
     #    ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
@@ -73,11 +73,11 @@ class Link(typing.NamedTuple):
     title: str
     raw_location: str
     parsed_location: parse.ParseResult
-    extra: str
+    alt_text: str
 
     @property
     def content(self):
-        return self.raw_location if not self.extra else f"{self.raw_location} {self.extra}"
+        return self.raw_location if not self.alt_text else f"{self.raw_location} {self.alt_text}"
 
     @property
     def full_link(self):
@@ -92,7 +92,7 @@ class Link(typing.NamedTuple):
             title_in_braces=console.green(f"[{self.title}]"),
             left_brace= console.green('[') if self.is_reference else console.green('('),
             location=console.red(self.raw_location),
-            extra=console.blue(self.extra),
+            extra=" " + console.blue(self.alt_text) if self.alt_text else "",
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
 
@@ -107,11 +107,25 @@ class Link(typing.NamedTuple):
     is_reference: bool
 
 
-def child(path: str) -> str:
+def extract_tail(path: str) -> str:
+    """
+    Given a path in a file system, return its tail (everything past the first non-root slash). Examples:
+        - /wiki/Beatmap/Category -> Beatmap/Category
+        - img/users/2.png -> users/2.png
+    """
     return path[path.find('/', 1) + 1:]
 
 
 def check_link(redirects: redirect_parser.Redirects, references: References, directory: str, link: Link) -> typing.Tuple[bool, typing.List[str]]:
+    """
+    Verify that the link is valid:
+        - External links are always assumed valid, since we can't just issue HTTP requests left and right
+        - For Markdown references, there exists a dereferencing line with [reference_name]: /lo/ca/ti/on
+        - Direct internal links, as well as redirects, must point to existing article files
+        - Relative links are parsed under the assumption that
+            their parent (current article, where the link is defined) is `directory`
+    """
+
     notes = []
 
     # dereference the location, if possible
@@ -141,12 +155,20 @@ def check_link(redirects: redirect_parser.Redirects, references: References, dir
             return (True, notes)
 
         # may have a redirect
-        value, redir_note = redirect_parser.check_redirect(redirects, child(location))
+        value, redir_note = redirect_parser.check_redirect(redirects, extract_tail(location))
         notes.append(redir_note)
         return (value, notes)
 
 
 def find_link(s: str, index=0) -> typing.Optional[Link]:
+    """
+    Using the state machine, find the first Markdown link found in the string `s` after the `index` position.
+    The following are considered links (alt text or title may be missing):
+        - [title](/loca/ti/on "Alt text")
+        - ![title](/path/to/image "Alt text), with ! not considered a part of the link
+        - [title][reference], with exact locations found separately via find_reference()
+    """
+
     state = State.IDLE
 
     start = None
@@ -195,13 +217,14 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                 if extra is None:
                     extra = end
 
+                raw_location = s[location: extra]
                 return Link(
-                    raw_location=s[location: extra],
-                    parsed_location=parse.urlparse(s[location: extra]),
+                    raw_location=raw_location,
+                    parsed_location=parse.urlparse(raw_location),
                     title=s[start + 1: location - 2],
-                    extra=s[extra: end],
-                    link_start=start,
-                    link_end=end,
+                    alt_text=s[extra: end],
+                    start=start,
+                    end=end,
                     is_reference=False
                 )
             continue
@@ -210,13 +233,14 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
             if brackets.closed(c):
                 # end of a complete reference-style link
                 end = i
+                raw_location = s[location: end]
                 return Link(
-                    raw_location=s[location: end],
-                    parsed_location=parse.urlparse(s[location: end]),
+                    raw_location=raw_location,
+                    parsed_location=parse.urlparse(raw_location),
                     title=s[start + 1: location - 2],
-                    extra="",
-                    link_start=start,
-                    link_end=end,
+                    alt_text="",
+                    start=start,
+                    end=end,
                     is_reference=True
                 )
             continue
@@ -224,24 +248,36 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     return None
 
 
-def find_links(s: str) -> typing.List[Link]:
+def find_links(line: str) -> typing.List[Link]:
+    """
+    Iteratively extract all links from a line.
+    """
+
     results = []
     index = 0
-    match = find_link(s, index)
+    match = find_link(line, index)
     while match:
         results.append(match)
-        match = find_link(s, match.link_end + 1)
+        match = find_link(line, match.end + 1)
     return results
 
 
 def find_reference(s: str) -> typing.Optional[typing.Tuple[str, str]]:
+    """
+    Given a line, attempt to extract a reference from it (assuming it occupies the whole line). Example:
+        - "[reference]: /wiki/kudosu.png" -> ("reference", "/wiki/kudosu.png")
+    """
+
     split = s.find(':')
     if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
         return (s[1:split - 1], s[split + 2:-1])
-    return
 
 
 def find_references(file) -> References:
+    """
+    Attempt to read link references in form of "[reference_name]: /path/to/location" from a text file.
+    """
+
     seek = file.tell()
     references = {}
     for linenumber, line in enumerate(file, start=1):
