@@ -128,7 +128,7 @@ class Link(typing.NamedTuple):
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
 
-    def dereference(self, references: References) -> typing.Union['Link', typing.Optional[Reference]]:
+    def resolve(self, references: References) -> typing.Union['Link', typing.Optional[Reference]]:
         if not self.is_reference:
             return self
         return references.get(self.parsed_location.path)
@@ -165,8 +165,8 @@ def check_link(
             their parent (current article, where the link is defined) is `directory`
     """
 
-    # dereference the link, if possible
-    link = link_.dereference(references)
+    # resolve the link, if possible
+    link = link_.resolve(references)
     if link is None:
         return errors.MissingReference(link_.raw_location)
 
@@ -304,16 +304,17 @@ def find_links(line: str) -> typing.List[Link]:
     return results
 
 
-def find_references(file) -> References:
+def find_references(text) -> References:
     """
     Attempt to read link references in form of "[reference_name]: /path/to/location" from a text file.
     """
 
-    seek = file.tell()
-    references = {}
-    for lineno, line in enumerate(file, start=1):
-        reference = Reference.parse(line, lineno)
-        if reference:
-            references[reference.name] = reference
-    file.seek(seek)
-    return references
+    references = (
+        Reference.parse(line, lineno)
+        for lineno, line in enumerate(text.splitlines(), start=1)
+    )
+    return {
+        r.name: r
+        for r in references if
+        r is not None
+    }
