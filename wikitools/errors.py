@@ -26,7 +26,7 @@ class BrokenRedirect(
         )
 
 
-class LinkNotFound(LinkError, collections.namedtuple('MissingReference', 'location')):
+class MissingReference(LinkError, collections.namedtuple('MissingReference', 'location')):
     location: str
 
     def __repr__(self):

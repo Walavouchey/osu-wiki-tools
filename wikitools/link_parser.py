@@ -154,7 +154,7 @@ def extract_tail(path: str) -> str:
 
 
 def check_link(
-    redirects: redirect_parser.Redirects, references: References, directory: str, link_: Link
+    redirects: redirect_parser.Redirects, references: References, current_article_dir: str, link_: Link
 ) -> typing.Optional[errors.LinkError]:
     """
     Verify that the link is valid:
@@ -181,7 +181,7 @@ def check_link(
     if parsed_location.netloc == '':
         # convert a relative wikilink to absolute
         if not location.startswith("/wiki/"):
-            location = f"/wiki/{directory}/{location}"
+            location = f"/wiki/{current_article_dir}/{location}"
 
         # article file exists -> quick win
         # TODO(TicClick): check if a section exists
