@@ -183,3 +183,34 @@ class TestReferenceLinks:
             alt_text="",
             is_reference=True,
         )
+
+
+class TestReferences:
+    def test__no_referenes(self):
+        assert link_parser.Reference.parse('A totally normal line.', lineno=1) is None
+        assert link_parser.Reference.parse('A line with [a link](/wiki/Link).', lineno=1) is None
+
+    def test__references(self):
+        assert link_parser.Reference.parse('[refname]: /wiki/Article', lineno=10) == link_parser.Reference(
+            lineno=10,
+            name='refname',
+            raw_location='/wiki/Article', parsed_location=parse.urlparse('/wiki/Article'),
+            alt_text='',
+        )
+
+        assert link_parser.Reference.parse('[ref]: /some/path "Alt text"', lineno=11) == link_parser.Reference(
+            lineno=11,
+            name='ref',
+            raw_location='/some/path', parsed_location=parse.urlparse('/some/path'),
+            alt_text='Alt text'
+        )
+
+        assert link_parser.Reference.parse(
+            '[ref]: https://example.com/image.png "Image"', lineno=12
+        ) == link_parser.Reference(
+            lineno=12,
+            name='ref',
+            raw_location='https://example.com/image.png',
+            parsed_location=parse.urlparse('https://example.com/image.png'),
+            alt_text='Image'
+        )

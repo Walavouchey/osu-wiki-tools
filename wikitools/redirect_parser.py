@@ -1,7 +1,4 @@
-import os
 import typing
-
-from wikitools import console
 
 Redirects = typing.Dict[str, typing.Tuple[str, int]]
 
@@ -20,17 +17,3 @@ def load_redirects(path: str) -> Redirects:
             except IndexError:
                 pass
     return redirects
-
-
-def check_redirect(redirects: Redirects, link: str):
-    link_lower = link.lower()
-    try:
-        destination, line_no = redirects[link_lower]
-    except KeyError:
-        note = f"{console.blue('Note:')} \"{link}\" was not found"
-        return (False, note)
-    if not os.path.exists(f"wiki/{destination}"):
-        note = f"{console.blue('Note:')} Broken redirect (redirect.yaml:{line_no}: {link_lower} --> {destination})"
-        return (False, note)
-    return (True, "")
-

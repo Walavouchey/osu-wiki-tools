@@ -3,9 +3,41 @@ import os
 import typing
 from urllib import parse
 
-from wikitools import console, redirect_parser
+from wikitools import console, redirect_parser, errors
 
-References = typing.Dict[str, typing.Tuple[str, int]]
+
+class Reference(typing.NamedTuple):
+    lineno: int
+    name: str
+    raw_location: str
+    parsed_location: parse.ParseResult
+    alt_text: str
+
+    @classmethod
+    def parse(cls, s: str, lineno) -> typing.Optional['Reference']:
+        """
+        Given a line, attempt to extract a reference from it (assuming it occupies the whole line). Example:
+            - "[reference]: /wiki/kudosu.png" -> ("reference", "/wiki/kudosu.png")
+        """
+
+        split = s.find(':')
+        if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
+            name = s[1:split - 1]
+            try:
+                location, alt_text = s[split + 2:].split(' ', maxsplit=1)
+                alt_text = alt_text[1:-1]  # trim quotes
+            except ValueError:  # no space
+                location = s[split + 2:]
+                alt_text = ""
+
+            parsed_location = parse.urlparse(location)
+            return cls(
+                lineno=lineno, name=name,
+                raw_location=location, parsed_location=parsed_location, alt_text=alt_text
+            )
+
+
+References = typing.Dict[str, Reference]
 
 
 class Brackets():
@@ -96,6 +128,11 @@ class Link(typing.NamedTuple):
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
 
+    def dereference(self, references: References) -> typing.Union['Link', typing.Optional[Reference]]:
+        if not self.is_reference:
+            return self
+        return references.get(self.parsed_location.path)
+
     # Whether the link is a reference-style link. The only difference is that
     # `location` is a reference and needs to be resolved later.
     #
@@ -116,7 +153,9 @@ def extract_tail(path: str) -> str:
     return path[path.find('/', 1) + 1:]
 
 
-def check_link(redirects: redirect_parser.Redirects, references: References, directory: str, link: Link) -> typing.Tuple[bool, typing.List[str]]:
+def check_link(
+    redirects: redirect_parser.Redirects, references: References, directory: str, link_: Link
+) -> typing.Optional[errors.LinkError]:
     """
     Verify that the link is valid:
         - External links are always assumed valid, since we can't just issue HTTP requests left and right
@@ -126,22 +165,17 @@ def check_link(redirects: redirect_parser.Redirects, references: References, dir
             their parent (current article, where the link is defined) is `directory`
     """
 
-    notes = []
+    # dereference the link, if possible
+    link = link_.dereference(references)
+    if link is None:
+        return errors.MissingReference(link_.raw_location)
 
-    # dereference the location, if possible
     location = link.parsed_location.path
     parsed_location = link.parsed_location
-    if link.is_reference and location in references:
-        ref, lineno = references[location]
-        location = ref.split(' ')[0].split('#')[0].split('?')[0]
-        parsed_location = parse.urlparse(location)
-        notes.append(f"{console.blue('Note:')} Reference at line {lineno}: [{location}]: {ref}")
-    elif link.is_reference:
-        notes.append(f"{console.blue('Note:')} No corresponding reference found for \"{link.raw_location}\"")
 
     # some external link; don't care
     if parsed_location.scheme:
-        return (True, notes)
+        return
 
     # internal link (domain is empty)
     if parsed_location.netloc == '':
@@ -152,12 +186,20 @@ def check_link(redirects: redirect_parser.Redirects, references: References, dir
         # article file exists -> quick win
         # TODO(TicClick): check if a section exists
         if os.path.exists(location[1:]):
-            return (True, notes)
+            return
 
-        # may have a redirect
-        value, redir_note = redirect_parser.check_redirect(redirects, extract_tail(location))
-        notes.append(redir_note)
-        return (value, notes)
+        # check for a redirect
+        redirect_source = extract_tail(location)
+        try:
+            redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
+        except KeyError:
+            return errors.LinkNotFound(redirect_source)
+
+        if not os.path.exists(f"wiki/{redirect_destination}"):
+            return errors.BrokenRedirect(redirect_source, redirect_line_no, redirect_destination)
+
+    else:
+        raise RuntimeError(f"Unhandled link type: {parsed_location}")
 
 
 def find_link(s: str, index=0) -> typing.Optional[Link]:
@@ -262,17 +304,6 @@ def find_links(line: str) -> typing.List[Link]:
     return results
 
 
-def find_reference(s: str) -> typing.Optional[typing.Tuple[str, str]]:
-    """
-    Given a line, attempt to extract a reference from it (assuming it occupies the whole line). Example:
-        - "[reference]: /wiki/kudosu.png" -> ("reference", "/wiki/kudosu.png")
-    """
-
-    split = s.find(':')
-    if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
-        return (s[1:split - 1], s[split + 2:-1])
-
-
 def find_references(file) -> References:
     """
     Attempt to read link references in form of "[reference_name]: /path/to/location" from a text file.
@@ -280,9 +311,9 @@ def find_references(file) -> References:
 
     seek = file.tell()
     references = {}
-    for linenumber, line in enumerate(file, start=1):
-        reference = find_reference(line)
+    for lineno, line in enumerate(file, start=1):
+        reference = Reference.parse(line, lineno)
         if reference:
-            references[reference[0]] = (reference[1], linenumber)
+            references[reference.name] = reference
     file.seek(seek)
     return references
