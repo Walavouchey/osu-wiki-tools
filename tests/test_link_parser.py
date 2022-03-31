@@ -3,6 +3,7 @@ import textwrap
 from urllib import parse
 
 import pytest
+import conftest
 
 from wikitools import link_parser, errors, redirect_parser
 
@@ -271,29 +272,9 @@ class TestLinkObject:
         assert link.resolve({}) is None
 
 
-@pytest.fixture(scope='function')
-def root(tmpdir):
-    root = tmpdir.join('wiki')
-    root.mkdir()
-
-    # XXX(TicClick): this is a hack, since most functions expect the 'wiki' directory is in our sight.
-    # when the --root flag is added, this may be changed
-    curdir = os.getcwd()
-    os.chdir(tmpdir)
-    yield root
-    os.chdir(curdir)
-
-
-def create_files(root, *articles):
-    for path, contents in articles:
-        article_folder = root.join(os.path.dirname(path))
-        article_folder.ensure(dir=1)
-        article_folder.join(os.path.basename(path)).write(contents)
-
-
 class TestArticleLinks:
     def test__valid_absolute_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('First_article/en.md', '# First article')
         )
@@ -303,7 +284,7 @@ class TestArticleLinks:
         assert error is None
 
     def test__invalid_absolute_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Another_article/en.md', '# Another article')
         )
@@ -317,7 +298,7 @@ class TestArticleLinks:
             assert isinstance(error, errors.LinkNotFound)
 
     def test__valid_reference(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('My_article/en.md', '# My article')
         )
@@ -328,7 +309,7 @@ class TestArticleLinks:
         assert error is None
 
     def test__invalid_reference(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Obscure_article/en.md', '# First article')
         )
@@ -340,7 +321,7 @@ class TestArticleLinks:
         assert error.location == 'article_ref'
 
     def test__valid_relative_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Batteries/en.md', '# Batteries'),
             ('Batteries/Included/en.md', '# Included'),
@@ -358,7 +339,7 @@ class TestArticleLinks:
             assert error is None
 
     def test__invalid_relative_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Existing_article/en.md', '# Existing article')
         )
@@ -370,7 +351,7 @@ class TestArticleLinks:
 
 class TestImageLinks:
     def test__valid_absolute_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Article/en.md', '# Article'),
             ('img/battery.png', '')
@@ -381,7 +362,7 @@ class TestImageLinks:
         assert error is None
 
     def test__invalid_absolute_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('New_article/en.md', '# New article'),
             ('img/battery.png', '')
@@ -392,7 +373,7 @@ class TestImageLinks:
         assert isinstance(error, errors.LinkNotFound)
 
     def test__valid_relative_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Beatmap/en.md', '# Beatmap'),
             ('Beatmap/img/beatmap.png', '')
@@ -403,7 +384,7 @@ class TestImageLinks:
         assert error is None
 
     def test__invalid_relative_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('Difficulty/en.md', '# Difficulty'),
             ('Difficulty/img/difficulty.png', '')
@@ -416,7 +397,7 @@ class TestImageLinks:
 
 class TestRedirectedLinks:
     def test__valid_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             ('redirect.yaml', '"old_link": "New_article"'),
             ('New_article/en.md', '# New article'),
@@ -428,7 +409,7 @@ class TestRedirectedLinks:
         assert error is None
 
     def test__invalid_link(self, root):
-        create_files(
+        conftest.create_files(
             root,
             (
                 'redirect.yaml', textwrap.dedent('''

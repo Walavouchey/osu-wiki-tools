@@ -13,6 +13,10 @@ class Reference(typing.NamedTuple):
     parsed_location: parse.ParseResult
     alt_text: str
 
+    @property
+    def start(self):
+        return 0
+
     @classmethod
     def parse(cls, s: str, lineno) -> typing.Optional['Reference']:
         """
@@ -154,7 +158,8 @@ def extract_tail(path: str) -> str:
 
 
 def check_link(
-    redirects: redirect_parser.Redirects, references: References, current_article_dir: str, link_: Link
+    redirects: redirect_parser.Redirects, references: References, current_article_dir: str,
+    link_: typing.Union[Link, Reference]
 ) -> typing.Optional[errors.LinkError]:
     """
     Verify that the link is valid:
@@ -166,7 +171,7 @@ def check_link(
     """
 
     # resolve the link, if possible
-    link = link_.resolve(references)
+    link = link_ if isinstance(link_, Reference) else link_.resolve(references)
     if link is None:
         return errors.MissingReference(link_.raw_location)
 

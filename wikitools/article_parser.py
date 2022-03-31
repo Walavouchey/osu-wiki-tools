@@ -51,7 +51,7 @@ class Article:
             path = path[2:]
 
         saved_lines = {}
-        references = []
+        references = {}
         identifiers = []
 
         in_multiline = False
@@ -61,22 +61,29 @@ class Article:
                 if comments:
                     in_multiline = comments[-1].end == -1
 
-                links_on_line = filter(
+                # everything in a multiline comment doesn't count
+                if in_multiline:
+                    continue
+
+                links_on_line = list(filter(
                     lambda l: not(
                         l.content == '/wiki/Sitemap' or
                         comment_parser.is_in_comment(l.start, comments)
                     ),
                     link_parser.find_links(line)
-                )
-                saved_lines[lineno] = ArticleLine(raw_line=line, links=list(links_on_line))
+                ))
+                # cache meaningful lines. in our case, lines with links and references
+                if links_on_line:
+                    saved_lines[lineno] = ArticleLine(raw_line=line, links=links_on_line)
 
                 identifier = identifier_parser.extract_identifier(line)
                 if identifier is not None:
                     identifiers.append(identifier)
 
                 if line.startswith('['):
-                    reference = link_parser.find_reference(line)
+                    reference = link_parser.Reference.parse(line.strip(), lineno=lineno)
                     if reference is not None:
+                        references[reference.name] = reference
                         saved_lines[lineno] = ArticleLine(raw_line=line, links=[reference])
 
         return cls(path, saved_lines, references, identifiers)
@@ -85,9 +92,10 @@ class Article:
         bad_links = []
         errors = []
 
+        article_directory = os.path.relpath(self.directory, 'wiki/')
         for lineno, line in self.lines.items():
             for link in line.links:
-                error = link_parser.check_link(redirects, self.references, self.directory, link)
+                error = link_parser.check_link(redirects, self.references, article_directory, link)
                 if error is None:
                     continue
 
