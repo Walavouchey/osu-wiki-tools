@@ -14,8 +14,22 @@ class Reference(typing.NamedTuple):
     alt_text: str
 
     @property
+    def full_coloured_link(self):
+        return "{title_in_braces}: {location}{extra}".format(
+            title_in_braces=console.green(f"[{self.name}]"),
+            location=console.red(self.raw_location),
+            extra=f' "{console.blue(self.alt_text)}"' if self.alt_text else "",
+        )
+
+    @property
     def start(self):
         return 0
+
+    @property
+    def end(self):
+        return len(self.name) + 4 + len(self.raw_location) + (
+            3 + len(self.alt_text) if self.alt_text else 0
+        )
 
     @classmethod
     def parse(cls, s: str, lineno) -> typing.Optional['Reference']:

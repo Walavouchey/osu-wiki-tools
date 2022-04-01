@@ -1,8 +1,11 @@
 import collections
 
+from wikitools import console
+
 
 class LinkError:
-    pass
+    def pretty(self):
+        return f'{console.blue("Note:")} {repr(self)}'
 
 
 class LinkNotFound(LinkError, collections.namedtuple('LinkNotFound', 'location')):

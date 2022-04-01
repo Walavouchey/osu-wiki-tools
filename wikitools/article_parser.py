@@ -89,7 +89,7 @@ class Article:
         return cls(path, saved_lines, references, identifiers)
 
     def check_links(self, redirects):
-        bad_links = []
+        bad_links = {}
         errors = []
 
         article_directory = os.path.relpath(self.directory, 'wiki/')
@@ -99,7 +99,7 @@ class Article:
                 if error is None:
                     continue
 
-                bad_links.append(link)
+                bad_links.setdefault(lineno, []).append(link)
                 errors.append((
                     error,
                     LinkErrorLocation(

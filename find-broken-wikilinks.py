@@ -1,9 +1,10 @@
 import argparse
+import itertools
 import os
 import sys
 import typing
 
-from wikitools import comment_parser, console, link_parser, redirect_parser
+from wikitools import article_parser, comment_parser, console, link_parser, redirect_parser
 
 
 def directory(filename: str) -> str:
@@ -77,14 +78,9 @@ def main():
 
     redirects = redirect_parser.load_redirects("wiki/redirect.yaml")
     exit_code = 0
-    error_count = 0
-    match_count = 0
-    error_file_count = 0
-    file_count = 0
+
+    articles = {}
     for filename in filenames:
-        filename = filename.replace('\\', '/')
-        if filename.startswith("./"):
-            filename = filename[2:]
         if any((
             not filename.endswith(".md"),
             "TEMPLATE" in filename,
@@ -93,58 +89,44 @@ def main():
         )):
             continue
 
+        a = article_parser.Article.parse_file(filename)
+        articles.setdefault(a.directory, []).append(a)
+
+    error_count = 0
+    link_count = 0
+    error_file_count = 0
+    file_count = 0
+
+    for a in itertools.chain.from_iterable(articles.values()):
+        link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
-        with open(filename, 'r', encoding='utf-8') as fd:
-            references = link_parser.find_references(fd)
 
-            in_multiline = False
-            for linenumber, line in enumerate(fd, start=1):
-                comments = comment_parser.find_comments(line, in_multiline)
-                if comments:
-                    in_multiline = comments[-1].end == -1
+        errors, bad_links = a.check_links(redirects)
+        if not errors:
+            continue
 
-                matches = link_parser.find_links(line)
-                bad_links = []
-                all_notes = []
-                for match in matches:
-                    if comment_parser.is_in_comment(match.start, comments):
-                        continue
-                    match_count += 1
+        error_count += len(errors)
+        error_file_count += 1
+        if exit_code == 0:
+            print_error()
+        exit_code = 1
 
-                    if match.content == "/wiki/Sitemap":
-                        continue
+        for error, location in errors:
+            print(location.pretty())
+            print(error.pretty())
 
-                    success, notes = link_parser.check_link(redirects, references, directory(filename), match)
-                    if success:
-                        continue
-                    error_count += 1
-                    bad_links.append(match)
-                    all_notes += notes
-
-                    if exit_code == 0:
-                        print_error()
-                    exit_code = 1
-
-                    print(f"{console.yellow(filename)}:{linenumber}:{match.start + 1}: {console.red(match.raw_location)}")
-
-                if all_notes:
-                    print('\n'.join(all_notes))
-
-
-                if bad_links:
-                    print()
-                    error_file_count += 1
-                    if args.separate:
-                        for link in bad_links:
-                            print(highlight_links(line, [link]), end="\n\n")
-                    else:
-                        print(highlight_links(line, bad_links), end="\n\n")
+        for lineno, links in sorted(bad_links.items()):
+            if args.separate:
+                for link in links:
+                    print(highlight_links(a.lines[lineno].raw_line, [link]), end="\n\n")
+            else:
+                print(highlight_links(a.lines[lineno].raw_line, links), end="\n\n")
 
     if exit_code == 0:
         print_clean()
         print()
 
-    print_count(error_count, match_count, error_file_count, file_count)
+    print_count(error_count, link_count, error_file_count, file_count)
     sys.exit(exit_code)
 
 

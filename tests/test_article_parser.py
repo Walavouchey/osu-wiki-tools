@@ -146,9 +146,10 @@ class TestArticleChecker:
         errors, bad_links = article.check_links(redirects)
 
         assert len(errors) == 5
-        assert len(bad_links) == 5
+        all_bad_links = list(sum((_ for _ in bad_links.values()), []))
+        assert len(all_bad_links) == 5
 
-        assert set(_.raw_location for _ in bad_links) == {
+        assert set(_.raw_location for _ in all_bad_links) == {
             '/wiki/Broken_link',
             'Bad_relative_link',
             '/wiki/Broken_redirect',
