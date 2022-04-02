@@ -4,7 +4,7 @@ import os
 import sys
 import typing
 
-from wikitools import article_parser, console, link_parser, redirect_parser
+from wikitools import article_parser, console, link_parser, link_checker, redirect_parser
 
 
 def print_error():
@@ -90,18 +90,18 @@ def main():
             continue
 
         a = article_parser.parse(filename)
-        articles.setdefault(a.directory, []).append(a)
+        articles[a.path] = a
 
     error_count = 0
     link_count = 0
     error_file_count = 0
     file_count = 0
 
-    for a in itertools.chain.from_iterable(articles.values()):
+    for _, a in sorted(articles.items()):
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
-        results = a.check_links(redirects)
+        results = link_checker.check_article(a, redirects, articles)
         if not results:
             continue
 

@@ -9,11 +9,6 @@ class ArticleLine(typing.NamedTuple):
     links: typing.List[link_parser.Link]
 
 
-class DetailedError(typing.NamedTuple):
-    link: link_parser.Link
-    error: errors.LinkError
-
-
 class Article:
     """
     A wiki article, which contains some parts from the text file considered important:
@@ -42,21 +37,6 @@ class Article:
     @property
     def path(self) -> str:
         return os.path.join(self.directory, self.filename)
-
-    def check_links(self, redirects: redirect_parser.Redirects):
-        """
-        Try resolving links in the article either to another articles, or files.
-        """
-
-        result = {}
-        article_directory = os.path.relpath(self.directory, 'wiki/')
-        for lineno, line in self.lines.items():
-            for link in line.links:
-                error = link_parser.check_link(redirects, self.references, article_directory, link)
-                if error is not None:
-                    result.setdefault(lineno, []).append(DetailedError(link=link, error=error))
-
-        return result
 
 
 def parse(path: str) -> Article:

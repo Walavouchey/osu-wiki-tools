@@ -112,65 +112,6 @@ class Link(typing.NamedTuple):
     is_reference: bool
 
 
-def extract_tail(path: str) -> str:
-    """
-    Given a path in a file system, return its tail (everything past the first non-root slash). Examples:
-        - /wiki/Beatmap/Category -> Beatmap/Category
-        - img/users/2.png -> users/2.png
-    """
-    return path[path.find('/', 1) + 1:]
-
-
-def check_link(
-    redirects: redirect_parser.Redirects, references: reference_parser.References, current_article_dir: str,
-    link_: typing.Union[Link, reference_parser.Reference]
-) -> typing.Optional[errors.LinkError]:
-    """
-    Verify that the link is valid:
-        - External links are always assumed valid, since we can't just issue HTTP requests left and right
-        - For Markdown references, there exists a dereferencing line with [reference_name]: /lo/ca/ti/on
-        - Direct internal links, as well as redirects, must point to existing article files
-        - Relative links are parsed under the assumption that
-          their parent (current article, where the link is defined) is `current_article_dir`
-    """
-
-    # resolve the link, if possible
-    link = link_ if isinstance(link_, reference_parser.Reference) else link_.resolve(references)
-    if link is None:
-        return errors.MissingReference(link_.raw_location)
-
-    location = link.parsed_location.path
-    parsed_location = link.parsed_location
-
-    # some external link; don't care
-    if parsed_location.scheme:
-        return
-
-    # internal link (domain is empty)
-    if parsed_location.netloc == '':
-        # convert a relative wikilink to absolute
-        if not location.startswith("/wiki/"):
-            location = f"/wiki/{current_article_dir}/{location}"
-
-        # article file exists -> quick win
-        # TODO(TicClick): check if a section exists
-        if os.path.exists(location[1:]):
-            return
-
-        # check for a redirect
-        redirect_source = extract_tail(location)
-        try:
-            redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
-        except KeyError:
-            return errors.LinkNotFound(redirect_source)
-
-        if not os.path.exists(f"wiki/{redirect_destination}"):
-            return errors.BrokenRedirect(redirect_source, redirect_line_no, redirect_destination)
-
-    else:
-        raise RuntimeError(f"Unhandled link type: {parsed_location}")
-
-
 def find_link(s: str, index=0) -> typing.Optional[Link]:
     """
     Using the state machine, find the first Markdown link found in the string `s` after the `index` position.
