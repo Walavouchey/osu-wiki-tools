@@ -89,7 +89,7 @@ def main():
         )):
             continue
 
-        a = article_parser.Article.parse_file(filename)
+        a = article_parser.parse(filename)
         articles.setdefault(a.directory, []).append(a)
 
     error_count = 0

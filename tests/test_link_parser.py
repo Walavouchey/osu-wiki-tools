@@ -5,7 +5,7 @@ from urllib import parse
 import pytest
 import conftest
 
-from wikitools import link_parser, errors, redirect_parser
+from wikitools import link_parser, errors, redirect_parser, reference_parser
 
 
 class TestInlinePlainLinks:
@@ -190,83 +190,10 @@ class TestReferenceLinks:
         )
 
 
-class TestReferences:
-    def test__no_referenes(self):
-        assert link_parser.Reference.parse('A totally normal line.', lineno=1) is None
-        assert link_parser.Reference.parse('A line with [a link](/wiki/Link).', lineno=1) is None
-
-    def test__references(self):
-        assert link_parser.Reference.parse('[refname]: /wiki/Article', lineno=10) == link_parser.Reference(
-            lineno=10,
-            name='refname',
-            raw_location='/wiki/Article', parsed_location=parse.urlparse('/wiki/Article'),
-            alt_text='',
-        )
-
-        assert link_parser.Reference.parse('[ref]: /some/path "Alt text"', lineno=11) == link_parser.Reference(
-            lineno=11,
-            name='ref',
-            raw_location='/some/path', parsed_location=parse.urlparse('/some/path'),
-            alt_text='Alt text'
-        )
-
-        assert link_parser.Reference.parse(
-            '[ref]: https://example.com/image.png "Image"', lineno=12
-        ) == link_parser.Reference(
-            lineno=12,
-            name='ref',
-            raw_location='https://example.com/image.png',
-            parsed_location=parse.urlparse('https://example.com/image.png'),
-            alt_text='Image'
-        )
-
-
-class TestReferenceFinder:
-    def test__find_references(self):
-        text = textwrap.dedent('''
-            # An article
-
-            [stray]: /refe/ren/ce
-        ''').strip()
-
-        expected_reference = link_parser.Reference(
-            lineno=3, name='stray', raw_location='/refe/ren/ce',
-            parsed_location=parse.urlparse('/refe/ren/ce'), alt_text=''
-        )
-        assert link_parser.find_references(text) == {'stray': expected_reference}
-
-    def test__more_references(self):
-        text = textwrap.dedent('''
-            # Lorem ipsum
-
-            Dolor [sit][sit_ref] amet.
-
-            [sit_ref]: /a/random/insertion
-
-            It is a long established fact that a ![reader][reader_ref] will be distracted by... [KEEP READING]
-
-            [reader_ref]: img/reader.png "A reader"
-        ''').strip()
-
-        link_ref = link_parser.Reference(
-            lineno=5, name='sit_ref', raw_location='/a/random/insertion',
-            parsed_location=parse.urlparse('/a/random/insertion'), alt_text=''
-        )
-        image_ref = link_parser.Reference(
-            lineno=9, name='reader_ref', raw_location='img/reader.png',
-            parsed_location=parse.urlparse('img/reader.png'), alt_text='A reader'
-        )
-
-        assert link_parser.find_references(text) == {
-            'sit_ref': link_ref,
-            'reader_ref': image_ref
-        }
-
-
 class TestLinkObject:
     def test__resolution(self):
         link = link_parser.find_link('This is an [example][example_ref].')
-        references = link_parser.find_references('[example_ref]: https://example.com "Example"')
+        references = reference_parser.extract_all('[example_ref]: https://example.com "Example"')
 
         assert link.resolve(references) == references['example_ref']
         assert link.resolve({}) is None
@@ -304,7 +231,7 @@ class TestArticleLinks:
         )
 
         link = link_parser.find_link('This link is [working][article_ref].')
-        references = link_parser.find_references('[article_ref]: /wiki/My_article "Something something"')
+        references = reference_parser.extract_all('[article_ref]: /wiki/My_article "Something something"')
         error = link_parser.check_link(redirects={}, references=references, current_article_dir='does/not/matter', link_=link)
         assert error is None
 
@@ -315,7 +242,7 @@ class TestArticleLinks:
         )
 
         link = link_parser.find_link('This link is [not working][article_ref].')
-        references = link_parser.find_references('[other_ref]: /wiki/Obscure_article "Something something"')
+        references = reference_parser.extract_all('[other_ref]: /wiki/Obscure_article "Something something"')
         error = link_parser.check_link(redirects={}, references=references, current_article_dir='does/not/matter', link_=link)
         assert isinstance(error, errors.MissingReference)
         assert error.location == 'article_ref'

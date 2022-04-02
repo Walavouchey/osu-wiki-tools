@@ -5,7 +5,7 @@ Redirects = typing.Dict[str, typing.Tuple[str, int]]
 
 def load_redirects(path: str) -> Redirects:
     """
-    Read redirects from a string representing YAML dictionary manually to preserve line numbers.
+    Read redirects from a file representing YAML dictionary manually to preserve line numbers.
     """
 
     redirects = {}

@@ -13,7 +13,7 @@ def extract_identifier(s: str) -> typing.Set[str]:
             (placed in the beginning or the end of the line: https://github.com/ppy/osu-web/issues/8057)
 
     This function doesn't recognize HTML comments and code blocks and will extract identifiers from these as well.
-        It should have no impact on the link checker.
+    The burden of checking for the comments and code blocks lies on the caller.
 
     TODO(TicClick): support repeated headings (heading.1, heading.2 for identical lines)
     """

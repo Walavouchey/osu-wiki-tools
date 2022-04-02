@@ -3,59 +3,7 @@ import os
 import typing
 from urllib import parse
 
-from wikitools import console, redirect_parser, errors
-
-
-class Reference(typing.NamedTuple):
-    lineno: int
-    name: str
-    raw_location: str
-    parsed_location: parse.ParseResult
-    alt_text: str
-
-    @property
-    def full_coloured_link(self):
-        return "{title_in_braces}: {location}{extra}".format(
-            title_in_braces=console.green(f"[{self.name}]"),
-            location=console.red(self.raw_location),
-            extra=f' "{console.blue(self.alt_text)}"' if self.alt_text else "",
-        )
-
-    @property
-    def start(self):
-        return 0
-
-    @property
-    def end(self):
-        return len(self.name) + 4 + len(self.raw_location) + (
-            3 + len(self.alt_text) if self.alt_text else 0
-        )
-
-    @classmethod
-    def parse(cls, s: str, lineno) -> typing.Optional['Reference']:
-        """
-        Given a line, attempt to extract a reference from it (assuming it occupies the whole line). Example:
-            - "[reference]: /wiki/kudosu.png" -> ("reference", "/wiki/kudosu.png")
-        """
-
-        split = s.find(':')
-        if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
-            name = s[1:split - 1]
-            try:
-                location, alt_text = s[split + 2:].split(' ', maxsplit=1)
-                alt_text = alt_text[1:-1]  # trim quotes
-            except ValueError:  # no space
-                location = s[split + 2:]
-                alt_text = ""
-
-            parsed_location = parse.urlparse(location)
-            return cls(
-                lineno=lineno, name=name,
-                raw_location=location, parsed_location=parsed_location, alt_text=alt_text
-            )
-
-
-References = typing.Dict[str, Reference]
+from wikitools import console, redirect_parser, reference_parser, errors
 
 
 class Brackets():
@@ -146,7 +94,9 @@ class Link(typing.NamedTuple):
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
 
-    def resolve(self, references: References) -> typing.Union['Link', typing.Optional[Reference]]:
+    def resolve(
+        self, references: reference_parser.References
+    ) -> typing.Union['Link', typing.Optional[reference_parser.Reference]]:
         if not self.is_reference:
             return self
         return references.get(self.parsed_location.path)
@@ -172,8 +122,8 @@ def extract_tail(path: str) -> str:
 
 
 def check_link(
-    redirects: redirect_parser.Redirects, references: References, current_article_dir: str,
-    link_: typing.Union[Link, Reference]
+    redirects: redirect_parser.Redirects, references: reference_parser.References, current_article_dir: str,
+    link_: typing.Union[Link, reference_parser.Reference]
 ) -> typing.Optional[errors.LinkError]:
     """
     Verify that the link is valid:
@@ -181,11 +131,11 @@ def check_link(
         - For Markdown references, there exists a dereferencing line with [reference_name]: /lo/ca/ti/on
         - Direct internal links, as well as redirects, must point to existing article files
         - Relative links are parsed under the assumption that
-            their parent (current article, where the link is defined) is `directory`
+          their parent (current article, where the link is defined) is `current_article_dir`
     """
 
     # resolve the link, if possible
-    link = link_ if isinstance(link_, Reference) else link_.resolve(references)
+    link = link_ if isinstance(link_, reference_parser.Reference) else link_.resolve(references)
     if link is None:
         return errors.MissingReference(link_.raw_location)
 
@@ -226,7 +176,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     Using the state machine, find the first Markdown link found in the string `s` after the `index` position.
     The following are considered links (alt text or title may be missing):
         - [title](/loca/ti/on "Alt text")
-        - ![title](/path/to/image "Alt text), with ! not considered a part of the link
+        - ![title](/path/to/image "Alt text), with ! not being considered a part of the link
         - [title][reference], with exact locations found separately via find_reference()
     """
 
@@ -321,19 +271,3 @@ def find_links(line: str) -> typing.List[Link]:
         results.append(match)
         match = find_link(line, match.end + 1)
     return results
-
-
-def find_references(text) -> References:
-    """
-    Attempt to read link references in form of "[reference_name]: /path/to/location" from a text file.
-    """
-
-    references = (
-        Reference.parse(line, lineno)
-        for lineno, line in enumerate(text.splitlines(), start=1)
-    )
-    return {
-        r.name: r
-        for r in references if
-        r is not None
-    }

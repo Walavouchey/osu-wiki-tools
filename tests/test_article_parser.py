@@ -1,10 +1,9 @@
-import itertools
 import textwrap
 from urllib import parse
 
 import conftest
 
-from wikitools import article_parser, link_parser, redirect_parser, errors as error_types
+from wikitools import article_parser, link_parser, redirect_parser, errors as error_types, reference_parser
 
 
 class TestArticleParser:
@@ -31,17 +30,17 @@ class TestArticleParser:
             )
         )
 
-        article = article_parser.Article.parse_file('wiki/Article/en.md')
+        article = article_parser.parse('wiki/Article/en.md')
 
         assert article.directory == 'wiki/Article'
         assert article.filename == 'en.md'
         assert article.identifiers == ['list-of-references']
         assert article.references == {
-            'links_ref': link_parser.Reference(
+            'links_ref': reference_parser.Reference(
                 lineno=9, name='links_ref', raw_location='https://example.com',
                 parsed_location=parse.urlparse('https://example.com'), alt_text=''
             ),
-            'vier_ref': link_parser.Reference(
+            'vier_ref': reference_parser.Reference(
                 lineno=13, name='vier_ref', raw_location='/wiki/Article_three',
                 parsed_location=parse.urlparse('/wiki/Article_three'), alt_text='Links!'
             )
@@ -79,7 +78,7 @@ class TestArticleParser:
             )
         )
 
-        article = article_parser.Article.parse_file('wiki/Article/en.md')
+        article = article_parser.parse('wiki/Article/en.md')
         assert len(article.references) == 0  # commented references are also skipped
 
         links = sum((line.links for line in article.lines.values()), start=[])
@@ -108,7 +107,7 @@ class TestArticleChecker:
         )
 
         redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
-        article = article_parser.Article.parse_file('wiki/Article/en.md')
+        article = article_parser.parse('wiki/Article/en.md')
         assert article.check_links(redirects) == {}
 
     def test__check_article__bad(self, root):
@@ -141,7 +140,7 @@ class TestArticleChecker:
         )
 
         redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
-        article = article_parser.Article.parse_file('wiki/Article/en.md')
+        article = article_parser.parse('wiki/Article/en.md')
         results = article.check_links(redirects)
 
         flattened_results = []
