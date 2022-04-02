@@ -1,7 +1,7 @@
 import os
 import typing
 
-from wikitools import link_parser, comment_parser, identifier_parser, console
+from wikitools import link_parser, comment_parser, identifier_parser, errors
 
 
 class ArticleLine(typing.NamedTuple):
@@ -9,23 +9,15 @@ class ArticleLine(typing.NamedTuple):
     links: typing.List[link_parser.Link]
 
 
-class LinkErrorLocation(typing.NamedTuple):
-    path: str
-    lineno: int
-    position: int
-    link_location: str
-
-    def __repr__(self):
-        return f"{self.path}:{self.lineno}:{self.position}: {self.link_location}"
-
-    def pretty(self):
-        return f"{console.yellow(self.path)}:{self.lineno}:{self.position}: {console.red(self.link_location)}"
+class DetailedError(typing.NamedTuple):
+    link: link_parser.Link
+    error: errors.LinkError
 
 
 class Article:
     directory: str
     filename: str
-    lines: typing.Dict[int, ArticleLine]
+    cached_lines: typing.Dict[int, str]
     references: link_parser.References
     identifiers: list
 
@@ -89,23 +81,12 @@ class Article:
         return cls(path, saved_lines, references, identifiers)
 
     def check_links(self, redirects):
-        bad_links = {}
-        errors = []
-
+        result = {}
         article_directory = os.path.relpath(self.directory, 'wiki/')
         for lineno, line in self.lines.items():
             for link in line.links:
                 error = link_parser.check_link(redirects, self.references, article_directory, link)
-                if error is None:
-                    continue
+                if error is not None:
+                    result.setdefault(lineno, []).append(DetailedError(link=link, error=error))
 
-                bad_links.setdefault(lineno, []).append(link)
-                errors.append((
-                    error,
-                    LinkErrorLocation(
-                        path=self.path, lineno=lineno, position=link.start + 1,
-                        link_location=link.raw_location
-                    )
-                ))
-
-        return errors, bad_links
+        return result

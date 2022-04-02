@@ -4,11 +4,7 @@ import os
 import sys
 import typing
 
-from wikitools import article_parser, comment_parser, console, link_parser, redirect_parser
-
-
-def directory(filename: str) -> str:
-    return filename[filename.find('/') + 1:filename.rfind('/')]
+from wikitools import article_parser, console, link_parser, redirect_parser
 
 
 def print_error():
@@ -43,6 +39,10 @@ def highlight_links(s: str, links: typing.List[link_parser.Link]) -> str:
         prev_index = link.end + 1
     highlighted_line += s[prev_index:-1]
     return highlighted_line
+
+
+def pretty_location(path, lineno, pos, location):
+    return f"{console.yellow(path)}:{lineno}:{pos}: {console.red(location)}"
 
 
 def parse_args(args):
@@ -101,26 +101,28 @@ def main():
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
-        errors, bad_links = a.check_links(redirects)
-        if not errors:
+        results = a.check_links(redirects)
+        if not results:
             continue
 
-        error_count += len(errors)
         error_file_count += 1
         if exit_code == 0:
             print_error()
         exit_code = 1
 
-        for error, location in errors:
-            print(location.pretty())
-            print(error.pretty())
+        for lineno, errors_on_line in sorted(results.items()):
+            error_count += len(errors_on_line)
+            for e in errors_on_line:
+                print(pretty_location(a.path, lineno, e.link.start + 1, e.link.raw_location))
+            for e in errors_on_line:
+                print(e.error.pretty())
 
-        for lineno, links in sorted(bad_links.items()):
+            print()
             if args.separate:
-                for link in links:
-                    print(highlight_links(a.lines[lineno].raw_line, [link]), end="\n\n")
+                for e in errors_on_line:
+                    print(highlight_links(a.lines[lineno].raw_line, [e.link]), end="\n\n")
             else:
-                print(highlight_links(a.lines[lineno].raw_line, links), end="\n\n")
+                print(highlight_links(a.lines[lineno].raw_line, (_.link for _ in errors_on_line)), end="\n\n")
 
     if exit_code == 0:
         print_clean()
