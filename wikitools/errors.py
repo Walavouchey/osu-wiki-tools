@@ -47,3 +47,19 @@ class MissingReference(LinkError, collections.namedtuple('MissingReference', 'lo
 
     def __repr__(self):
         return f'No corresponding reference found for "{self.location}"'
+
+
+class MissingIdentifier(
+    LinkError,
+    collections.namedtuple('MissingSection', 'path location')
+):
+    """
+    An error indicating that in another article there is no heading or any other object
+    that would produce #such-reference.
+    """
+
+    path: str
+    identifier: str
+
+    def __repr__(self):
+        return f'There is no heading or other object with identifier "{self.identifier}" in "{self.path}"'

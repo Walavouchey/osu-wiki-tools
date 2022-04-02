@@ -369,25 +369,40 @@ class TestExternalLinks:
             assert error is None
 
 
-@pytest.mark.skip("not implemented yet")
 class TestSectionLinks:
+    @pytest.mark.skip("not implemented yet")
     def test__valid_absolute_link(self):
         raise NotImplementedError()
 
-    def test__invalid_absolute_link__missing_heading(self):
-        raise NotImplementedError()
+    @pytest.mark.xfail(reason="sections are not accounted for")
+    def test__invalid_absolute_link__missing_heading(self, root):
+        conftest.create_files(
+            root,
+            ('New_article/en.md', '# New article'),
+        )
 
+        link = link_parser.find_link('Please read the [article](/wiki/New_article#some-nonexistent-heading).')
+        error = link_parser.check_link(redirects={}, references={}, current_article_dir='does/not/matter', link_=link)
+        assert isinstance(error, errors.MissingIdentifier)
+        assert error.identifier == 'some-nonexistent-heading'
+        assert error.path == 'wiki/New_article/en.md'
+
+    @pytest.mark.skip("not implemented yet")
     def test__invalid_absolute_link__missing_translation(self):
         raise NotImplementedError()
 
+    @pytest.mark.skip("not implemented yet")
     def test__valid_relative_link(self):
         raise NotImplementedError()
 
+    @pytest.mark.skip("not implemented yet")
     def test__invalid_relative_link(self):
         raise NotImplementedError()
 
+    @pytest.mark.skip("not implemented yet")
     def test__valid_redirect(self):
         raise NotImplementedError()
 
+    @pytest.mark.skip("not implemented yet")
     def test__invalid_redirect(self):
         raise NotImplementedError()
