@@ -1,7 +1,5 @@
 import textwrap
 
-import pytest
-
 import conftest
 from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
 
@@ -207,42 +205,209 @@ class TestExternalLinks:
 
 
 class TestSectionLinks:
-    @pytest.mark.skip("not implemented yet")
-    def test__valid_absolute_link(self):
-        raise NotImplementedError()
+    def test__valid_absolute_link(self, root):
+        conftest.create_files(
+            root,
+            (
+                'New_article/en.md',
+                textwrap.dedent('''
+                    # New article
 
-    @pytest.mark.xfail(reason="sections are not accounted for")
+                    ## Some real heading
+
+                    Some real though from a real person.
+                ''').strip()
+            )
+        )
+        new_article = article_parser.parse('wiki/New_article/en.md')
+        assert new_article.identifiers == ['some-real-heading']
+        all_articles = {new_article.path: new_article}
+
+        link = link_parser.find_link('Please read the [article](/wiki/New_article#some-real-heading).')
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert error is None
+
+    def test__valid_absolute_link__translation(self, root):
+        conftest.create_files(
+            root,
+            ('New_article/en.md', '# New article'),
+            (
+                'New_article/ru.md',
+                textwrap.dedent('''
+                    # New article
+
+                    ## Заголовок (translated)
+                ''')
+            )
+        )
+
+        all_articles = {
+            path: article_parser.parse(path)
+            for path in ('wiki/New_article/en.md', 'wiki/New_article/ru.md')
+        }
+
+        link = link_parser.find_link('См. [другую статью](/wiki/New_article#заголовок-(translated)).')
+        error = link_checker.check_link(
+            article=dummy_article('wiki/Some_other_article/ru.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert error is None
+
     def test__invalid_absolute_link__missing_heading(self, root):
         conftest.create_files(
             root,
             ('New_article/en.md', '# New article'),
         )
+        new_article = dummy_article('wiki/New_article/en.md')
+        all_articles = {new_article.path: new_article}
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-nonexistent-heading).')
-        error = link_checker.check_link(redirects={}, references={}, current_article_dir='does/not/matter', link_=link)
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles=all_articles
+        )
         assert isinstance(error, error_types.MissingIdentifier)
         assert error.identifier == 'some-nonexistent-heading'
         assert error.path == 'wiki/New_article/en.md'
+        assert not error.translation_available
 
-    @pytest.mark.skip("not implemented yet")
-    def test__invalid_absolute_link__missing_translation(self):
-        raise NotImplementedError()
+    def test__invalid_absolute_link__missing_translation(self, root):
+        conftest.create_files(
+            root,
+            (
+                'New_article/en.md',
+                textwrap.dedent('''
+                    # New article
 
-    @pytest.mark.skip("not implemented yet")
-    def test__valid_relative_link(self):
-        raise NotImplementedError()
+                    ## Self-check
 
-    @pytest.mark.skip("not implemented yet")
-    def test__invalid_relative_link(self):
-        raise NotImplementedError()
+                    This line exists.
+                ''').strip()
+            )
+        )
+        new_article = article_parser.parse('wiki/New_article/en.md')
+        all_articles = {new_article.path: new_article}
 
-    @pytest.mark.skip("not implemented yet")
-    def test__valid_redirect(self):
-        raise NotImplementedError()
+        # pretend we're linking from a French page
+        link = link_parser.find_link("Merci de lire l'[article](/wiki/New_article#auto-contrôle).")
+        error = link_checker.check_link(
+            article=dummy_article('wiki/Some_other_article/fr.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert isinstance(error, error_types.MissingIdentifier)
+        assert error.identifier == 'auto-contrôle'
+        assert error.path == 'wiki/New_article/en.md'
 
-    @pytest.mark.skip("not implemented yet")
-    def test__invalid_redirect(self):
-        raise NotImplementedError()
+    def test__valid_relative_link(self, root):
+        conftest.create_files(
+            root,
+            ('New_article/en.md', '# New article'),
+            (
+                'New_article/Included_article/en.md',
+                textwrap.dedent('''
+                    # Included article
+
+                    ## Subheading
+
+                    This line exists.
+                ''').strip()
+            )
+        )
+        all_articles = {
+            path: article_parser.parse(path)
+            for path in ('wiki/New_article/en.md', 'wiki/New_article/Included_article/en.md')
+        }
+
+        link = link_parser.find_link("Please follow the [included article](Included_article#subheading).")
+        error = link_checker.check_link(
+            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert error is None
+
+    def test__invalid_relative_link(self, root):
+        conftest.create_files(
+            root,
+            ('New_article/en.md', '# New article'),
+            (
+                'New_article/Included_article/en.md',
+                textwrap.dedent('''
+                    # Included article
+
+                    ## Subheading
+
+                    This line exists.
+                ''').strip()
+            )
+        )
+        all_articles = {
+            path: article_parser.parse(path)
+            for path in ('wiki/New_article/en.md', 'wiki/New_article/Included_article/en.md')
+        }
+
+        link = link_parser.find_link("Please follow the [included article](Included_article#wrong-subheading).")
+        error = link_checker.check_link(
+            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert isinstance(error, error_types.MissingIdentifier)
+        assert error.identifier == 'wrong-subheading'
+        assert error.path == 'wiki/New_article/Included_article/en.md'
+
+    def test__valid_redirect(self, root):
+        conftest.create_files(
+            root,
+            ('redirect.yaml', '"old_location": "Target_article"'),
+            ('New_article/en.md', '# New article'),
+            (
+                'Target_article/en.md',
+                textwrap.dedent('''
+                    # Included article
+
+                    ## Subheading
+
+                    This line exists.
+                ''').strip()
+            )
+        )
+        all_articles = {
+            path: article_parser.parse(path)
+            for path in ('wiki/New_article/en.md', 'wiki/Target_article/en.md')
+        }
+        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+
+        link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#subheading).")
+        error = link_checker.check_link(
+            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects=redirects, references={}, all_articles=all_articles
+        )
+        assert error is None
+
+    def test__invalid_redirect(self, root):
+        conftest.create_files(
+            root,
+            ('redirect.yaml', '"old_location": "Target_article"'),
+            ('New_article/en.md', '# New article'),
+            (
+                'Target_article/en.md',
+                textwrap.dedent('''
+                    # Included article
+
+                    ## Subheading
+
+                    This line exists.
+                ''').strip()
+            )
+        )
+        all_articles = {
+            path: article_parser.parse(path)
+            for path in ('wiki/New_article/en.md', 'wiki/Target_article/en.md')
+        }
+        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+
+        link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#totally-wrong-heading).")
+        error = link_checker.check_link(
+            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects=redirects, references={}, all_articles=all_articles
+        )
+        assert isinstance(error, error_types.MissingIdentifier)
+        assert error.identifier == 'totally-wrong-heading'
+        assert error.path == 'wiki/Target_article/en.md'
 
 
 class TestArticleChecker:

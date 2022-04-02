@@ -19,7 +19,7 @@ class Article:
 
     directory: str
     filename: str
-    cached_lines: typing.Dict[int, str]
+    lines: typing.Dict[int, str]
     references: reference_parser.References
     identifiers: list
 

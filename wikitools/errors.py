@@ -51,7 +51,7 @@ class MissingReference(LinkError, collections.namedtuple('MissingReference', 'lo
 
 class MissingIdentifier(
     LinkError,
-    collections.namedtuple('MissingSection', 'path location')
+    collections.namedtuple('MissingIdentifier', 'path identifier translation_available')
 ):
     """
     An error indicating that in another article there is no heading or any other object
@@ -60,6 +60,9 @@ class MissingIdentifier(
 
     path: str
     identifier: str
+    translation_available: bool
 
     def __repr__(self):
-        return f'There is no heading or other object with identifier "{self.identifier}" in "{self.path}"'
+        return 'There is no heading or other object with identifier "{}" in "{}"{}'.format(
+            self.identifier, self.path, '.' if self.translation_available else ' (no translation available).'
+        )

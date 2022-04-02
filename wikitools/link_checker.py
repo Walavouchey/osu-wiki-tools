@@ -43,30 +43,46 @@ def check_link(
     if parsed_location.scheme:
         return
 
-    # internal link (domain is empty)
-    if parsed_location.netloc == '':
-        # convert a relative wikilink to absolute
-        if not location.startswith("/wiki/"):    
-            current_article_dir = os.path.relpath(article.directory, 'wiki/')
-            location = f"/wiki/{current_article_dir}/{location}"
+    # domain is non-empty, but the link is internal?
+    if parsed_location.netloc:
+        raise RuntimeError(f"Unhandled link type: {parsed_location}")
 
-        # article file exists -> quick win
-        # TODO(TicClick): check if a section exists
-        if os.path.exists(location[1:]):
-            return
+    # convert a relative wikilink to absolute
+    if not location.startswith("/wiki/"):
+        current_article_dir = os.path.relpath(article.directory, 'wiki/')
+        location = f"/wiki/{current_article_dir}/{location}"
 
-        # check for a redirect
+    target = location[1:]
+    # no article? could be a redirect check for a redirect
+    if not os.path.exists(target):
         redirect_source = extract_tail(location)
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
             return errors.LinkNotFound(redirect_source)
 
-        if not os.path.exists(f"wiki/{redirect_destination}"):
+        target = os.path.join('wiki', redirect_destination)
+        if not os.path.exists(target):
             return errors.BrokenRedirect(redirect_source, redirect_line_no, redirect_destination)
 
-    else:
-        raise RuntimeError(f"Unhandled link type: {parsed_location}")
+    # link to an article in general, article exists -> good
+    if not parsed_location.fragment:
+        return
+
+    # link to a section -> need to find the target article; it could be a translation
+    # XXX(TicClick): this part assumes there is always an English version of the article in a folder
+    target_file = os.path.join(target, article.filename)
+    is_translation_available = article.filename != 'en.md' and os.path.exists(target_file)
+    if not is_translation_available:
+        target_file = os.path.join(target, 'en.md')
+    if target_file not in all_articles:
+        # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
+        all_articles[target_file] = article_parser.parse(target_file)
+    target_article = all_articles[target_file]
+    if parsed_location.fragment not in target_article.identifiers:
+        return errors.MissingIdentifier(target_file, parsed_location.fragment, translation_available=is_translation_available)
+
+    return
 
 
 def check_article(article, redirects: redirect_parser.Redirects, all_articles: typing.Dict[str, article_parser.Article]):
