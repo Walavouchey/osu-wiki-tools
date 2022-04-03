@@ -1,9 +1,8 @@
 import enum
-import os
 import typing
 from urllib import parse
 
-from wikitools import console, redirect_parser, reference_parser, errors
+from wikitools import console, reference_parser
 
 
 class Brackets():
@@ -88,7 +87,7 @@ class Link(typing.NamedTuple):
     def full_coloured_link(self):
         return "{title_in_braces}{left_brace}{location}{extra}{right_brace}".format(
             title_in_braces=console.green(f"[{self.title}]"),
-            left_brace= console.green('[') if self.is_reference else console.green('('),
+            left_brace=console.green('[') if self.is_reference else console.green('('),
             location=console.red(self.raw_location),
             extra=" " + console.blue(self.alt_text) if self.alt_text else "",
             right_brace=console.green(']') if self.is_reference else console.green(')'),

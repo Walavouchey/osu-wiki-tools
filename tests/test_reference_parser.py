@@ -75,4 +75,3 @@ class TestReferenceFinder:
             'sit_ref': link_ref,
             'reader_ref': image_ref
         }
-

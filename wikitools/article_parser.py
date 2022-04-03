@@ -1,7 +1,7 @@
 import os
 import typing
 
-from wikitools import link_parser, comment_parser, identifier_parser, errors, redirect_parser, reference_parser
+from wikitools import link_parser, comment_parser, identifier_parser, reference_parser
 
 
 class ArticleLine(typing.NamedTuple):
