@@ -35,6 +35,14 @@ class TestHeadingParser:
         ):
             assert identifier_parser.extract_identifier(heading) == identifier
 
+    def test__link(self):
+        for heading, identifier in (
+            ('## [accounts@example.com](mailto:accounts@example.com)', 'accounts@example.com'),
+            ('## I dare you, I [double dare you](/wiki/Say_what_again)', 'i-dare-you,-i-double-dare-you'),
+            ('## A [b](/wiki/B) c d!', 'a-b-c-d!')
+        ):
+            assert identifier_parser.extract_identifier(heading) == identifier
+
     def test__custom(self):
         for line, identifier in (
             ('osu! is a free-to-win game.', None),

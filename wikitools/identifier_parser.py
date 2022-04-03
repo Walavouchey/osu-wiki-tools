@@ -47,7 +47,11 @@ def extract_identifier(s: str) -> typing.Set[str]:
     link = link_parser.find_link(s, j)
     if link is not None:
         # before link.start, there is an exclamation mark
-        heading = s[j: link.start - 1] + s[link.end + 1:]
+        if s[link.start - 1] == '!':
+            heading = s[j: link.start - 1] + s[link.end + 1:]
+        else:
+            # People/The_Team/Account_support_team has e-mail addresses WITH LINKS IN THEM as headings
+            heading = s[j: link.start] + link.title + s[link.end + 1:]
     else:
         heading = s[j:]
 
