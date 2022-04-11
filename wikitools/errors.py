@@ -1,6 +1,6 @@
 import collections
 
-from wikitools import console
+from wikitools import console, link_parser
 
 
 class LinkError:
@@ -8,67 +8,79 @@ class LinkError:
         return f'{console.blue("Note:")} {repr(self)}'
 
 
-class MalformedLinkError(LinkError, collections.namedtuple('MalformedLinkError', 'location')):
+class MalformedLinkError(
+    LinkError,
+    collections.namedtuple('MalformedLinkError', 'link')
+):
     """
     An error indicating an erroneous link (for example, with several leading slashes).
     """
 
-    location: str
+    link: link_parser.Link
 
     def __repr__(self):
-        return f'Incorrect link structure (typo?): "{self.location}"'
+        return f'Incorrect link structure (typo?): "{self.link.raw_location}"'
 
 
-class LinkNotFoundError(LinkError, collections.namedtuple('LinkNotFound', 'location')):
+class LinkNotFoundError(
+    LinkError,
+    collections.namedtuple('LinkNotFound', 'link resolved_location')
+):
     """
     An error indicating missing link: a text or binary file does not exist, and there is no such redirect.
     """
 
-    location: str
+    link: link_parser.Link
+    resolved_location: str
 
     def __repr__(self):
-        return f'"{self.location}" was not found'
+        return f'"{self.resolved_location}" was not found'
 
 
 class BrokenRedirectError(
     LinkError,
-    collections.namedtuple('BrokenRedirect', 'location redirect_lineno redirect_destination')
+    collections.namedtuple('BrokenRedirect', 'link resolved_location redirect_lineno redirect_destination')
 ):
     """
     An error indicating broken redirect: an article from the redirect.yaml file does not exist.
     """
 
-    location: str
+    link: link_parser.Link
+    resolved_location: str
     redirect_lineno: int
     redirect_destination: str
 
     def __repr__(self):
         return 'Broken redirect (redirect.yaml:{}: {} --> {})'.format(
-            self.redirect_lineno, self.location.lower(), self.redirect_destination
+            self.redirect_lineno, self.resolved_location.lower(), self.redirect_destination
         )
 
 
-class MissingReferenceError(LinkError, collections.namedtuple('MissingReference', 'location')):
+class MissingReferenceError(
+    LinkError,
+    collections.namedtuple('MissingReference', 'link')
+):
     """
     An error indicating that a reference-style link is missing its counterpart:
     [link][link_ref] exists, but [link_ref]: /wiki/Path/To/Article does not.
     """
 
-    location: str
+    link: link_parser.Link
 
     def __repr__(self):
-        return f'No corresponding reference found for "{self.location}"'
+        return f'No corresponding reference found for "{self.link.raw_location}"'
 
 
 class MissingIdentifierError(
     LinkError,
-    collections.namedtuple('MissingIdentifier', 'path identifier translation_available')
+    collections.namedtuple('MissingIdentifier', 'link path identifier translation_available')
 ):
     """
     An error indicating that in another article there is no heading or any other object
     that would produce #such-reference.
     """
 
+    link: link_parser.Link
     path: str
     identifier: str
     translation_available: bool

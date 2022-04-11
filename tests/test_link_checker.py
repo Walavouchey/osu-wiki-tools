@@ -63,7 +63,7 @@ class TestArticleLinks:
             article=dummy_article('does/not/matter'), link_=link, redirects={}, references=references, all_articles={}
         )
         assert isinstance(error, error_types.MissingReferenceError)
-        assert error.location == 'article_ref'
+        assert error.link.raw_location == 'article_ref'
 
     def test__valid_relative_link(self, root):
         conftest.create_files(
@@ -200,7 +200,7 @@ class TestRedirectedLinks:
         )
         assert isinstance(error, error_types.BrokenRedirectError)
         assert error.redirect_lineno == 2
-        assert error.location == 'Old_link'
+        assert error.resolved_location == 'Old_link'
         assert error.redirect_destination == 'Wrong_redirect'
 
 
@@ -226,7 +226,7 @@ class TestMalformedLink:
             article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
         )
         assert isinstance(error, error_types.MalformedLinkError)
-        assert error.location == '//example.com'
+        assert error.link.raw_location == '//example.com'
 
 
 class TestSectionLinks:
@@ -491,13 +491,12 @@ class TestArticleChecker:
         redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
         article = article_parser.parse('wiki/Article/en.md')
         errors = link_checker.check_article(article, redirects, all_articles={})
+        assert sum(len(ee) for ee in errors.values()) == 5
 
         flattened_errors = []
         for lineno, rr in sorted(errors.items()):
             for result in rr:
                 flattened_errors.append((lineno, result))
-
-        assert len(flattened_errors) == 5
 
         assert set(r.link.raw_location for (_, r) in flattened_errors) == {
             '/wiki/Broken_link',
@@ -507,34 +506,34 @@ class TestArticleChecker:
             'img/you_tried.jpeg'
         }
 
-        broken_link_error = flattened_errors[0][1].error
+        broken_link_error = flattened_errors[0][1]
         broken_link = flattened_errors[0][1].link
         assert isinstance(broken_link_error, error_types.LinkNotFoundError)
-        assert broken_link_error.location == 'Broken_link'
+        assert broken_link_error.resolved_location == 'Broken_link'
         assert (flattened_errors[0][0], broken_link.start) == (7, 0)
 
-        broken_rel_link_error = flattened_errors[1][1].error
+        broken_rel_link_error = flattened_errors[1][1]
         broken_rel_link = flattened_errors[1][1].link
         assert isinstance(broken_rel_link_error, error_types.LinkNotFoundError)
-        assert broken_rel_link_error.location == 'Article/Bad_relative_link'
+        assert broken_rel_link_error.resolved_location == 'Article/Bad_relative_link'
         assert (flattened_errors[1][0], broken_rel_link.start) == (9, 14)
 
-        broken_redirect_error = flattened_errors[2][1].error
+        broken_redirect_error = flattened_errors[2][1]
         broken_redirect = flattened_errors[2][1].link
         assert isinstance(broken_redirect_error, error_types.BrokenRedirectError)
-        assert broken_redirect_error.location == 'Broken_redirect'
+        assert broken_redirect_error.resolved_location == 'Broken_redirect'
         assert (flattened_errors[2][0], broken_redirect.start) == (10, 15)
 
-        broken_redirect_error = flattened_errors[3][1].error
+        broken_redirect_error = flattened_errors[3][1]
         broken_redirect_2 = flattened_errors[3][1].link
         assert isinstance(broken_redirect_error, error_types.MissingReferenceError)
-        assert broken_redirect_error.location == 'at_all_ref'
+        assert broken_redirect_error.link.raw_location == 'at_all_ref'
         assert (flattened_errors[3][0], broken_redirect_2.start) == (11, 19)
 
-        broken_image_error = flattened_errors[4][1].error
+        broken_image_error = flattened_errors[4][1]
         broken_image = flattened_errors[4][1].link
         assert isinstance(broken_image_error, error_types.LinkNotFoundError)
-        assert broken_image_error.location == 'Article/img/you_tried.jpeg'
+        assert broken_image_error.resolved_location == 'Article/img/you_tried.jpeg'
         assert (flattened_errors[4][0], broken_image.start) == (12, 10)
 
         # all lines, even with references, were cached

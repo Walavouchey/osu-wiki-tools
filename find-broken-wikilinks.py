@@ -114,7 +114,7 @@ def main():
             for e in errors_on_line:
                 print(pretty_location(a.path, lineno, e.link.start + 1, e.link.raw_location))
             for e in errors_on_line:
-                print(e.error.pretty())
+                print(e.pretty())
 
             print()
             if args.separate:
