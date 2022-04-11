@@ -10,15 +10,6 @@ class DetailedError(typing.NamedTuple):
     error: errors.LinkError
 
 
-def extract_tail(path: str) -> str:
-    """
-    Given a path in a file system, return its tail (everything past the first non-root slash). Examples:
-        - /wiki/Beatmap/Category -> Beatmap/Category
-        - img/users/2.png -> users/2.png
-    """
-    return path[path.find('/', 1) + 1:]
-
-
 def check_link(
     article: article_parser.Article, link_: typing.Union[link_parser.Link, reference_parser.Reference],
     redirects: redirect_parser.Redirects, references: reference_parser.References,
@@ -50,13 +41,13 @@ def check_link(
 
     # convert a relative wikilink to absolute
     if not location.startswith("/wiki/"):
-        current_article_dir = os.path.relpath(article.directory, 'wiki/')
+        current_article_dir = os.path.relpath(article.directory, 'wiki')
         location = f"/wiki/{current_article_dir}/{location}"
 
-    target = pathlib.Path(location[1:])
-    # no article? could be a redirect check for a redirect
+    target = pathlib.Path(location[1:])  # strip leading slash
+    # no article? could be a redirect
     if not target.exists():
-        redirect_source = extract_tail(location)
+        redirect_source = target.relative_to('wiki').as_posix()
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
