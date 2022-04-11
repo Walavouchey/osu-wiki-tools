@@ -89,13 +89,13 @@ def check_article(
 
     errors = {}
     for lineno, line in article.lines.items():
-        local_errors = list(filter(
-            None,
-            (
+        local_errors = [
+            errors for errors in (
                 check_link(article, link, redirects, article.references, all_articles)
                 for link in line.links
             )
-        ))
+            if errors
+        ]
         if local_errors:
             errors[lineno] = local_errors
 
