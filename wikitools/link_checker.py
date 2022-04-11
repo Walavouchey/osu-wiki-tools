@@ -46,7 +46,12 @@ def check_link(
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
-            return errors.LinkNotFoundError(link, redirect_source)
+            # return reference-style link instead of its dereferenced part if possible,
+            # because later we will display it inline
+            return errors.LinkNotFoundError(
+                link if isinstance(link, link_parser.Link) else link_,
+                redirect_source
+            )
 
         target = pathlib.Path('wiki') / redirect_destination
         if not target.exists():

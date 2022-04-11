@@ -165,6 +165,23 @@ class TestImageLinks:
         )
         assert isinstance(error, error_types.LinkNotFoundError)
 
+    def test__invalid_reference_link(self, root):
+        conftest.create_files(
+            root,
+            ('OWC_2030/en.md', '# OWC 2030'),
+            ('img/dummy.png', '')
+        )
+
+        references = reference_parser.extract_all('[flag_XX]: /wiki/shared/img/XX.gif')
+        link = link_parser.find_link('![][flag_XX] "The XXth Country"')
+        error = link_checker.check_link(
+            article=dummy_article('wiki/OWC_2030/en.md'), link_=link, redirects={}, references=references, all_articles={}
+        )
+        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error.link, link_parser.Link)
+        assert error.link.is_reference
+        assert error.link.raw_location == 'flag_XX'
+
 
 class TestRedirectedLinks:
     def test__valid_link(self, root):
