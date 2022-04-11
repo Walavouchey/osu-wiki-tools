@@ -14,8 +14,6 @@ def extract_identifier(s: str) -> typing.Set[str]:
 
     This function doesn't recognize HTML comments and code blocks and will extract identifiers from these as well.
     The burden of checking for the comments and code blocks lies on the caller.
-
-    TODO(TicClick): support repeated headings (heading.1, heading.2 for identical lines)
     """
 
     for i in range(len(s)):

@@ -34,7 +34,7 @@ class TestArticleParser:
 
         assert article.directory == 'wiki/Article'
         assert article.filename == 'en.md'
-        assert article.identifiers == ['list-of-references']
+        assert article.identifiers == {'list-of-references'}
         assert article.references == {
             'links_ref': reference_parser.Reference(
                 lineno=9, name='links_ref', raw_location='https://example.com',
@@ -84,3 +84,36 @@ class TestArticleParser:
         links = sum((line.links for line in article.lines.values()), start=[])
         locations = set(_.raw_location for _ in links)
         assert locations == {'/wiki/Red', 'img/violet.png', 'blue_ref'}
+
+    def test__repeating_headings(self, root):
+        conftest.create_files(
+            root,
+            (
+                'Ranking_criteria/en.md',
+                textwrap.dedent('''
+                    # Ranking criteria
+
+                    ## Section
+
+                    ## Section
+
+                    ## Something else
+
+                    ## Random
+
+                    ## Tricky section {#random}
+
+                    ## Section
+                ''').strip()
+            )
+        )
+
+        article = article_parser.parse('wiki/Ranking_criteria/en.md')
+        assert article.identifiers == {
+            'section',
+            'section.1',
+            'something-else',
+            'random',
+            'random.1',
+            'section.2',
+        }

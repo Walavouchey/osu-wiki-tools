@@ -1,3 +1,4 @@
+import collections
 import pathlib
 import typing
 
@@ -21,13 +22,13 @@ class Article:
     filename: str
     lines: typing.Dict[int, str]
     references: reference_parser.References
-    identifiers: list
+    identifiers: set
 
     def __init__(
         self, path: pathlib.Path,
         lines: typing.Dict[int, ArticleLine],
         references: reference_parser.References,
-        identifiers: list,
+        identifiers: set,
     ):
         self.filename = path.name
         self.directory = str(path.parent.as_posix())
@@ -51,7 +52,8 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
 
     saved_lines = {}
     references = {}
-    identifiers = []
+    cnt = collections.Counter()
+    identifiers = set()
 
     in_multiline = False
     with path.open('r', encoding='utf-8') as fd:
@@ -77,7 +79,10 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
 
             identifier = identifier_parser.extract_identifier(line)
             if identifier is not None:
-                identifiers.append(identifier)
+                cnt[identifier] += 1
+                if identifier in identifiers:
+                    identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
+                identifiers.add(identifier)
 
             if line.startswith('['):
                 reference = reference_parser.extract(line.strip(), lineno=lineno)

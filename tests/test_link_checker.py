@@ -6,7 +6,7 @@ from wikitools import article_parser, link_checker, link_parser, redirect_parser
 
 
 def dummy_article(path):
-    return article_parser.Article(pathlib.Path(path), lines=[], references=[], identifiers=[])
+    return article_parser.Article(pathlib.Path(path), lines=[], references=[], identifiers=set())
 
 
 class TestArticleLinks:
@@ -245,7 +245,7 @@ class TestSectionLinks:
             )
         )
         new_article = article_parser.parse('wiki/New_article/en.md')
-        assert new_article.identifiers == ['some-real-heading']
+        assert new_article.identifiers == {'some-real-heading'}
         all_articles = {new_article.path: new_article}
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-real-heading).')
