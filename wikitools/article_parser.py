@@ -1,4 +1,4 @@
-import os
+import pathlib
 import typing
 
 from wikitools import link_parser, comment_parser, identifier_parser, reference_parser
@@ -24,37 +24,37 @@ class Article:
     identifiers: list
 
     def __init__(
-        self, path: str,
+        self, path: pathlib.Path,
         lines: typing.Dict[int, ArticleLine],
         references: reference_parser.References,
         identifiers: list,
     ):
-        self.directory, self.filename = path.rsplit(os.sep, 1)
+        self.filename = path.name
+        self.directory = str(path.parent.as_posix())
         self.lines = lines
         self.references = references
         self.identifiers = identifiers
 
     @property
     def path(self) -> str:
-        return os.path.join(self.directory, self.filename)
+        return '/'.join((self.directory, self.filename))
 
 
-def parse(path: str) -> Article:
+def parse(path: typing.Union[str, pathlib.Path]) -> Article:
     """
     Read an article line by line, extracting links, identifiers and references as we go.
     Objects inside <!-- HTML comments -->, both single and multiline, are skipped.
     """
 
-    path = path.replace('\\', '/')
-    if path.startswith("./"):
-        path = path[2:]
+    if isinstance(path, str):
+        path = pathlib.Path(path)
 
     saved_lines = {}
     references = {}
     identifiers = []
 
     in_multiline = False
-    with open(path, 'r', encoding='utf-8') as fd:
+    with path.open('r', encoding='utf-8') as fd:
         for lineno, line in enumerate(fd, start=1):
             comments = comment_parser.parse(line, in_multiline)
             if comments:

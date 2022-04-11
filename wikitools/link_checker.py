@@ -1,4 +1,5 @@
 import os
+import pathlib
 import typing
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
@@ -52,17 +53,17 @@ def check_link(
         current_article_dir = os.path.relpath(article.directory, 'wiki/')
         location = f"/wiki/{current_article_dir}/{location}"
 
-    target = location[1:]
+    target = pathlib.Path(location[1:])
     # no article? could be a redirect check for a redirect
-    if not os.path.exists(target):
+    if not target.exists():
         redirect_source = extract_tail(location)
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
             return errors.LinkNotFound(redirect_source)
 
-        target = os.path.join('wiki', redirect_destination)
-        if not os.path.exists(target):
+        target = pathlib.Path('wiki') / redirect_destination
+        if not target.exists():
             return errors.BrokenRedirect(redirect_source, redirect_line_no, redirect_destination)
 
     # link to an article in general, article exists -> good
@@ -71,16 +72,18 @@ def check_link(
 
     # link to a section -> need to find the target article; it could be a translation
     # XXX(TicClick): this part assumes there is always an English version of the article in a folder
-    target_file = os.path.join(target, article.filename)
-    is_translation_available = article.filename != 'en.md' and os.path.exists(target_file)
+    target_file = target / article.filename
+    is_translation_available = article.filename != 'en.md' and target_file.is_file()
     if not is_translation_available:
-        target_file = os.path.join(target, 'en.md')
-    if target_file not in all_articles:
+        target_file = target / 'en.md'
+
+    raw_path = target_file.as_posix()
+    if raw_path not in all_articles:
         # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
-        all_articles[target_file] = article_parser.parse(target_file)
-    target_article = all_articles[target_file]
+        all_articles[raw_path] = article_parser.parse(target_file)
+    target_article = all_articles[raw_path]
     if parsed_location.fragment not in target_article.identifiers:
-        return errors.MissingIdentifier(target_file, parsed_location.fragment, translation_available=is_translation_available)
+        return errors.MissingIdentifier(raw_path, parsed_location.fragment, translation_available=is_translation_available)
 
     return
 

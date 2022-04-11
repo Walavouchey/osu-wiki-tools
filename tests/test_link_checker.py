@@ -1,3 +1,4 @@
+import pathlib
 import textwrap
 
 import conftest
@@ -5,7 +6,7 @@ from wikitools import article_parser, link_checker, link_parser, redirect_parser
 
 
 def dummy_article(path):
-    return article_parser.Article(path, lines=[], references=[], identifiers=[])
+    return article_parser.Article(pathlib.Path(path), lines=[], references=[], identifiers=[])
 
 
 class TestArticleLinks:
