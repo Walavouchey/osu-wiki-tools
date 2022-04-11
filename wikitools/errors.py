@@ -64,5 +64,5 @@ class MissingIdentifierError(
 
     def __repr__(self):
         return 'There is no heading or other object with identifier "{}" in "{}"{}'.format(
-            self.identifier, self.path, '.' if self.translation_available else ' (no translation available).'
+            self.identifier, self.path, '' if self.translation_available else ' (no translation available)'
         )
