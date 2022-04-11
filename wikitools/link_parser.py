@@ -62,9 +62,9 @@ class Link(typing.NamedTuple):
 
     # Sections of a link. Example:
     #    ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
-    #      ^ - alt_text - ^
+    #      ^ alt_text  ^
     #                     ^ ----- location ----- ^
-    #                                               ^ ------- title ------- ^
+    #                                             ^ ---------- title ---------- ^
     #                     ^ --------------------- content --------------------- ^
     #     ^ ------------------ full_link / full_coloured_link ------------------ ^
     alt_text: str
