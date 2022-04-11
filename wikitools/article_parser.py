@@ -44,7 +44,7 @@ class Article:
 def parse(path: typing.Union[str, pathlib.Path]) -> Article:
     """
     Read an article line by line, extracting links, identifiers and references as we go.
-    Objects inside <!-- HTML comments -->, both single and multiline, are skipped.
+    Anything inside <!-- HTML comments -->, both single and multiline, is skipped.
     """
 
     if isinstance(path, str):

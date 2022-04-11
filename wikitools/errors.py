@@ -43,7 +43,7 @@ class LinkNotFoundError(
     collections.namedtuple('LinkNotFound', 'link resolved_location')
 ):
     """
-    An error indicating missing link: a text or binary file does not exist, and there is no such redirect.
+    An error indicating a missing link: a text or binary file does not exist, and there is no redirect for it.
     """
 
     link: link_parser.Link
@@ -58,7 +58,7 @@ class BrokenRedirectError(
     collections.namedtuple('BrokenRedirect', 'link resolved_location redirect_lineno redirect_destination')
 ):
     """
-    An error indicating broken redirect: an article from the redirect.yaml file does not exist.
+    An error indicating broken redirect: the redirect either points to a non-existent article, or another redirect (which is not allowed).
     """
 
     link: link_parser.Link
@@ -92,7 +92,7 @@ class MissingIdentifierError(
     collections.namedtuple('MissingIdentifier', 'link path identifier translation_available')
 ):
     """
-    An error indicating that in another article there is no heading or any other object
+    An error indicating that in another article there is no heading or identifier tag
     that would produce #such-reference.
     """
 

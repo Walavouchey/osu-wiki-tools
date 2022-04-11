@@ -11,11 +11,9 @@ class Comment(typing.NamedTuple):
         <!-- this is a comment -->
         ^ start                  ^ end
 
-    Since an article is read and errors are printed line-by-line
-    (to protect against unexpected crashes), multiline comments are
-    expressed by setting the start and/or end values to -1, indicating
-    continuation of a comment from a previous line or to subsequent
-    lines respectively.
+    Multiline comments are expressed by setting the start and/or end
+    values to -1, indicating continuation of a comment from a
+    previous line or to subsequent lines respectively.
 
     Examples:
 
@@ -26,7 +24,7 @@ class Comment(typing.NamedTuple):
         ^ start                                          (end = -1)
 
         A whole line marked as part of a multiline comment
-        (start = -1)                          (end = -1)
+        (start = -1)                            (end = -1)
     """
 
     start: int

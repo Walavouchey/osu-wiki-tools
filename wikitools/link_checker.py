@@ -79,7 +79,7 @@ def check_article(
     all_articles: typing.Dict[str, article_parser.Article]
 ) -> typing.Dict[int, errors.LinkError]:
     """
-    Try resolving links in the article either to another articles, or files.
+    Try resolving links in the article to other articles or files.
     """
 
     errors = {}

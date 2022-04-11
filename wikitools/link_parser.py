@@ -51,12 +51,12 @@ class Link(typing.NamedTuple):
     - alt_text: 'Player is AFK'
     - raw_location: 'img/chat-console-afk.png'
     - parsed_location: urllib.parse.ParseResult with all of its fields
-    - title: 'Player is away from keyboard'
+    - title: ' "Player is away from keyboard"'
     """
 
     # Link position within the line. Example:
     #   See also: [Difficulty names](/wiki/Beatmap/Difficulty#naming-conventions)
-    #             ^ start                                                  ^ end
+    #             ^ start                                                       ^ end
     start: int
     end: int
 
@@ -86,7 +86,7 @@ class Link(typing.NamedTuple):
     @property
     def fragment_start(self):
         """
-        0-based position of a hash sign, if the link has a #fragment. Otherwise, the same value as its end.
+        Position of the link #fragment in the line, if there is one. Otherwise, the same value as the end of the link.
         """
         return self.start + len(self.alt_text) + 2 + len(self.parsed_location.path) + 1
 
@@ -117,7 +117,7 @@ class Link(typing.NamedTuple):
     # Whether the link is a reference-style link. The only difference is that
     # `location` is a reference and needs to be resolved later.
     #
-    # The syntax for such links is the same as regular links:
+    # The syntax for such links is the almost the same as regular links:
     #    [text][reference]
     #
     # The reference can then later be defined at the start of a new line:
@@ -127,10 +127,11 @@ class Link(typing.NamedTuple):
 
 def find_link(s: str, index=0) -> typing.Optional[Link]:
     """
-    Using the state machine, find the first Markdown link found in the string `s` after the `index` position.
-    The following are considered links (title or alt_text may be missing):
+    Finds the first valid Markdown link found in the string `s`, starting the search from position `index`.
+    The following are considered links (title and alt_text may be omitted):
         - [alt_text](/loca/ti/on "Title")
         - ![alt_text](/path/to/image "Title), with ! not being considered a part of the link
+        - [artist - title (creator) [diff]](/loca/ti/ion_(with_parentheses) "Title")
         - [alt_text][reference], with exact locations found separately via find_reference()
     """
 
