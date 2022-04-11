@@ -77,7 +77,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
             if links_on_line:
                 saved_lines[lineno] = ArticleLine(raw_line=line, links=links_on_line)
 
-            identifier = identifier_parser.extract_identifier(line)
+            identifier = identifier_parser.extract_identifier(line, links_on_line)
             if identifier is not None:
                 cnt[identifier] += 1
                 if identifier in identifiers:

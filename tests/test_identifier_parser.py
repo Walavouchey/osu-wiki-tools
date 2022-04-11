@@ -1,7 +1,7 @@
 from wikitools import identifier_parser
 
 
-class TestHeadingParser:
+class TestIdentifierParser:
     def test__plain_headings(self):
         for heading, identifier in (
             ('# Game modifiers', None),
@@ -39,7 +39,8 @@ class TestHeadingParser:
         for heading, identifier in (
             ('## [accounts@example.com](mailto:accounts@example.com)', 'accounts@example.com'),
             ('## I dare you, I [double dare you](/wiki/Say_what_again)', 'i-dare-you,-i-double-dare-you'),
-            ('## A [b](/wiki/B) c d!', 'a-b-c-d!')
+            ('## A [b](/wiki/B) c d!', 'a-b-c-d!'),
+            ('## A [wild](/wiki/B) l[ink](/wiki/Ink) appears ![abc](/img/abc.png)', 'a-wild-link-appears'),
         ):
             assert identifier_parser.extract_identifier(heading) == identifier
 
