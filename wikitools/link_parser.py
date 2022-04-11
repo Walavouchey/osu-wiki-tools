@@ -144,7 +144,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     parens = Brackets('(', ')')
     brackets = Brackets('[', ']')
 
-    for i, c in enumerate(s[index:], start=index):
+    for i in range(index, len(s)):
+        c = s[i]
         if state == State.IDLE and c == '[':
             # potential start of a link
             brackets.depth += 1
