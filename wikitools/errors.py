@@ -50,7 +50,7 @@ class LinkNotFoundError(
     resolved_location: str
 
     def __repr__(self):
-        return f'"{self.resolved_location}" was not found'
+        return f'"/{self.resolved_location}" was not found'
 
 
 class BrokenRedirectError(
@@ -104,7 +104,7 @@ class MissingIdentifierError(
     translation_available: bool
 
     def __repr__(self):
-        return 'There is no heading or other object with identifier "{}" in "/{}"{}'.format(
+        return 'There is no heading or other tag with identifier "{}" in "/{}"{}'.format(
             self.identifier, self.path, '' if self.translation_available else ' (no translation available)'
         )
 
