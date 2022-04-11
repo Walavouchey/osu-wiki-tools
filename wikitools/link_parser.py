@@ -40,7 +40,7 @@ class Link(typing.NamedTuple):
 
         See [Difficulty Names](/wiki/Beatmap/Difficulty#naming-conventions)
 
-    - title: 'Difficulty Names'
+    - alt_text: 'Difficulty Names'
     - raw_location: '/wiki/Beatmap/Difficulty#naming-conventions'
     - parsed_location: urllib.parse.ParseResult with all of its fields
 
@@ -48,10 +48,10 @@ class Link(typing.NamedTuple):
 
         ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
 
-    - title: 'Player is AFK'
+    - alt_text: 'Player is AFK'
     - raw_location: 'img/chat-console-afk.png'
     - parsed_location: urllib.parse.ParseResult with all of its fields
-    - alt_text: 'Player is away from keyboard'
+    - title: 'Player is away from keyboard'
     """
 
     # Link position within the line. Example:
@@ -62,40 +62,40 @@ class Link(typing.NamedTuple):
 
     # Sections of a link. Example:
     #    ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
-    #      ^ - title - ^
+    #      ^ - alt_text - ^
     #                     ^ ----- location ----- ^
-    #                                               ^ ------- alt_text ------- ^
+    #                                               ^ ------- title ------- ^
     #                     ^ --------------------- content --------------------- ^
     #     ^ ------------------ full_link / full_coloured_link ------------------ ^
-    title: str
+    alt_text: str
     raw_location: str
     parsed_location: parse.ParseResult
-    alt_text: str
+    title: str
 
     @property
     def content(self):
-        return self.raw_location if not self.alt_text else f"{self.raw_location} {self.alt_text}"
+        return self.raw_location if not self.title else f"{self.raw_location} {self.title}"
 
     @property
     def full_link(self):
         if self.is_reference:
-            return f"[{self.title}][{self.content}]"
+            return f"[{self.alt_text}][{self.content}]"
         else:
-            return f"[{self.title}]({self.content})"
+            return f"[{self.alt_text}]({self.content})"
 
     @property
     def fragment_start(self):
         """
         0-based position of a hash sign, if the link has a #fragment. Otherwise, the same value as its end.
         """
-        return self.start + len(self.title) + 2 + len(self.parsed_location.path) + 1
+        return self.start + len(self.alt_text) + 2 + len(self.parsed_location.path) + 1
 
     def colorise_link(self, fragment_only=False):
-        return "{title_in_braces}{left_brace}{location}{extra}{right_brace}".format(
-            title_in_braces=console.green(f"[{self.title}]"),
+        return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+            alt_text_in_braces=console.green(f"[{self.alt_text}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
             location=self.colorise_location(fragment_only=fragment_only),
-            extra=" " + console.blue(self.alt_text) if self.alt_text else "",
+            extra=" " + console.blue(self.title) if self.title else "",
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
 
@@ -128,10 +128,10 @@ class Link(typing.NamedTuple):
 def find_link(s: str, index=0) -> typing.Optional[Link]:
     """
     Using the state machine, find the first Markdown link found in the string `s` after the `index` position.
-    The following are considered links (alt text or title may be missing):
-        - [title](/loca/ti/on "Alt text")
-        - ![title](/path/to/image "Alt text), with ! not being considered a part of the link
-        - [title][reference], with exact locations found separately via find_reference()
+    The following are considered links (title or alt_text may be missing):
+        - [alt_text](/loca/ti/on "Title")
+        - ![alt_text](/path/to/image "Title), with ! not being considered a part of the link
+        - [alt_text][reference], with exact locations found separately via find_reference()
     """
 
     state = State.IDLE
@@ -186,8 +186,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                 return Link(
                     raw_location=raw_location,
                     parsed_location=parse.urlparse(raw_location),
-                    title=s[start + 1: location - 2],
-                    alt_text=s[extra: end],
+                    alt_text=s[start + 1: location - 2],
+                    title=s[extra: end],
                     start=start,
                     end=end,
                     is_reference=False
@@ -202,8 +202,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                 return Link(
                     raw_location=raw_location,
                     parsed_location=parse.urlparse(raw_location),
-                    title=s[start + 1: location - 2],
-                    alt_text="",
+                    alt_text=s[start + 1: location - 2],
+                    title="",
                     start=start,
                     end=end,
                     is_reference=True

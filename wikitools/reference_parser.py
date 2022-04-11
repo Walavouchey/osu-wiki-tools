@@ -13,13 +13,13 @@ class Reference(typing.NamedTuple):
     name: str
     raw_location: str
     parsed_location: parse.ParseResult
-    alt_text: str
+    title: str
 
     def colorise_link(self, fragment_only=False):
-        return "{title_in_braces}: {location}{extra}".format(
-            title_in_braces=console.green(f"[{self.name}]"),
+        return "{alt_text_in_braces}: {location}{extra}".format(
+            alt_text_in_braces=console.green(f"[{self.name}]"),
             location=self.colorise_location(fragment_only=fragment_only),
-            extra=f' "{console.blue(self.alt_text)}"' if self.alt_text else "",
+            extra=f' "{console.blue(self.title)}"' if self.title else "",
         )
 
     def colorise_location(self, fragment_only=False):
@@ -37,7 +37,7 @@ class Reference(typing.NamedTuple):
     @property
     def end(self):
         return len(self.name) + 4 + len(self.raw_location) + (
-            3 + len(self.alt_text) if self.alt_text else 0
+            3 + len(self.title) if self.title else 0
         )
 
 
@@ -54,16 +54,16 @@ def extract(s: str, lineno) -> typing.Optional['Reference']:
     if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
         name = s[1:split - 1]
         try:
-            location, alt_text = s[split + 2:].split(' ', maxsplit=1)
-            alt_text = alt_text[1:-1]  # trim quotes
-        except ValueError:  # no space -> no alt text
+            location, title = s[split + 2:].split(' ', maxsplit=1)
+            title = title[1:-1]  # trim quotes
+        except ValueError:  # no space -> no title
             location = s[split + 2:]
-            alt_text = ""
+            title = ""
 
         parsed_location = parse.urlparse(location)
         return Reference(
             lineno=lineno, name=name,
-            raw_location=location, parsed_location=parsed_location, alt_text=alt_text
+            raw_location=location, parsed_location=parsed_location, title=title
         )
 
 

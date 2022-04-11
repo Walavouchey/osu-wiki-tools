@@ -10,23 +10,23 @@ class TestInlinePlainLinks:
         assert link == link_parser.Link(
             start=3,
             end=26,
-            title="example",
+            alt_text="example",
             raw_location="/wiki/Example",
             parsed_location=parse.urlparse("/wiki/Example"),
-            alt_text="",
+            title="",
             is_reference=False,
         )
 
-    def test__regular_link__alt_text(self):
-        example = 'An [example](/wiki/Example "Alt text").'
+    def test__regular_link__title(self):
+        example = 'An [example](/wiki/Example "Title").'
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=3,
             end=37,
-            title="example",
+            alt_text="example",
             raw_location="/wiki/Example",
             parsed_location=parse.urlparse("/wiki/Example"),
-            alt_text=' "Alt text"',
+            title=' "Title"',
             is_reference=False,
         )
 
@@ -44,10 +44,10 @@ class TestInlinePlainLinks:
             link_parser.Link(
                 start=16,
                 end=29,
-                title="a",
+                alt_text="a",
                 raw_location="/wiki/[A]",
                 parsed_location=parse.urlparse("/wiki/[A]"),
-                alt_text="",
+                title="",
                 is_reference=False,
             )
         ]
@@ -57,10 +57,10 @@ class TestInlinePlainLinks:
         assert link_parser.find_link(example) == link_parser.Link(
             start=3,
             end=21,
-            title="M",
+            alt_text="M",
             raw_location="/wiki/M#manual",
             parsed_location=parse.urlparse("/wiki/M#manual"),
-            alt_text="",
+            title="",
             is_reference=False,
         )
 
@@ -69,10 +69,10 @@ class TestInlinePlainLinks:
         assert link_parser.find_link(example) == link_parser.Link(
             start=0,
             end=41,
-            title="example.com",
+            alt_text="example.com",
             raw_location="https://example.com/?test=1",
             parsed_location=parse.urlparse("https://example.com/?test=1"),
-            alt_text="",
+            title="",
             is_reference=False,
         )
 
@@ -84,49 +84,49 @@ class TestInlineImageLinks:
         assert link == link_parser.Link(
             start=17,
             end=35,
-            title="",
+            alt_text="",
             raw_location="/wiki/crown.png",
             parsed_location=parse.urlparse("/wiki/crown.png"),
-            alt_text="",
+            title="",
             is_reference=False,
         )
 
-    def test__image_link__title(self):
+    def test__image_link__alt_text(self):
         example = "Check this out: ![Crown](/wiki/crown.png)"
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=17,
             end=40,
-            title="Crown",
+            alt_text="Crown",
             raw_location="/wiki/crown.png",
             parsed_location=parse.urlparse("/wiki/crown.png"),
-            alt_text="",
+            title="",
             is_reference=False,
         )
 
-    def test__image_link__alt_text(self):
-        example = 'Check this out: ![](/wiki/crown.png "Alt text")'
+    def test__image_link__title(self):
+        example = 'Check this out: ![](/wiki/crown.png "Title")'
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=17,
             end=46,
-            title="",
+            alt_text="",
             raw_location="/wiki/crown.png",
             parsed_location=parse.urlparse("/wiki/crown.png"),
-            alt_text=' "Alt text"',
+            title=' "Title"',
             is_reference=False,
         )
 
-    def test__image_link__title__alt_text(self):
-        example = 'Check this out: ![Crown](/wiki/crown.png "Alt text")'
+    def test__image_link__alt_text__title(self):
+        example = 'Check this out: ![Crown](/wiki/crown.png "Title")'
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=17,
             end=51,
-            title="Crown",
+            alt_text="Crown",
             raw_location="/wiki/crown.png",
             parsed_location=parse.urlparse("/wiki/crown.png"),
-            alt_text=' "Alt text"',
+            title=' "Title"',
             is_reference=False,
         )
 
@@ -139,19 +139,19 @@ class TestInlineMultipleLinks:
             link_parser.Link(
                 start=16,
                 end=27,
-                title="a",
+                alt_text="a",
                 raw_location="/wiki/A",
                 parsed_location=parse.urlparse("/wiki/A"),
-                alt_text="",
+                title="",
                 is_reference=False,
             ),
             link_parser.Link(
                 start=33,
                 end=44,
-                title="b",
+                alt_text="b",
                 raw_location="/wiki/B",
                 parsed_location=parse.urlparse("/wiki/B"),
-                alt_text="",
+                title="",
                 is_reference=False,
             )
         ]
@@ -164,10 +164,10 @@ class TestReferenceLinks:
         assert link == link_parser.Link(
             start=8,
             end=28,
-            title="yourself",
+            alt_text="yourself",
             raw_location="reference",
             parsed_location=parse.urlparse("reference"),
-            alt_text="",
+            title="",
             is_reference=True,
         )
 
@@ -177,10 +177,10 @@ class TestReferenceLinks:
         assert link == link_parser.Link(
             start=17,
             end=33,
-            title="Sweden",
+            alt_text="Sweden",
             raw_location="SE_flag",
             parsed_location=parse.urlparse("SE_flag"),
-            alt_text="",
+            title="",
             is_reference=True,
         )
 

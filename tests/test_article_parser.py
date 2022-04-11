@@ -38,11 +38,11 @@ class TestArticleParser:
         assert article.references == {
             'links_ref': reference_parser.Reference(
                 lineno=9, name='links_ref', raw_location='https://example.com',
-                parsed_location=parse.urlparse('https://example.com'), alt_text=''
+                parsed_location=parse.urlparse('https://example.com'), title=''
             ),
             'vier_ref': reference_parser.Reference(
                 lineno=13, name='vier_ref', raw_location='/wiki/Article_three',
-                parsed_location=parse.urlparse('/wiki/Article_three'), alt_text='Links!'
+                parsed_location=parse.urlparse('/wiki/Article_three'), title='Links!'
             )
         }
 

@@ -31,7 +31,7 @@ def extract_identifier(s: str) -> typing.Set[str]:
                 if j < len(s) and s[j] == '}':
                     return s[id_start: j]
 
-    # skip regular lines and titles (no one refers to them)
+    # skip regular lines and alt_texts (no one refers to them)
     if not s.startswith('#') or s.startswith('# '):
         return
 
@@ -49,7 +49,7 @@ def extract_identifier(s: str) -> typing.Set[str]:
             heading = s[j: link.start - 1] + s[link.end + 1:]
         else:
             # People/The_Team/Account_support_team has e-mail addresses WITH LINKS IN THEM as headings
-            heading = s[j: link.start] + link.title + s[link.end + 1:]
+            heading = s[j: link.start] + link.alt_text + s[link.end + 1:]
     else:
         heading = s[j:]
 
