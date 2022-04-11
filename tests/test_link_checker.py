@@ -236,7 +236,7 @@ class TestSectionLinks:
             ('New_article/en.md', '# New article'),
             (
                 'New_article/ru.md',
-                textwrap.dedent('''
+                textwrap.dedent(u'''
                     # New article
 
                     ## Заголовок (translated)
