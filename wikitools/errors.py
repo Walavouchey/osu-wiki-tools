@@ -104,7 +104,7 @@ class MissingIdentifierError(
     translation_available: bool
 
     def __repr__(self):
-        return 'There is no heading or other tag with identifier "{}" in "/{}"{}'.format(
+        return 'There is no heading or tag with identifier "{}" in "/{}"{}'.format(
             self.identifier, self.path, '' if self.translation_available else ' (no translation available)'
         )
 
