@@ -8,7 +8,7 @@ class LinkError:
         return f'{console.blue("Note:")} {repr(self)}'
 
 
-class LinkNotFound(LinkError, collections.namedtuple('LinkNotFound', 'location')):
+class LinkNotFoundError(LinkError, collections.namedtuple('LinkNotFound', 'location')):
     """
     An error indicating missing link: a text or binary file does not exist, and there is no such redirect.
     """
@@ -19,7 +19,7 @@ class LinkNotFound(LinkError, collections.namedtuple('LinkNotFound', 'location')
         return f'"{self.location}" was not found'
 
 
-class BrokenRedirect(
+class BrokenRedirectError(
     LinkError,
     collections.namedtuple('BrokenRedirect', 'location redirect_lineno redirect_destination')
 ):
@@ -37,7 +37,7 @@ class BrokenRedirect(
         )
 
 
-class MissingReference(LinkError, collections.namedtuple('MissingReference', 'location')):
+class MissingReferenceError(LinkError, collections.namedtuple('MissingReference', 'location')):
     """
     An error indicating that a reference-style link is missing its counterpart:
     [link][link_ref] exists, but [link_ref]: /wiki/Path/To/Article does not.
@@ -49,7 +49,7 @@ class MissingReference(LinkError, collections.namedtuple('MissingReference', 'lo
         return f'No corresponding reference found for "{self.location}"'
 
 
-class MissingIdentifier(
+class MissingIdentifierError(
     LinkError,
     collections.namedtuple('MissingIdentifier', 'path identifier translation_available')
 ):

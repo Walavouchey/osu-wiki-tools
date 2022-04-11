@@ -26,7 +26,7 @@ def check_link(
     # resolve the link, if possible
     link = link_ if isinstance(link_, reference_parser.Reference) else link_.resolve(references)
     if link is None:
-        return errors.MissingReference(link_.raw_location)
+        return errors.MissingReferenceError(link_.raw_location)
 
     location = link.parsed_location.path
     parsed_location = link.parsed_location
@@ -51,11 +51,11 @@ def check_link(
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
-            return errors.LinkNotFound(redirect_source)
+            return errors.LinkNotFoundError(redirect_source)
 
         target = pathlib.Path('wiki') / redirect_destination
         if not target.exists():
-            return errors.BrokenRedirect(redirect_source, redirect_line_no, redirect_destination)
+            return errors.BrokenRedirectError(redirect_source, redirect_line_no, redirect_destination)
 
     # link to an article in general, article exists -> good
     if not parsed_location.fragment:
@@ -74,7 +74,7 @@ def check_link(
         all_articles[raw_path] = article_parser.parse(target_file)
     target_article = all_articles[raw_path]
     if parsed_location.fragment not in target_article.identifiers:
-        return errors.MissingIdentifier(raw_path, parsed_location.fragment, translation_available=is_translation_available)
+        return errors.MissingIdentifierError(raw_path, parsed_location.fragment, translation_available=is_translation_available)
 
     return
 
@@ -84,11 +84,11 @@ def check_article(article, redirects: redirect_parser.Redirects, all_articles: t
     Try resolving links in the article either to another articles, or files.
     """
 
-    result = {}
+    errors = {}
     for lineno, line in article.lines.items():
         for link in line.links:
             error = check_link(article, link, redirects, article.references, all_articles)
             if error is not None:
-                result.setdefault(lineno, []).append(DetailedError(link=link, error=error))
+                errors.setdefault(lineno, []).append(DetailedError(link=link, error=error))
 
-    return result
+    return errors

@@ -100,8 +100,8 @@ def main():
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
-        results = link_checker.check_article(a, redirects, articles)
-        if not results:
+        errors = link_checker.check_article(a, redirects, articles)
+        if not errors:
             continue
 
         error_file_count += 1
@@ -109,7 +109,7 @@ def main():
             print_error()
         exit_code = 1
 
-        for lineno, errors_on_line in sorted(results.items()):
+        for lineno, errors_on_line in sorted(errors.items()):
             error_count += len(errors_on_line)
             for e in errors_on_line:
                 print(pretty_location(a.path, lineno, e.link.start + 1, e.link.raw_location))
