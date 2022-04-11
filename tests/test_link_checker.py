@@ -138,6 +138,20 @@ class TestImageLinks:
         )
         assert error is None
 
+    # this is wrong as per ASC but still semantically correct
+    def test__valid_relative_link__in_article_directory(self, root):
+        conftest.create_files(
+            root,
+            ('Beatmap/en.md', '# Beatmap'),
+            ('Beatmap/beatmap.png', '')
+        )
+
+        link = link_parser.find_link('Behold, the relative image of a ![beatmap](beatmap.png "Wow!").')
+        error = link_checker.check_link(
+            article=dummy_article('wiki/Beatmap/en.md'), link_=link, redirects={}, references={}, all_articles={}
+        )
+        assert error is None
+
     def test__invalid_relative_link(self, root):
         conftest.create_files(
             root,
@@ -203,6 +217,16 @@ class TestExternalLinks:
                 article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
             )
             assert error is None
+
+
+class TestMalformedLink:
+    def test__missing_scheme(self):
+        link = link_parser.find_link('Forgot to add a [scheme](//example.com)',)
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+        assert error.location == '//example.com'
 
 
 class TestSectionLinks:

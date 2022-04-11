@@ -8,6 +8,17 @@ class LinkError:
         return f'{console.blue("Note:")} {repr(self)}'
 
 
+class MalformedLinkError(LinkError, collections.namedtuple('MalformedLinkError', 'location')):
+    """
+    An error indicating an erroneous link (for example, with several leading slashes).
+    """
+
+    location: str
+
+    def __repr__(self):
+        return f'Incorrect link structure (typo?): "{self.location}"'
+
+
 class LinkNotFoundError(LinkError, collections.namedtuple('LinkNotFound', 'location')):
     """
     An error indicating missing link: a text or binary file does not exist, and there is no such redirect.

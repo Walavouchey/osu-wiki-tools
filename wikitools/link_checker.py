@@ -37,7 +37,7 @@ def check_link(
 
     # domain is non-empty, but the link is internal?
     if parsed_location.netloc:
-        raise RuntimeError(f"Unhandled link type: {parsed_location}")
+        return errors.MalformedLinkError(link.raw_location)
 
     # convert a relative wikilink to absolute
     if not location.startswith("/wiki/"):
