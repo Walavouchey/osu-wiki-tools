@@ -22,7 +22,7 @@ class TestInlinePlainLinks:
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=3,
-            end=37,
+            end=34,
             alt_text="example",
             raw_location="/wiki/Example",
             parsed_location=parse.urlparse("/wiki/Example"),
@@ -109,7 +109,7 @@ class TestInlineImageLinks:
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=17,
-            end=46,
+            end=43,
             alt_text="",
             raw_location="/wiki/crown.png",
             parsed_location=parse.urlparse("/wiki/crown.png"),
@@ -122,7 +122,7 @@ class TestInlineImageLinks:
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
             start=17,
-            end=51,
+            end=48,
             alt_text="Crown",
             raw_location="/wiki/crown.png",
             parsed_location=parse.urlparse("/wiki/crown.png"),
