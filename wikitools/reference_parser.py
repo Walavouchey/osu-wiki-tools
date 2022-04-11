@@ -15,13 +15,20 @@ class Reference(typing.NamedTuple):
     parsed_location: parse.ParseResult
     alt_text: str
 
-    @property
-    def full_coloured_link(self):
+    def colorize_link(self, fragment_only=False):
         return "{title_in_braces}: {location}{extra}".format(
             title_in_braces=console.green(f"[{self.name}]"),
-            location=console.red(self.raw_location),
+            location=self.colorize_location(fragment_only=fragment_only),
             extra=f' "{console.blue(self.alt_text)}"' if self.alt_text else "",
         )
+
+    def colorize_location(self, fragment_only=False):
+        if fragment_only:
+            return "".join((
+                console.green(self.parsed_location.path),
+                console.red('#' + self.parsed_location.fragment)
+            ))
+        return console.red(self.raw_location)
 
     @property
     def start(self):

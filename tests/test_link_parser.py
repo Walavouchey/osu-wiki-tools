@@ -185,6 +185,19 @@ class TestReferenceLinks:
         )
 
 
+class TestIdentifierLinks:
+    def test__misc_links(self):
+        for example, (start, fragment_start) in (
+            ("Thank you, we'll [call](/wiki/Test#test) your name", (17, 34)),
+            ("I am sure you [will](#local-ref).", (14, 21)),
+            ("No [reference](/wiki/No).", (3, 23)),
+        ):
+            link = link_parser.find_link(example)
+            assert link.start == start
+            assert link.fragment_start == fragment_start
+            print(link.end)
+
+
 class TestLinkObject:
     def test__resolution(self):
         link = link_parser.find_link('This is an [example][example_ref].')

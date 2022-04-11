@@ -3,7 +3,7 @@ import os
 import sys
 import typing
 
-from wikitools import article_parser, console, link_parser, link_checker, redirect_parser
+from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types
 
 
 def print_error():
@@ -29,14 +29,14 @@ def print_count(errors: int, matches: int, error_files: int, files: int):
     print(f"{console.blue('Note:')} Found {s(errors, 'error')} in {s(error_files, 'file')} ({s(matches, 'link')} in {s(files, 'file')} checked).")
 
 
-def highlight_links(s: str, links: typing.List[link_parser.Link]) -> str:
+def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
     highlighted_line = ""
     prev_index = 0
-    for link in links:
-        highlighted_line += s[prev_index:link.start]
-        highlighted_line += link.full_coloured_link
-        prev_index = link.end + 1
-    highlighted_line += s[prev_index:-1]
+    for error in errors:
+        highlighted_line += s[prev_index: error.link.start]
+        highlighted_line += error.pretty_link
+        prev_index = error.link.end + 1
+    highlighted_line += s[prev_index: -1]
     return highlighted_line
 
 
@@ -112,16 +112,16 @@ def main():
         for lineno, errors_on_line in sorted(errors.items()):
             error_count += len(errors_on_line)
             for e in errors_on_line:
-                print(pretty_location(a.path, lineno, e.link.start + 1, e.link.raw_location))
+                print(e.pretty_location(a.path, lineno))
             for e in errors_on_line:
                 print(e.pretty())
 
             print()
             if args.separate:
                 for e in errors_on_line:
-                    print(highlight_links(a.lines[lineno].raw_line, [e.link]), end="\n\n")
+                    print(highlight_links(a.lines[lineno].raw_line, [e]), end="\n\n")
             else:
-                print(highlight_links(a.lines[lineno].raw_line, (_.link for _ in errors_on_line)), end="\n\n")
+                print(highlight_links(a.lines[lineno].raw_line, errors_on_line), end="\n\n")
 
     if exit_code == 0:
         print_clean()

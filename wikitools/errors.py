@@ -4,8 +4,24 @@ from wikitools import console, link_parser
 
 
 class LinkError:
+    _colorize_fragment_only = False
+
     def pretty(self):
         return f'{console.blue("Note:")} {repr(self)}'
+
+    def pretty_location(self, article_path, lineno):
+        return "{}: {}".format(
+            console.yellow(":".join((article_path, str(lineno), str(self.pos)))),
+            self.link.colorize_location(fragment_only=self._colorize_fragment_only)
+        )
+
+    @property
+    def pretty_link(self):
+        return self.link.colorize_link(fragment_only=self._colorize_fragment_only)
+
+    @property
+    def pos(self):
+        return self.link.start + 1
 
 
 class MalformedLinkError(
@@ -80,6 +96,8 @@ class MissingIdentifierError(
     that would produce #such-reference.
     """
 
+    _colorize_fragment_only = True
+
     link: link_parser.Link
     path: str
     identifier: str
@@ -89,3 +107,7 @@ class MissingIdentifierError(
         return 'There is no heading or other object with identifier "{}" in "{}"{}'.format(
             self.identifier, self.path, '' if self.translation_available else ' (no translation available)'
         )
+
+    @property
+    def pos(self):
+        return self.link.fragment_start + 1

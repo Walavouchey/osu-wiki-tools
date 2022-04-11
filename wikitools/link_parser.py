@@ -84,14 +84,28 @@ class Link(typing.NamedTuple):
             return f"[{self.title}]({self.content})"
 
     @property
-    def full_coloured_link(self):
+    def fragment_start(self):
+        """
+        0-based position of a hash sign, if the link has a #fragment. Otherwise, the same value as its end.
+        """
+        return self.start + len(self.title) + 2 + len(self.parsed_location.path) + 1
+
+    def colorize_link(self, fragment_only=False):
         return "{title_in_braces}{left_brace}{location}{extra}{right_brace}".format(
             title_in_braces=console.green(f"[{self.title}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
-            location=console.red(self.raw_location),
+            location=self.colorize_location(fragment_only=fragment_only),
             extra=" " + console.blue(self.alt_text) if self.alt_text else "",
             right_brace=console.green(']') if self.is_reference else console.green(')'),
         )
+
+    def colorize_location(self, fragment_only=False):
+        if fragment_only:
+            return "".join((
+                console.green(self.parsed_location.path),
+                console.red('#' + self.parsed_location.fragment)
+            ))
+        return console.red(self.raw_location)
 
     def resolve(
         self, references: reference_parser.References
