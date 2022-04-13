@@ -2,6 +2,7 @@ import subprocess
 import sys
 import os
 
+
 def print_usage_and_exit():
     print(f"""Usage: {sys.argv[0]} [options]
 
@@ -15,29 +16,37 @@ options:
 Omitting arguments is equivalent to -i 1""")
     sys.exit(0)
 
-def red(s): # important
+
+def red(s):  # important
     return f"\x1b[31m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def green(s): # info
+
+def green(s):  # info
     return f"\x1b[32m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def yellow(s): # debug
+
+def yellow(s):  # debug
     return f"\x1b[33m{s}\x1b[0m" if sys.stdout.isatty() else s
 
-def blue(s): # command run
+
+def blue(s):  # command run
     return f"\x1b[34m{s}\x1b[0m" if sys.stdout.isatty() else s
+
 
 def error(msg):
     print(red(msg))
     sys.exit(1)
 
+
 def shell(cmd):
     result = subprocess.run(cmd.split(" "), stdout=subprocess.PIPE)
     return result.stdout.decode("utf-8")
 
+
 def print_and_run(cmd):
     print(blue(cmd))
     subprocess.run(cmd.split(" "))
+
 
 if len(sys.argv) > 1 and ("-h" in sys.argv[1] or "--help" in sys.argv[1]):
     print_usage_and_exit()
@@ -56,9 +65,9 @@ index = 0
 if len(commits) < 1:
     error(f"No new commits on branch {branch} since master")
 
-translations = [file for file in os.listdir(".") if ".md" in file and not "en.md" in file]
+translations = [file for file in os.listdir(".") if ".md" in file and "en.md" not in file]
 
-if not "en.md" in os.listdir("."):
+if "en.md" not in os.listdir("."):
     error("No English article found (en.md)! Are you in the right folder?")
 
 if len(translations) < 1:
@@ -134,11 +143,11 @@ for filename in translations:
             if not in_yaml:
                 continue
             if "outdated: true" in line:
-                outdated = True;
+                outdated = True
             if "outdated_since: true" in line:
                 has_commit_hash = True
 
-        if not exited_yaml: # no front matter: insert markers
+        if not exited_yaml:  # no front matter: insert markers
             print(yellow(f"{filename}: No front matter found, outdating..."))
             new_content = f"---\noutdated: true\noutdated_since: {commit}\n---\n\n" + content
             with open(filename, "w", encoding="utf-8") as writer:
@@ -149,8 +158,8 @@ for filename in translations:
         if in_yaml and not exited_yaml:
             error(f"Invalid yaml formatting in {filename}")
 
-        if not in_yaml and exited_yaml: # front matter found
-            if outdated or has_commit_hash: # only insert if not outdated
+        if not in_yaml and exited_yaml:  # front matter found
+            if outdated or has_commit_hash:  # only insert if not outdated
                 print(yellow(f"{filename}: Front matter found with outdated marker{'s' if outdated and has_commit_hash else ''}"))
                 continue
             print(yellow(f"{filename}: Front matter found but no outdated markers, outdating..."))
@@ -167,7 +176,7 @@ for filename in translations:
             with open(filename, "w", encoding="utf-8") as writer:
                 writer.write(new_content)
             files_edited.append(filename)
-        
+
 
 if len(files_edited) < 1:
     error("No translations needed outdating")
