@@ -4,7 +4,7 @@ from wikitools import console, link_parser
 
 
 class LinkError:
-    _colorise_fragment_only = False
+    _colourise_fragment_only = False
 
     def pretty(self):
         return f'{console.blue("Note:")} {repr(self)}'
@@ -12,12 +12,12 @@ class LinkError:
     def pretty_location(self, article_path, lineno):
         return "{}: {}".format(
             console.yellow(":".join((article_path, str(lineno), str(self.pos)))),
-            self.link.colorise_location(fragment_only=self._colorise_fragment_only)
+            self.link.colourise_location(fragment_only=self._colourise_fragment_only)
         )
 
     @property
     def pretty_link(self):
-        return self.link.colorise_link(fragment_only=self._colorise_fragment_only)
+        return self.link.colourise_link(fragment_only=self._colourise_fragment_only)
 
     @property
     def pos(self):
@@ -96,7 +96,7 @@ class MissingIdentifierError(
     that would produce #such-reference.
     """
 
-    _colorise_fragment_only = True
+    _colourise_fragment_only = True
 
     link: link_parser.Link
     path: str
