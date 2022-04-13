@@ -128,7 +128,7 @@ class Link(typing.NamedTuple):
 def find_link(s: str, index=0) -> typing.Optional[Link]:
     """
     Finds the first valid Markdown link found in the string `s`, starting the search from position `index`.
-    The following are considered links (title and alt_text may be omitted):
+    The following are considered links (title and alt text may be omitted):
         - [alt_text](/loca/ti/on "Title")
         - ![alt_text](/path/to/image "Title), with ! not being considered a part of the link
         - [artist - title (creator) [diff]](/loca/ti/ion_(with_parentheses) "Title")

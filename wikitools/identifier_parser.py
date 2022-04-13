@@ -32,7 +32,7 @@ def extract_identifier(
                 if j < len(s) and s[j] == '}':
                     return s[id_start: j]
 
-    # skip regular lines and alt_texts (no one refers to them)
+    # skip regular lines and article titles (no one refers to them)
     if not s.startswith('#') or s.startswith('# '):
         return
 
