@@ -46,10 +46,10 @@ def check_link(
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
-            # return reference-style link instead of its dereferenced part if possible,
-            # because later we will display it inline
+            is_link = isinstance(link, link_parser.Link)
             return errors.LinkNotFoundError(
-                link if isinstance(link, link_parser.Link) else link_,
+                link if is_link else link_,
+                None if is_link else link,
                 location
             )
 

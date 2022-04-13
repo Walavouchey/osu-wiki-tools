@@ -181,6 +181,9 @@ class TestImageLinks:
         assert isinstance(error.link, link_parser.Link)
         assert error.link.is_reference
         assert error.link.raw_location == 'flag_XX'
+        assert error.reference
+        assert error.reference.raw_location == '/wiki/shared/img/XX.gif'
+        assert error.reference.lineno == 1
 
 
 class TestRedirectedLinks:

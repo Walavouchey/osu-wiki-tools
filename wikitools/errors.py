@@ -1,6 +1,7 @@
 import collections
+import typing
 
-from wikitools import console, link_parser
+from wikitools import console, link_parser, reference_parser
 
 
 class LinkError:
@@ -40,17 +41,18 @@ class MalformedLinkError(
 
 class LinkNotFoundError(
     LinkError,
-    collections.namedtuple('LinkNotFound', 'link resolved_location')
+    collections.namedtuple('LinkNotFound', 'link reference resolved_location')
 ):
     """
     An error indicating a missing link: a text or binary file does not exist, and there is no redirect for it.
     """
 
     link: link_parser.Link
+    reference: typing.Optional[reference_parser.Reference]
     resolved_location: str
 
     def __repr__(self):
-        return f'"{self.resolved_location}" was not found'
+        return f'"{self.resolved_location}" was not found' + f' (reference at line {self.reference.lineno})' if self.reference else ''
 
 
 class BrokenRedirectError(
