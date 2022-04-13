@@ -50,7 +50,7 @@ class LinkNotFoundError(
     resolved_location: str
 
     def __repr__(self):
-        return f'"/{self.resolved_location}" was not found'
+        return f'"{self.resolved_location}" was not found'
 
 
 class BrokenRedirectError(

@@ -50,7 +50,7 @@ def check_link(
             # because later we will display it inline
             return errors.LinkNotFoundError(
                 link if isinstance(link, link_parser.Link) else link_,
-                target.as_posix()
+                location
             )
 
         target = pathlib.Path('wiki') / redirect_destination
