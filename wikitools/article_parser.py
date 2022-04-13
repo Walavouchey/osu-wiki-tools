@@ -88,6 +88,5 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
                 reference = reference_parser.extract(line.strip(), lineno=lineno)
                 if reference is not None:
                     references[reference.name] = reference
-                    saved_lines[lineno] = ArticleLine(raw_line=line, links=[reference])
 
     return Article(path, saved_lines, references, identifiers)

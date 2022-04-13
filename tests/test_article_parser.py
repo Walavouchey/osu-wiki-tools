@@ -46,7 +46,7 @@ class TestArticleParser:
             )
         }
 
-        assert set(article.lines.keys()) == {3, 5, 7, 9, 13}
+        assert set(article.lines.keys()) == {3, 5, 7}
         # lines are stored as-is, with trailing line breaks
         assert article.lines[3].raw_line == 'Links! [Links](https://example.com)!\n'
 

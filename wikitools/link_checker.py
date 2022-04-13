@@ -6,7 +6,7 @@ from wikitools import redirect_parser, reference_parser, errors, link_parser, ar
 
 
 def check_link(
-    article: article_parser.Article, link_: typing.Union[link_parser.Link, reference_parser.Reference],
+    article: article_parser.Article, link_: link_parser.Link,
     redirects: redirect_parser.Redirects, references: reference_parser.References,
     all_articles: typing.Dict[str, article_parser.Article]
 ) -> typing.Optional[errors.LinkError]:
@@ -19,7 +19,7 @@ def check_link(
     """
 
     # resolve the link, if possible
-    link = link_ if isinstance(link_, reference_parser.Reference) else link_.resolve(references)
+    link = link_.resolve(references)
     if link is None:
         return errors.MissingReferenceError(link_)
 
