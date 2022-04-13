@@ -19,12 +19,11 @@ def check_link(
     """
 
     # resolve the link, if possible
-    original_link = link
-    link = link.resolve(references)
-    if link is None:
-        return errors.MissingReferenceError(original_link)
+    reference = link.resolve(references)
+    if reference is None and link.is_reference:
+        return errors.MissingReferenceError(link)
 
-    location = link.parsed_location.path
+    location = (reference and reference.parsed_location.path) or link.parsed_location.path
     parsed_location = link.parsed_location
 
     # some external link; don't care
@@ -47,12 +46,7 @@ def check_link(
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
         except KeyError:
-            is_link = isinstance(link, link_parser.Link)
-            return errors.LinkNotFoundError(
-                link if is_link else original_link,
-                None if is_link else link,
-                location
-            )
+            return errors.LinkNotFoundError(link, reference, location)
 
         target = pathlib.Path('wiki') / redirect_destination
         if not target.exists():

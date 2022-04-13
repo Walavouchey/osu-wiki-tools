@@ -111,7 +111,7 @@ class Link(typing.NamedTuple):
         self, references: reference_parser.References
     ) -> typing.Optional[reference_parser.Reference]:
         if not self.is_reference:
-            return self
+            return None
         return references.get(self.parsed_location.path)
 
     # Whether the link is a reference-style link. The only difference is that
