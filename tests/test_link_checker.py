@@ -18,7 +18,7 @@ class TestArticleLinks:
 
         link = link_parser.find_link('Check the [first article](/wiki/First_article).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
         assert error is None
 
@@ -34,7 +34,7 @@ class TestArticleLinks:
         ):
             link = link_parser.find_link(line)
             error = link_checker.check_link(
-                article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+                article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
             )
             assert isinstance(error, error_types.LinkNotFoundError)
 
@@ -47,7 +47,7 @@ class TestArticleLinks:
         link = link_parser.find_link('This link is [working][article_ref].')
         references = reference_parser.extract_all('[article_ref]: /wiki/My_article "Something something"')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references=references, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
         )
         assert error is None
 
@@ -60,7 +60,7 @@ class TestArticleLinks:
         link = link_parser.find_link('This link is [not working][article_ref].')
         references = reference_parser.extract_all('[other_ref]: /wiki/Obscure_article "Something something"')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references=references, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
         )
         assert isinstance(error, error_types.MissingReferenceError)
         assert error.link.raw_location == 'article_ref'
@@ -81,7 +81,7 @@ class TestArticleLinks:
         ):
             link = link_parser.find_link(line)
             error = link_checker.check_link(
-                article=dummy_article('wiki/Batteries/en.md'), link_=link, redirects={}, references={}, all_articles={}
+                article=dummy_article('wiki/Batteries/en.md'), link=link, redirects={}, references={}, all_articles={}
             )
             assert error is None
 
@@ -93,7 +93,7 @@ class TestArticleLinks:
 
         link = link_parser.find_link('This link [does not work](Broken_link).')
         error = link_checker.check_link(
-            article=dummy_article('wiki/Existing_article/en.md'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('wiki/Existing_article/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
         assert isinstance(error, error_types.LinkNotFoundError)
 
@@ -108,7 +108,7 @@ class TestImageLinks:
 
         link = link_parser.find_link('Check this ![out](/wiki/img/battery.png).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
         assert error is None
 
@@ -121,7 +121,7 @@ class TestImageLinks:
 
         link = link_parser.find_link('Do not check this ![out](/wiki/img/nonsense.png).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
         assert isinstance(error, error_types.LinkNotFoundError)
 
@@ -134,7 +134,7 @@ class TestImageLinks:
 
         link = link_parser.find_link('Behold, the beatmap ![beatmap](img/beatmap.png "Wow!").')
         error = link_checker.check_link(
-            article=dummy_article('wiki/Beatmap/en.md'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('wiki/Beatmap/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
         assert error is None
 
@@ -148,7 +148,7 @@ class TestImageLinks:
 
         link = link_parser.find_link('Behold, the relative image of a ![beatmap](beatmap.png "Wow!").')
         error = link_checker.check_link(
-            article=dummy_article('wiki/Beatmap/en.md'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('wiki/Beatmap/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
         assert error is None
 
@@ -161,7 +161,7 @@ class TestImageLinks:
 
         link = link_parser.find_link('Nothing to see here ![please](img/none.png "disperse").')
         error = link_checker.check_link(
-            article=dummy_article('wiki/Difficulty/en.md'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('wiki/Difficulty/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
         assert isinstance(error, error_types.LinkNotFoundError)
 
@@ -175,7 +175,7 @@ class TestImageLinks:
         references = reference_parser.extract_all('[flag_XX]: /wiki/shared/img/XX.gif')
         link = link_parser.find_link('![][flag_XX] "The XXth Country"')
         error = link_checker.check_link(
-            article=dummy_article('wiki/OWC_2030/en.md'), link_=link, redirects={}, references=references, all_articles={}
+            article=dummy_article('wiki/OWC_2030/en.md'), link=link, redirects={}, references=references, all_articles={}
         )
         assert isinstance(error, error_types.LinkNotFoundError)
         assert isinstance(error.link, link_parser.Link)
@@ -197,7 +197,7 @@ class TestRedirectedLinks:
         redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
         link = link_parser.find_link('Please read the [old article](/wiki/Old_LiNK).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects=redirects, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
         )
         assert error is None
 
@@ -216,7 +216,7 @@ class TestRedirectedLinks:
         redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
         link = link_parser.find_link('Please read the [old article](/wiki/Old_link).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects=redirects, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
         )
         assert isinstance(error, error_types.BrokenRedirectError)
         assert error.redirect_lineno == 2
@@ -234,7 +234,7 @@ class TestExternalLinks:
         ):
             link = link_parser.find_link(line)
             error = link_checker.check_link(
-                article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+                article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
             )
             assert error is None
 
@@ -243,7 +243,7 @@ class TestMalformedLink:
     def test__missing_scheme(self):
         link = link_parser.find_link('Forgot to add a [scheme](//example.com)',)
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
         assert isinstance(error, error_types.MalformedLinkError)
         assert error.link.raw_location == '//example.com'
@@ -270,7 +270,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-real-heading).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert error is None
 
@@ -295,7 +295,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link('См. [другую статью](/wiki/New_article#заголовок-(translated)).')
         error = link_checker.check_link(
-            article=dummy_article('wiki/Some_other_article/ru.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('wiki/Some_other_article/ru.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert error is None
 
@@ -309,7 +309,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-nonexistent-heading).')
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link_=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'some-nonexistent-heading'
@@ -336,7 +336,7 @@ class TestSectionLinks:
         # pretend we're linking from a French page
         link = link_parser.find_link("Merci de lire l'[article](/wiki/New_article#auto-contrôle).")
         error = link_checker.check_link(
-            article=dummy_article('wiki/Some_other_article/fr.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('wiki/Some_other_article/fr.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'auto-contrôle'
@@ -364,7 +364,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link("Please follow the [included article](Included_article#subheading).")
         error = link_checker.check_link(
-            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('wiki/New_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert error is None
 
@@ -390,7 +390,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link("Please follow the [included article](Included_article#wrong-subheading).")
         error = link_checker.check_link(
-            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('wiki/New_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'wrong-subheading'
@@ -420,7 +420,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#subheading).")
         error = link_checker.check_link(
-            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects=redirects, references={}, all_articles=all_articles
+            article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )
         assert error is None
 
@@ -448,7 +448,7 @@ class TestSectionLinks:
 
         link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#totally-wrong-heading).")
         error = link_checker.check_link(
-            article=dummy_article('wiki/New_article/en.md'), link_=link, redirects=redirects, references={}, all_articles=all_articles
+            article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'totally-wrong-heading'

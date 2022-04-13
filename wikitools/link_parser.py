@@ -109,7 +109,7 @@ class Link(typing.NamedTuple):
 
     def resolve(
         self, references: reference_parser.References
-    ) -> typing.Union['Link', typing.Optional[reference_parser.Reference]]:
+    ) -> typing.Optional[reference_parser.Reference]:
         if not self.is_reference:
             return self
         return references.get(self.parsed_location.path)
