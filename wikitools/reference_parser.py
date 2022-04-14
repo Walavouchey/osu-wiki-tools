@@ -50,21 +50,26 @@ def extract(s: str, lineno) -> typing.Optional[Reference]:
         - "[reference]: /wiki/kudosu.png" -> ("reference", "/wiki/kudosu.png")
     """
 
-    split = s.find(':')
-    if split != -1 and s.startswith('[') and s[split - 1] == ']' and s[split + 1] == ' ':
-        name = s[1:split - 1]
-        try:
-            location, title = s[split + 2:].split(' ', maxsplit=1)
-            title = title[1:-1]  # trim quotes
-        except ValueError:  # no space -> no title
-            location = s[split + 2:]
-            title = ""
+    if not s.startswith('['):
+        return None
 
-        parsed_location = parse.urlparse(location)
-        return Reference(
-            lineno=lineno, name=name,
-            raw_location=location, parsed_location=parsed_location, title=title
-        )
+    split = s.find(':')
+    if not (split != -1 and s[split - 1] == ']' and s[split + 1] == ' '):
+        return None
+
+    name = s[1:split - 1]
+    try:
+        location, title = s[split + 2:].split(' ', maxsplit=1)
+        title = title[1:-1]  # trim quotes
+    except ValueError:  # no space -> no title
+        location = s[split + 2:]
+        title = ""
+
+    parsed_location = parse.urlparse(location)
+    return Reference(
+        lineno=lineno, name=name,
+        raw_location=location, parsed_location=parsed_location, title=title
+    )
 
 
 def extract_all(text: str) -> References:
