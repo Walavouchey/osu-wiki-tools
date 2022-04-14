@@ -8,6 +8,19 @@ class TestCodeBlockParser:
             code_block_parser.CodeBlock(start=3, closed_at=5, tag_len=1)
         )
 
+        # ` ``t`` `
+        assert not code_block_parser.CodeBlock(start=0, closed_at=8, tag_len=1).contains(
+            code_block_parser.CodeBlock(start=2, closed_at=5, tag_len=2)
+        )
+
+        # ``first`` `second` ``third``
+        first = code_block_parser.CodeBlock(start=0, closed_at=7, tag_len=2)
+        second = code_block_parser.CodeBlock(start=10, closed_at=17, tag_len=1)
+        third = code_block_parser.CodeBlock(start=19, closed_at=26, tag_len=2)
+        assert not first.contains(second) and not first.contains(third)
+        assert not second.contains(first) and not second.contains(third)
+        assert not third.contains(first) and not third.contains(second)
+
     def test__inline_blocks(self):
         for line, expected in (
             ("Empty", []),
@@ -31,7 +44,7 @@ class TestCodeBlockParser:
                 [code_block_parser.CodeBlock(start=0, closed_at=11, tag_len=2)]
             ),
         ):
-            assert code_block_parser.parse(line) == expected, line
+            assert code_block_parser.CodeBlockParser().parse(line) == expected, line
 
     def test__multiline_blocks(self):
         lines = [
@@ -44,13 +57,9 @@ class TestCodeBlockParser:
         ]
 
         blocks = []
-        # TODO: this is copied from article_parser.parse() while it should be a standalone piece of code
-        in_multiline = False
+        parser = code_block_parser.CodeBlockParser()
         for line in lines:
-            new_blocks = code_block_parser.parse(line, in_multiline)
-            if new_blocks:
-                in_multiline = new_blocks[-1].end == -1
-            blocks.extend(new_blocks)
+            blocks.extend(parser.parse(line))
 
         assert blocks == [
             code_block_parser.CodeBlock(start=0, closed_at=-1, tag_len=3),

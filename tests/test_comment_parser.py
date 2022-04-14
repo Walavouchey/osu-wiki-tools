@@ -17,7 +17,7 @@ class TestCommentParser:
                 ]
             ),
         ):
-            assert comment_parser.parse(line) == expected
+            assert comment_parser.CommentParser().parse(line) == expected
 
     def test__multiline_comments(self):
         lines = [
@@ -31,13 +31,9 @@ class TestCommentParser:
         ]
 
         comments = []
-        # TODO: this is copied from article_parser.parse() while it should be a standalone piece of code
-        in_multiline = False
+        parser = comment_parser.CommentParser()
         for line in lines:
-            new_comments = comment_parser.parse(line, in_multiline)
-            if new_comments:
-                in_multiline = new_comments[-1].end == -1
-            comments.extend(new_comments)
+            comments.extend(parser.parse(line))
 
         assert comments == [
             comment_parser.Comment(start=10, end=-1),
