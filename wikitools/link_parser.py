@@ -1,4 +1,3 @@
-import enum
 import typing
 from urllib import parse
 
@@ -26,7 +25,7 @@ class Brackets():
         return False
 
 
-class State(enum.Enum):
+class State:
     IDLE = 0
     START = 1
     INLINE = 2
@@ -145,7 +144,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     parens = Brackets('(', ')')
     brackets = Brackets('[', ']')
 
-    for i, c in enumerate(s[index:], start=index):
+    for i in range(index, len(s)):
+        c = s[i]
         if state == State.IDLE and c == '[':
             # potential start of a link
             brackets.depth += 1
@@ -158,7 +158,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                 # the end of a bracket. the link may continue
                 # to be inline- or reference-style
                 if len(s) <= i + 1:
-                    state = state.IDLE
+                    state = State.IDLE
                     continue
 
                 if s[i + 1] == '(':
@@ -168,7 +168,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                     state = State.REFERENCE
                     location = i + 2
                 else:
-                    state = state.IDLE
+                    state = State.IDLE
             continue
 
         if state == State.INLINE:
