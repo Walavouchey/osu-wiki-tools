@@ -44,7 +44,7 @@ class Reference(typing.NamedTuple):
 References = typing.Dict[str, Reference]
 
 
-def extract(s: str, lineno) -> typing.Optional['Reference']:
+def extract(s: str, lineno) -> typing.Optional[Reference]:
     """
     Given a line, attempt to extract a reference from it (assuming it occupies the whole line). Example:
         - "[reference]: /wiki/kudosu.png" -> ("reference", "/wiki/kudosu.png")

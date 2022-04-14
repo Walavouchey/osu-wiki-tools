@@ -5,7 +5,8 @@ from wikitools import console, link_parser, reference_parser
 
 
 class LinkError:
-    _colourise_fragment_only = False
+    _colourise_fragment_only: bool = False
+    link: link_parser.Link
 
     def pretty(self):
         return f'{console.blue("Note:")} {repr(self)}'

@@ -32,7 +32,7 @@ class Comment(typing.NamedTuple):
 
 
 def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
-    comments = []
+    comments: typing.List[Comment] = []
     index = 0
     start = None
 

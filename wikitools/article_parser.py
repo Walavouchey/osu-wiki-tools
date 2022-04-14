@@ -20,7 +20,7 @@ class Article:
 
     directory: str
     filename: str
-    lines: typing.Dict[int, str]
+    lines: typing.Dict[int, ArticleLine]
     references: reference_parser.References
     identifiers: set
 
@@ -52,7 +52,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
 
     saved_lines = {}
     references = {}
-    cnt = collections.Counter()
+    cnt: typing.Counter[str] = collections.Counter()
     identifiers = set()
 
     in_multiline = False
