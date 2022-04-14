@@ -200,8 +200,15 @@ class TestIdentifierLinks:
 
 class TestLinkObject:
     def test__resolution(self):
-        link = link_parser.find_link('This is an [example][example_ref].')
-        references = reference_parser.extract_all('[example_ref]: https://example.com "Example"')
+        for link, reference, (raw_location, parsed_location) in (
+            ('This is an [example][example_ref].', '[example_ref]: https://example.com "Example"', ('https://example.com', parse.urlparse("https://example.com"))),
+            ('Cats are cute. [[1]][r]', '[r]: #references', ('#references', parse.urlparse("#references"))),
+        ):
+            link = link_parser.find_link(link)
+            reference = reference_parser.extract(reference, lineno=1)
 
-        assert link.resolve(references) == references['example_ref']
+            assert link.resolve({reference.name: reference}).raw_location == reference.raw_location
+            assert link.resolve({reference.name: reference}).raw_location == raw_location
+            assert link.resolve({reference.name: reference}).parsed_location == reference.parsed_location
+            assert link.resolve({reference.name: reference}).parsed_location == parsed_location
         assert link.resolve({}) is None
