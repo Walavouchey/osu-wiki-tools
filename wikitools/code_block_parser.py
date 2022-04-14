@@ -16,25 +16,16 @@ class CodeBlock(typing.NamedTuple):
 
         ```test test test```
         ^ start            ^ end
-                         ^ closed_at
 
         `this is a very long phrase`
         ^ start                    ^ end
-                                   ^ closed_at
 
     Similarly to the HTML comments, links in code blocks are not accounted for.
     """
 
-    start: int
-    closed_at: int  # position where the closing tag starts
+    start: int  # 0-based position of the first character of the block's opening tag
+    end: int  # 0-based position of the last character of the block's closing tag
     tag_len: int
-
-    @property
-    def end(self):
-        """
-        Position of the last character of the block INCLUDING the closing tag.
-        """
-        return -1 if self.closed_at == -1 else self.closed_at + self.tag_len - 1
 
     @property
     def is_multiline(self):
@@ -78,7 +69,7 @@ class CodeBlockParser:
                 opening_tag = tag_stack.pop()
                 # add the new code block
                 # if it's mistakenly included into a smaller one (` ```test``` `), remark will catch that anyway
-                blocks.append(CodeBlock(start=opening_tag.start, closed_at=i, tag_len=opening_tag.len))
+                blocks.append(CodeBlock(start=opening_tag.start, end=i + opening_tag.len - 1, tag_len=opening_tag.len))
             else:
                 tag_stack.append(CodeTag(start=i, len=cnt))
             i += cnt
@@ -88,7 +79,7 @@ class CodeBlockParser:
             # if there is a start of the multiline code block, the block takes priority over everything else
             if opening_tag.len == 3:
                 self.__in_multiline = True
-                return [CodeBlock(start=opening_tag.start, closed_at=-1, tag_len=3)]
+                return [CodeBlock(start=opening_tag.start, end=-1, tag_len=3)]
             # one of the inline blocks wasn't closed, which will be caught by a Markdown linter anyway
             else:
                 self.__in_multiline = blocks and blocks[0].is_multiline
@@ -112,7 +103,7 @@ def is_in_code_block(link_start: int, code_blocks: typing.List[CodeBlock]) -> bo
     if (
         not code_blocks or
         link_start < code_blocks[0].start or
-        link_start > code_blocks[-1].closed_at
+        link_start > code_blocks[-1].end
     ):
         return False
 
