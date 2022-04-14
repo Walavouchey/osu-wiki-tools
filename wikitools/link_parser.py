@@ -136,8 +136,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
 
     state = State.IDLE
 
-    start = None
-    location = None
+    start = -1
+    location = -1
     extra = None
     end = None
 
