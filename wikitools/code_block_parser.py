@@ -14,13 +14,13 @@ class CodeBlock(typing.NamedTuple):
 
     Examples:
 
-        ``` test test test ```
-        ^ start              ^ end
-                           ^ closed_at
+        ```test test test```
+        ^ start            ^ end
+                        ^ closed_at
 
         `this is a very long phrase`
         ^ start                    ^ end
-                                   ^ closed_at
+                                  ^ closed_at
 
     Similarly to the HTML comments, links in code blocks are not accounted for.
     """

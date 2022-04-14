@@ -144,3 +144,38 @@ class TestArticleParser:
 
         assert len(article.lines[9].links) == 1
         assert article.lines[9].links[0].raw_location == "/wiki/No"
+
+    def test__ignore_code_blocks(self, root):
+        conftest.create_files(
+            root,
+            (
+                'Code_blocks/en.md',
+                textwrap.dedent('''
+                    # Code blocks
+
+                    ## Examples
+
+                    `[Inline](/wiki/Inline)` | `[b][i]Inline[/i][/b]`
+
+                    `` `[Also inline](/wiki/Also_inline)` ``
+
+                    Let's take a [break](/wiki/Gameplay/Break)!
+
+                    ```
+                    [Multiline](/wiki/Multiline)
+                    [b][i]No[/i][/b]
+                    ```
+
+                    ```markdown
+                    [Multiline with syntax highlighting](/wiki/Multiline#syntax-highlighting)
+                    [wow][wow_ref]
+
+                    [wow_ref]: /wiki/Wow
+                    ```
+                ''').strip()
+            )
+        )
+        article = article_parser.parse('wiki/Code_blocks/en.md')
+        assert set(article.lines.keys()) == {9}
+        assert len(article.lines[9].links) == 1
+        assert article.lines[9].links[0].raw_location == "/wiki/Gameplay/Break"
