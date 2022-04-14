@@ -28,7 +28,7 @@ def check_link(
 
     # some external link; don't care
     if parsed_location.scheme:
-        return
+        return None
 
     # domain is non-empty, but the link is internal?
     if parsed_location.netloc:
@@ -54,7 +54,7 @@ def check_link(
 
     # link to an article in general, article exists -> good
     if not parsed_location.fragment:
-        return
+        return None
 
     # link to a section -> need to find the target article; it could be a translation
     # XXX(TicClick): this part assumes there is always an English version of the article in a folder
@@ -71,13 +71,13 @@ def check_link(
     if parsed_location.fragment not in target_article.identifiers:
         return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, is_translation_available)
 
-    return
+    return None
 
 
 def check_article(
     article: article_parser.Article, redirects: redirect_parser.Redirects,
     all_articles: typing.Dict[str, article_parser.Article]
-) -> typing.Dict[int, errors.LinkError]:
+) -> typing.Dict[int, typing.List[errors.LinkError]]:
     """
     Try resolving links in the article to other articles or files.
     """

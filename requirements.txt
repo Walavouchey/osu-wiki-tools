@@ -1,1 +1,3 @@
+mypy==0.942
+pytest-mypy==0.9.1
 pytest==7.1.1

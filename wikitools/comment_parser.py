@@ -32,9 +32,9 @@ class Comment(typing.NamedTuple):
 
 
 def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
-    comments = []
+    comments: typing.List[Comment] = []
     index = 0
-    start = None
+    start = 0
 
     while True:
         # don't start a comment if already in one
@@ -44,7 +44,7 @@ def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
                 # no more comments
                 return comments
 
-        end = line.find("-->", start or 0)
+        end = line.find("-->", start)
 
         if end != -1:
             # found the end of a comment
@@ -72,9 +72,9 @@ def is_in_comment(index: int, comments: typing.List[Comment]) -> bool:
         left_bound = comment.start
         right_bound = comment.end
         if comment.start == -1:
-            left_bound = float('-inf')
+            left_bound = float('-inf')  # type: ignore
         if comment.end == -1:
-            right_bound = float('inf')
+            right_bound = float('inf')  # type: ignore
 
         if index >= left_bound and index <= right_bound:
             return True
