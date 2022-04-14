@@ -238,6 +238,20 @@ class TestExternalLinks:
             )
             assert error is None
 
+    def test__all_external_reference_links__valid(self):
+        for line, reference in (
+            ('Check the [example][example].', '[example]: https://example.com "Example"'),
+            ('Contact [accounts@example.com][email].', '[email]: mailto:accounts@example.com'),
+            ('Look, [the web chat][irc]!', '[irc]: irc://cho.ppy.sh'),
+            ('I am [not even trying][aaa].', '[aaa]: htttttttttttttttttps://example.com'),
+        ):
+            link = link_parser.find_link(line)
+            references = reference_parser.extract_all(reference)
+            error = link_checker.check_link(
+                article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
+            )
+            assert error is None
+
 
 class TestMalformedLink:
     def test__missing_scheme(self):

@@ -24,7 +24,7 @@ def check_link(
         return errors.MissingReferenceError(link)
 
     location = (reference and reference.parsed_location.path) or link.parsed_location.path
-    parsed_location = link.parsed_location
+    parsed_location = (reference and reference.parsed_location) or link.parsed_location
 
     # some external link; don't care
     if parsed_location.scheme:
