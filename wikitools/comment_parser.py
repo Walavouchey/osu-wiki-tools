@@ -34,7 +34,7 @@ class Comment(typing.NamedTuple):
 def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
     comments: typing.List[Comment] = []
     index = 0
-    start = 0
+    start = -1
 
     while True:
         # don't start a comment if already in one
@@ -44,7 +44,7 @@ def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
                 # no more comments
                 return comments
 
-        end = line.find("-->", start)
+        end = line.find("-->", 0 if start == -1 else start)
 
         if end != -1:
             # found the end of a comment
@@ -57,7 +57,7 @@ def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
                 comments.append(Comment(start=start, end=end + 2))
             index = end + 3
             continue
-        elif start is None:
+        elif start == -1:
             # no comment start or end; the whole line is part of a comment
             comments.append(Comment(start=-1, end=-1))
             return comments

@@ -3,7 +3,7 @@ from urllib import parse
 
 import conftest
 
-from wikitools import article_parser, reference_parser
+from wikitools import article_parser, reference_parser, link_parser
 
 
 class TestArticleParser:
@@ -117,3 +117,30 @@ class TestArticleParser:
             'random.1',
             'section.2',
         }
+
+    def test__ignore_comments(self, root):
+        conftest.create_files(
+            root,
+            (
+                'Comments/en.md',
+                textwrap.dedent('''
+                    # Comments
+
+                    <!-- Don't mention [comments](/wiki/HTML#comment). -->
+
+                    <!-- Don't mention the [comments](/wiki/HTML#comment) at all.
+                        Yes, even if they span across several [lines](/wiki/Power_line).
+                        Please be [silent](/wiki/Silence) about that, okay? --> [Test](/wiki/Test)
+
+                    There is [no](/wiki/No) support<!-- for the [comments](/wiki/HTML#comment) --> on the wiki.
+                ''').strip()
+            )
+        )
+        article = article_parser.parse('wiki/Comments/en.md')
+        assert set(article.lines.keys()) == {7, 9}
+
+        assert len(article.lines[7].links) == 1
+        assert article.lines[7].links[0].raw_location == "/wiki/Test"
+
+        assert len(article.lines[9].links) == 1
+        assert article.lines[9].links[0].raw_location == "/wiki/No"
