@@ -117,7 +117,7 @@ def is_in_code_block(link_start: int, code_blocks: typing.List[CodeBlock]) -> bo
         return False
 
     for block in code_blocks:
-        if link_start > block.start:
+        if block.start < link_start < block.end:
             return True
 
     return False

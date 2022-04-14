@@ -161,6 +161,8 @@ class TestArticleParser:
 
                     Let's take a [break](/wiki/Gameplay/Break)!
 
+                    ``Some`` [fun stuff](/wiki/Fun_stuff) ``here``.
+
                     ```
                     [Multiline](/wiki/Multiline)
                     [b][i]No[/i][/b]
@@ -176,6 +178,10 @@ class TestArticleParser:
             )
         )
         article = article_parser.parse('wiki/Code_blocks/en.md')
-        assert set(article.lines.keys()) == {9}
+        assert set(article.lines.keys()) == {9, 11}
+
         assert len(article.lines[9].links) == 1
         assert article.lines[9].links[0].raw_location == "/wiki/Gameplay/Break"
+
+        assert len(article.lines[11].links) == 1
+        assert article.lines[11].links[0].raw_location == "/wiki/Fun_stuff"
