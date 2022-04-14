@@ -40,7 +40,7 @@ class CommentParser:
         self.__in_multiline = False
 
     @property
-    def in_multiline(self):
+    def in_multiline(self) -> bool:
         return self.__in_multiline
 
     def parse(self, line: str) -> typing.List[Comment]:
