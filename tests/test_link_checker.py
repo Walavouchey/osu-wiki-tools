@@ -478,9 +478,15 @@ class TestArticleChecker:
                 textwrap.dedent('''
                     # An article
 
-                    It's a [very](Subarticle) [well](/wiki/Brticle) written ![line](img/line.png).
+                    It's a [very](Subarticle) [well](/wiki/Brticle) written ![line](img/line.png). [[1]][r]
 
                     This line, however, uses a [redirect](/wiki/Old_link).
+
+                    ## References
+
+                    1. yes
+
+                    [r]: #references
                 ''').strip()
             ),
             ('Article/Subarticle/en.md', ''),
