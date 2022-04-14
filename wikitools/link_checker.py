@@ -23,8 +23,8 @@ def check_link(
     if reference is None and link.is_reference:
         return errors.MissingReferenceError(link)
 
-    location = reference.parsed_location.path if link.is_reference else link.parsed_location.path
-    parsed_location = reference.parsed_location if link.is_reference else link.parsed_location
+    location = reference.parsed_location.path if reference else link.parsed_location.path
+    parsed_location = reference.parsed_location if reference else link.parsed_location
 
     # some external link; don't care
     if parsed_location.scheme:
