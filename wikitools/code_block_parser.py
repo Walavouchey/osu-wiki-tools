@@ -49,8 +49,7 @@ class CodeBlockParser:
 
     def parse(self, line: str) -> typing.List[CodeBlock]:
         blocks: typing.List[CodeBlock] = []
-
-        tag_stack = []
+        tag_stack: typing.List[CodeTag] = []
         if self.__in_multiline:
             tag_stack.append(CodeTag(start=-1, len=3))
 
@@ -68,22 +67,27 @@ class CodeBlockParser:
             if tag_stack and tag_stack[-1].len == cnt:
                 opening_tag = tag_stack.pop()
                 # add the new code block
-                # if it's mistakenly included into a smaller one (` ```test``` `), remark will catch that anyway
                 blocks.append(CodeBlock(start=opening_tag.start, end=i + opening_tag.len - 1, tag_len=opening_tag.len))
             else:
                 tag_stack.append(CodeTag(start=i, len=cnt))
             i += cnt
 
         if tag_stack:
-            opening_tag = tag_stack[0]
-            # if there is a start of the multiline code block, the block takes priority over everything else
-            if opening_tag.len == 3:
-                self.__in_multiline = True
-                return [CodeBlock(start=opening_tag.start, end=-1, tag_len=3)]
-            # one of the inline blocks wasn't closed, which will be caught by a Markdown linter anyway
-            else:
-                self.__in_multiline = blocks and blocks[0].is_multiline
-                return blocks
+            for t in tag_stack:
+                if t.len == 3:
+                    # Find if there is an open multiline code block somewhere,
+                    # then discard everything that got inside and return the blocks we parsed before it
+                    # Example: "``test`` ```abc `def`" is treated as code block with "test" and a multiline block
+                    # where we don't care if `def` is inside or not as it is superseded anyway
+                    self.__in_multiline = True
+                    i = 0
+                    while i < len(blocks) and blocks[i].start <= t.start:
+                        i += 1
+                    return blocks[0: i] + [CodeBlock(start=t.start, end=-1, tag_len=3)]
+
+            # If there is no start of a multiline code block, it's a Markdown error (one or more inline blocks not closed)
+            # Return what we could close
+            return blocks
 
         # if all tags are closed, we need to consider that larger code blocks consume smaller ones
         filtered_blocks: typing.List[CodeBlock] = []

@@ -73,3 +73,15 @@ class TestCodeBlockParser:
             code_block_parser.CodeBlock(start=17, end=-1, tag_len=3),
             code_block_parser.CodeBlock(start=-1, end=56, tag_len=3),
         ]
+        assert not parser.in_multiline
+
+    def test__open_blocks(self):
+        line = "This just in: `code` ``blocks`` ```are not `jokes`"
+        parser = code_block_parser.CodeBlockParser()
+        blocks = parser.parse(line)
+        assert blocks == [
+            code_block_parser.CodeBlock(start=14, end=19, tag_len=1),
+            code_block_parser.CodeBlock(start=21, end=30, tag_len=2),
+            code_block_parser.CodeBlock(start=32, end=-1, tag_len=3),
+        ]
+        assert parser.in_multiline
