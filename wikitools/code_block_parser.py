@@ -34,8 +34,7 @@ class CodeBlock(typing.NamedTuple):
     def contains(self, other: 'CodeBlock'):
         return (
             self.start < other.start and
-            self.end > other.end and
-            self.tag_len > other.tag_len
+            self.end > other.end
         )
 
 

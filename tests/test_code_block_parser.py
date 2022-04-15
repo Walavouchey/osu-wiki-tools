@@ -9,7 +9,7 @@ class TestCodeBlockParser:
         )
 
         # ` ``t`` `
-        assert not code_block_parser.CodeBlock(start=0, end=8, tag_len=1).contains(
+        assert code_block_parser.CodeBlock(start=0, end=8, tag_len=1).contains(
             code_block_parser.CodeBlock(start=2, end=6, tag_len=2)
         )
 
@@ -47,8 +47,14 @@ class TestCodeBlockParser:
                 "``` `` `Inner` `` ```",
                 [code_block_parser.CodeBlock(start=0, end=20, tag_len=3)]
             ),
+            (
+                "` `` ```Small blocks eat large ones``` `` `",
+                [code_block_parser.CodeBlock(start=0, end=42, tag_len=1)]
+            ),
         ):
-            assert code_block_parser.CodeBlockParser().parse(line) == expected, line
+            parser = code_block_parser.CodeBlockParser()
+            assert parser.parse(line) == expected, line
+            assert not parser.in_multiline
 
     def test__multiline_blocks(self):
         lines = [
