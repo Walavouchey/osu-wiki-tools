@@ -43,6 +43,10 @@ class TestCodeBlockParser:
                 "`` `Space` ``",
                 [code_block_parser.CodeBlock(start=0, end=12, tag_len=2)]
             ),
+            (
+                "``` `` `Inner` `` ```",
+                [code_block_parser.CodeBlock(start=0, end=20, tag_len=3)]
+            ),
         ):
             assert code_block_parser.CodeBlockParser().parse(line) == expected, line
 
