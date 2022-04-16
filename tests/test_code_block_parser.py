@@ -2,25 +2,6 @@ from wikitools import code_block_parser
 
 
 class TestCodeBlockParser:
-    def test__inclusion(self):
-        # `` `t` ``
-        assert code_block_parser.CodeBlock(start=0, end=8, tag_len=2).contains(
-            code_block_parser.CodeBlock(start=3, end=5, tag_len=1)
-        )
-
-        # ` ``t`` `
-        assert code_block_parser.CodeBlock(start=0, end=8, tag_len=1).contains(
-            code_block_parser.CodeBlock(start=2, end=6, tag_len=2)
-        )
-
-        # ``first`` `second` ``third``
-        first = code_block_parser.CodeBlock(start=0, end=8, tag_len=2)
-        second = code_block_parser.CodeBlock(start=10, end=17, tag_len=1)
-        third = code_block_parser.CodeBlock(start=19, end=27, tag_len=2)
-        assert not first.contains(second) and not first.contains(third)
-        assert not second.contains(first) and not second.contains(third)
-        assert not third.contains(first) and not third.contains(second)
-
     def test__inline_blocks(self):
         for line, expected in (
             ("Empty", []),
@@ -44,12 +25,12 @@ class TestCodeBlockParser:
                 [code_block_parser.CodeBlock(start=0, end=12, tag_len=2)]
             ),
             (
-                "``` `` `Inner` `` ```",
-                [code_block_parser.CodeBlock(start=0, end=20, tag_len=3)]
+                "`` code block with random backticks ` ``` ` ``` ``",
+                [code_block_parser.CodeBlock(start=0, end=49, tag_len=2)]
             ),
             (
-                "` `` ```Small blocks eat large ones``` `` `",
-                [code_block_parser.CodeBlock(start=0, end=42, tag_len=1)]
+                "stray backtick ` and a ``code block`` and another stray ```",
+                [code_block_parser.CodeBlock(start=23, end=36, tag_len=2)]
             ),
         ):
             parser = code_block_parser.CodeBlockParser()
@@ -60,10 +41,18 @@ class TestCodeBlockParser:
         lines = [
             "This is expected:",
             "```",
-            "Failure!",
+            "Valid code block",
             "```",
-            "And this is not: ```",
-            "Success! `Your application has been approved` (or not)```",
+            "````markdown",
+            "```",
+            "Code block inside code block (ignored)",
+            "Inline `code blocks` inside a code block",
+            "```",
+            "````",
+            "This won't start a multi-line code block: ```",
+            "Here we have a `valid in-line code block`",
+            "```",
+            "Trailing multi-line code block",
         ]
 
         blocks = []
@@ -72,22 +61,10 @@ class TestCodeBlockParser:
             blocks.extend(parser.parse(line))
 
         assert blocks == [
-            code_block_parser.CodeBlock(start=0, end=-1, tag_len=3),
+            *(9 * [code_block_parser.CodeBlock(start=-1, end=-1, tag_len=3)]),
+
+            code_block_parser.CodeBlock(start=15, end=40, tag_len=1),
             code_block_parser.CodeBlock(start=-1, end=-1, tag_len=3),
-            code_block_parser.CodeBlock(start=-1, end=2, tag_len=3),
-
-            code_block_parser.CodeBlock(start=17, end=-1, tag_len=3),
-            code_block_parser.CodeBlock(start=-1, end=56, tag_len=3),
-        ]
-        assert not parser.in_multiline
-
-    def test__open_blocks(self):
-        line = "This just in: `code` ``blocks`` ```are not `jokes`"
-        parser = code_block_parser.CodeBlockParser()
-        blocks = parser.parse(line)
-        assert blocks == [
-            code_block_parser.CodeBlock(start=14, end=19, tag_len=1),
-            code_block_parser.CodeBlock(start=21, end=30, tag_len=2),
-            code_block_parser.CodeBlock(start=32, end=-1, tag_len=3),
+            code_block_parser.CodeBlock(start=-1, end=-1, tag_len=3),
         ]
         assert parser.in_multiline

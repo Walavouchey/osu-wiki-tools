@@ -1,4 +1,5 @@
 import typing
+import re
 
 
 class CodeTag(typing.NamedTuple):
@@ -10,17 +11,24 @@ class CodeBlock(typing.NamedTuple):
     """
     A Markdown code block (monospace font + gray backround). Could be one of the following:
         - Inline: `text` or `` text `` (the latter is used for snippets containing `)
-        - Multiline: ``` followed by anything else until the next ``` block
+        - Multiline:
+            ```
+            these can start and end with more backticks,
+            at which point they can contain code blocks
+            inside themselves, which are ignored
+            ```
 
     Examples:
 
-        ```test test test```
-        ^ start            ^ end
+        ```
+        test test test
+        ```
+        start and end are both -1 for all 3 lines
 
         `this is a very long phrase`
         ^ start                    ^ end
 
-    Similarly to the HTML comments, links in code blocks are not accounted for.
+    Similarly to HTML comments, links in code blocks are skipped
     """
 
     start: int  # 0-based position of the first character of the block's opening tag
@@ -29,28 +37,45 @@ class CodeBlock(typing.NamedTuple):
 
     @property
     def is_multiline(self):
-        return self.end == -1 and self.tag_len == 3
+        return self.start == -1 and self.end == -1
 
-    def contains(self, other: 'CodeBlock'):
-        return (
-            self.start < other.start and
-            self.end > other.end
-        )
+    def contains(self, pos: int):
+        return self.is_multiline or (self.start < pos and self.end > pos)
 
 
 class CodeBlockParser:
     def __init__(self):
         self.__in_multiline = False
+        self.__multiline_tag = ''
 
     @property
     def in_multiline(self) -> bool:
         return self.__in_multiline
 
+    def count_tag_length(self, line: str, pos: int) -> int:
+        tag_len = 0
+        while pos + tag_len < len(line) and line[pos + tag_len] == '`':
+            tag_len += 1
+        return tag_len
+
     def parse(self, line: str) -> typing.List[CodeBlock]:
         blocks: typing.List[CodeBlock] = []
-        tag_stack: typing.List[CodeTag] = []
+
+        if line.startswith('```'):
+            if self.__in_multiline:
+                if line.startswith(self.__multiline_tag):
+                    # multiline block closed with the correct tag
+                    self.__in_multiline = False
+                    return [CodeBlock(start=-1, end=-1, tag_len=3)]
+            else:
+                # opening a multiline block
+                self.__multiline_tag = '`' * self.count_tag_length(line, 0)
+                self.__in_multiline = True
+                return [CodeBlock(start=-1, end=-1, tag_len=3)]
+
+
         if self.__in_multiline:
-            tag_stack.append(CodeTag(start=-1, len=3))
+            return [CodeBlock(start=-1, end=-1, tag_len=3)]
 
         i = 0
         while i < len(line):
@@ -58,48 +83,23 @@ class CodeBlockParser:
                 i += 1
                 continue
 
-            cnt = 0
-            while i + cnt < len(line) and line[i + cnt] == '`':
-                cnt += 1
+            tag_len = self.count_tag_length(line, i)
 
-            # just closed the code block
-            if tag_stack and tag_stack[-1].len == cnt:
-                opening_tag = tag_stack.pop()
-                # add the new code block
-                blocks.append(CodeBlock(start=opening_tag.start, end=i + opening_tag.len - 1, tag_len=opening_tag.len))
+            # the next tag of the same length will close the block
+            closing_tag = re.search(
+                    f"(?<!`){'`' * tag_len}(?!`)",
+                    line[i + tag_len:]
+            )
+
+            if closing_tag:
+                closing_tag_pos = closing_tag.start() + i + tag_len
+                blocks.append(CodeBlock(start=i, end=closing_tag_pos + tag_len - 1, tag_len=tag_len))
+                i = closing_tag_pos + tag_len
             else:
-                tag_stack.append(CodeTag(start=i, len=cnt))
-            i += cnt
+                # the tag wasn't closed, but there could be more code blocks
+                i += tag_len
 
-        if tag_stack:
-            for t in tag_stack:
-                if t.len == 3:
-                    # Find if there is an open multiline code block somewhere,
-                    # then discard everything that got inside and return the blocks we parsed before it
-                    # Example: "``test`` ```abc `def`" is treated as code block with "test" and a multiline block
-                    # where we don't care if `def` is inside or not as it is superseded anyway
-                    self.__in_multiline = True
-                    i = 0
-                    while i < len(blocks) and blocks[i].start <= t.start:
-                        i += 1
-                    return blocks[0: i] + [CodeBlock(start=t.start, end=-1, tag_len=3)]
-
-            # If there is no start of a multiline code block, it's a Markdown error (one or more inline blocks not closed)
-            # Return what we could close
-            return blocks
-
-        # if all tags are closed, we need to consider that larger code blocks consume smaller ones
-        filtered_blocks: typing.List[CodeBlock] = []
-        blocks.sort()
-        i = 0
-        while i < len(blocks):
-            filtered_blocks.append(blocks[i])
-            i += 1
-            while i < len(blocks) and filtered_blocks[-1].contains(blocks[i]):
-                i += 1
-
-        self.__in_multiline = filtered_blocks and filtered_blocks[0].is_multiline
-        return filtered_blocks
+        return blocks
 
 
 def is_in_code_block(link_start: int, code_blocks: typing.List[CodeBlock]) -> bool:
@@ -111,10 +111,7 @@ def is_in_code_block(link_start: int, code_blocks: typing.List[CodeBlock]) -> bo
         return False
 
     for block in code_blocks:
-        if (
-            block.start < link_start < block.end or
-            block.start < link_start and block.is_multiline
-        ):
+        if (block.contains(link_start)):
             return True
 
     return False
