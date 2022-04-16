@@ -2,7 +2,7 @@ import collections
 import pathlib
 import typing
 
-from wikitools import link_parser, comment_parser, identifier_parser, reference_parser
+from wikitools import code_block_parser, link_parser, comment_parser, identifier_parser, reference_parser
 
 
 class ArticleLine(typing.NamedTuple):
@@ -55,21 +55,22 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
     cnt: typing.Counter[str] = collections.Counter()
     identifiers = set()
 
-    in_multiline = False
+    comment_reader = comment_parser.CommentParser()
+    code_block_reader = code_block_parser.CodeBlockParser()
     with path.open('r', encoding='utf-8') as fd:
         for lineno, line in enumerate(fd, start=1):
-            comments = comment_parser.parse(line, in_multiline)
-            if comments:
-                in_multiline = comments[-1].end == -1
+            comments = comment_reader.parse(line)
+            code_blocks = code_block_reader.parse(line)
 
-            # everything in a multiline comment doesn't count
-            if in_multiline:
+            # everything in a multiline comment or code block doesn't count
+            if comment_reader.in_multiline or code_block_reader.in_multiline:
                 continue
 
             links_on_line = list(filter(
                 lambda l: not(
                     l.content == '/wiki/Sitemap' or
-                    comment_parser.is_in_comment(l.start, comments)
+                    comment_parser.is_in_comment(l.start, comments) or
+                    code_block_parser.is_in_code_block(l.start, code_blocks)
                 ),
                 link_parser.find_links(line)
             ))

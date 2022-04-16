@@ -30,41 +30,56 @@ class Comment(typing.NamedTuple):
     start: int
     end: int
 
+    @property
+    def is_multiline(self):
+        return self.end == -1
 
-def parse(line: str, in_multiline: bool = False) -> typing.List[Comment]:
-    comments: typing.List[Comment] = []
-    index = 0
-    start = 0
 
-    while True:
-        # don't start a comment if already in one
-        if not in_multiline:
-            start = line.find("<!--", index)
-            if start == -1:
-                # no more comments
-                return comments
+class CommentParser:
+    def __init__(self):
+        self.__in_multiline = False
 
-        end = line.find("-->", start)
+    @property
+    def in_multiline(self) -> bool:
+        return self.__in_multiline
 
-        if end != -1:
-            # found the end of a comment
-            if in_multiline:
-                # end of a multiline comment
-                comments.append(Comment(start=-1, end=end + 2))
-                in_multiline = False
+    def parse(self, line: str) -> typing.List[Comment]:
+        comments: typing.List[Comment] = []
+        index = 0
+        start = -1
+
+        while True:
+            # don't start a comment if already in one
+            if not self.__in_multiline:
+                start = line.find("<!--", index)
+                if start == -1:
+                    break  # no more comments
+
+            end = line.find("-->", 0 if start == -1 else start)
+            if end != -1:
+                # found the end of a comment
+                if self.__in_multiline:
+                    # end of a multiline comment
+                    comments.append(Comment(start=-1, end=end + 2))
+                    self.__in_multiline = False
+                else:
+                    # whole inline comment
+                    comments.append(Comment(start=start, end=end + 2))
+                index = end + 3
+                continue
+
+            elif start == -1:
+                # no comment start or end; the whole line is part of a comment
+                comments.append(Comment(start=-1, end=-1))
+                break
+
             else:
-                # whole inline comment
-                comments.append(Comment(start=start, end=end + 2))
-            index = end + 3
-            continue
-        elif start is None:
-            # no comment start or end; the whole line is part of a comment
-            comments.append(Comment(start=-1, end=-1))
-            return comments
-        else:
-            # unmatched comment start: continuing to subsequent lines
-            comments.append(Comment(start=start, end=-1))
-            return comments
+                # unmatched comment start: continuing to subsequent lines
+                comments.append(Comment(start=start, end=-1))
+                break
+
+        self.__in_multiline = comments and comments[-1].is_multiline
+        return comments
 
 
 def is_in_comment(index: int, comments: typing.List[Comment]) -> bool:
