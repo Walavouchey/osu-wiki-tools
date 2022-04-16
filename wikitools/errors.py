@@ -53,7 +53,11 @@ class LinkNotFoundError(
     resolved_location: str
 
     def __repr__(self):
-        return f'"{self.resolved_location}" was not found' + f' (reference at line {self.reference.lineno})' if self.reference else ''
+        return '"{}" was not found{}'.format(
+            self.resolved_location,
+            f"(reference at line {self.reference.lineno})"
+            if self.reference else ''
+        )
 
 
 class BrokenRedirectError(
