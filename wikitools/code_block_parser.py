@@ -33,7 +33,6 @@ class CodeBlock(typing.NamedTuple):
 
     start: int  # 0-based position of the first character of the block's opening tag
     end: int  # 0-based position of the last character of the block's closing tag
-    tag_len: int
 
     @property
     def is_multiline(self):
@@ -66,16 +65,16 @@ class CodeBlockParser:
                 if line.startswith(self.__multiline_tag):
                     # multiline block closed with the correct tag
                     self.__in_multiline = False
-                    return [CodeBlock(start=-1, end=-1, tag_len=3)]
+                    return [CodeBlock(start=-1, end=-1)]
             else:
                 # opening a multiline block
                 self.__multiline_tag = '`' * self.count_tag_length(line, 0)
                 self.__in_multiline = True
-                return [CodeBlock(start=-1, end=-1, tag_len=3)]
+                return [CodeBlock(start=-1, end=-1)]
 
 
         if self.__in_multiline:
-            return [CodeBlock(start=-1, end=-1, tag_len=3)]
+            return [CodeBlock(start=-1, end=-1)]
 
         i = 0
         while i < len(line):
@@ -93,7 +92,7 @@ class CodeBlockParser:
 
             if closing_tag:
                 closing_tag_pos = closing_tag.start() + i + tag_len
-                blocks.append(CodeBlock(start=i, end=closing_tag_pos + tag_len - 1, tag_len=tag_len))
+                blocks.append(CodeBlock(start=i, end=closing_tag_pos + tag_len - 1))
                 i = closing_tag_pos + tag_len
             else:
                 # the tag wasn't closed, but there could be more code blocks

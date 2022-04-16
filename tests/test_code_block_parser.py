@@ -7,30 +7,30 @@ class TestCodeBlockParser:
             ("Empty", []),
             (
                 "`test`",
-                [code_block_parser.CodeBlock(start=0, end=5, tag_len=1)]
+                [code_block_parser.CodeBlock(start=0, end=5)]
             ),
             (
                 "`several` `code blocks`",
                 [
-                    code_block_parser.CodeBlock(start=0, end=8, tag_len=1),
-                    code_block_parser.CodeBlock(start=10, end=22, tag_len=1),
+                    code_block_parser.CodeBlock(start=0, end=8),
+                    code_block_parser.CodeBlock(start=10, end=22),
                 ]
             ),
             (
                 "``block-o``",
-                [code_block_parser.CodeBlock(start=0, end=10, tag_len=2)]
+                [code_block_parser.CodeBlock(start=0, end=10)]
             ),
             (
                 "`` `Space` ``",
-                [code_block_parser.CodeBlock(start=0, end=12, tag_len=2)]
+                [code_block_parser.CodeBlock(start=0, end=12)]
             ),
             (
                 "`` code block with random backticks ` ``` ` ``` ``",
-                [code_block_parser.CodeBlock(start=0, end=49, tag_len=2)]
+                [code_block_parser.CodeBlock(start=0, end=49)]
             ),
             (
                 "stray backtick ` and a ``code block`` and another stray ```",
-                [code_block_parser.CodeBlock(start=23, end=36, tag_len=2)]
+                [code_block_parser.CodeBlock(start=23, end=36)]
             ),
         ):
             parser = code_block_parser.CodeBlockParser()
@@ -61,10 +61,10 @@ class TestCodeBlockParser:
             blocks.extend(parser.parse(line))
 
         assert blocks == [
-            *(9 * [code_block_parser.CodeBlock(start=-1, end=-1, tag_len=3)]),
+            *(9 * [code_block_parser.CodeBlock(start=-1, end=-1)]),
 
-            code_block_parser.CodeBlock(start=15, end=40, tag_len=1),
-            code_block_parser.CodeBlock(start=-1, end=-1, tag_len=3),
-            code_block_parser.CodeBlock(start=-1, end=-1, tag_len=3),
+            code_block_parser.CodeBlock(start=15, end=40),
+            code_block_parser.CodeBlock(start=-1, end=-1),
+            code_block_parser.CodeBlock(start=-1, end=-1),
         ]
         assert parser.in_multiline
