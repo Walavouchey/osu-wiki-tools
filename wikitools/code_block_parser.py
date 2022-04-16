@@ -2,11 +2,6 @@ import typing
 import re
 
 
-class CodeTag(typing.NamedTuple):
-    start: int
-    len: int
-
-
 class CodeBlock(typing.NamedTuple):
     """
     A Markdown code block (monospace font + gray backround). Could be one of the following:
