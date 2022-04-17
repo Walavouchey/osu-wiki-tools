@@ -8,7 +8,8 @@ from wikitools import redirect_parser, reference_parser, errors, link_parser, ar
 def check_link(
     article: article_parser.Article, link: link_parser.Link,
     redirects: redirect_parser.Redirects, references: reference_parser.References,
-    all_articles: typing.Dict[str, article_parser.Article]
+    all_articles: typing.Dict[str, article_parser.Article],
+    check_outdated: bool = True,
 ) -> typing.Optional[errors.LinkError]:
     """
     Verify that the link is valid:
@@ -68,6 +69,10 @@ def check_link(
         # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
         all_articles[raw_path] = article_parser.parse(target_file)
     target_article = all_articles[raw_path]
+
+    if target_article.front_matter.get("outdated", False) and not check_outdated:
+        return None
+
     if parsed_location.fragment not in target_article.identifiers:
         return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, is_translation_available)
 
@@ -76,7 +81,8 @@ def check_link(
 
 def check_article(
     article: article_parser.Article, redirects: redirect_parser.Redirects,
-    all_articles: typing.Dict[str, article_parser.Article]
+    all_articles: typing.Dict[str, article_parser.Article],
+    check_outdated: bool = True
 ) -> typing.Dict[int, typing.List[errors.LinkError]]:
     """
     Try resolving links in the article to other articles or files.
@@ -86,7 +92,10 @@ def check_article(
     for lineno, line in article.lines.items():
         local_errors = [
             errors for errors in (
-                check_link(article, link, redirects, article.references, all_articles)
+                check_link(
+                    article, link, redirects, article.references, all_articles,
+                    check_outdated=check_outdated,
+                )
                 for link in line.links
             )
             if errors

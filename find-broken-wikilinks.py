@@ -49,6 +49,7 @@ def parse_args(args):
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
+    parser.add_argument("--outdated", action='store_true', help="check links to/in outdated articles")
     return parser.parse_args(args)
 
 
@@ -78,7 +79,7 @@ def main():
     redirects = redirect_parser.load_redirects("wiki/redirect.yaml")
     exit_code = 0
 
-    articles = {}
+    articles: typing.Dict[str, article_parser.Article] = {}
     for filename in filenames:
         if any((
             not filename.endswith(".md"),
@@ -97,10 +98,13 @@ def main():
     file_count = 0
 
     for _, a in sorted(articles.items()):
+        if a.front_matter.get("outdated", False) and not args.outdated:
+            continue
+
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
-        errors = link_checker.check_article(a, redirects, articles)
+        errors = link_checker.check_article(a, redirects, articles, check_outdated=args.outdated)
         if not errors:
             continue
 
