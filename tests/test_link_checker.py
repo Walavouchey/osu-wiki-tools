@@ -6,7 +6,9 @@ from wikitools import article_parser, link_checker, link_parser, redirect_parser
 
 
 def dummy_article(path):
-    return article_parser.Article(pathlib.Path(path), lines=[], references=[], identifiers=set())
+    return article_parser.Article(
+        pathlib.Path(path), lines=[], references=[], identifiers=set(), front_matter={}
+    )
 
 
 class TestArticleLinks:

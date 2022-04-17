@@ -13,6 +13,13 @@ class TestArticleParser:
             (
                 'Article/en.md',
                 textwrap.dedent('''
+                    ---
+                    stub: true
+                    tags:
+                      - k1
+                      - m1
+                    ---
+
                     # An article
 
                     Links! [Links](https://example.com)!
@@ -37,18 +44,20 @@ class TestArticleParser:
         assert article.identifiers == {'list-of-references'}
         assert article.references == {
             'links_ref': reference_parser.Reference(
-                lineno=9, name='links_ref', raw_location='https://example.com',
+                lineno=16, name='links_ref', raw_location='https://example.com',
                 parsed_location=parse.urlparse('https://example.com'), title=''
             ),
             'vier_ref': reference_parser.Reference(
-                lineno=13, name='vier_ref', raw_location='/wiki/Article_three',
+                lineno=20, name='vier_ref', raw_location='/wiki/Article_three',
                 parsed_location=parse.urlparse('/wiki/Article_three'), title='Links!'
             )
         }
+        assert article.front_matter["stub"] is True
+        assert article.front_matter["tags"] == ["k1", "m1"]
 
-        assert set(article.lines.keys()) == {3, 5, 7}
+        assert set(article.lines.keys()) == {10, 12, 14}
         # lines are stored as-is, with trailing line breaks
-        assert article.lines[3].raw_line == 'Links! [Links](https://example.com)!\n'
+        assert article.lines[10].raw_line == 'Links! [Links](https://example.com)!\n'
 
     def test__read_article__with_comments(self, root):
         conftest.create_files(
@@ -80,6 +89,7 @@ class TestArticleParser:
 
         article = article_parser.parse('wiki/Article/en.md')
         assert len(article.references) == 0  # commented references are also skipped
+        assert not article.front_matter
 
         links = sum((line.links for line in article.lines.values()), start=[])
         locations = set(_.raw_location for _ in links)
@@ -185,3 +195,48 @@ class TestArticleParser:
 
         assert len(article.lines[11].links) == 1
         assert article.lines[11].links[0].raw_location == "/wiki/Fun_stuff"
+
+
+class TestFrontMatter:
+    def test__read_write(self, root):
+        article_path = root.join("en.md")
+        article_path.write_text(textwrap.dedent('''
+            ---
+            outdated: true
+            tags:
+              - a
+              - aaa
+              - юниcode
+            ---
+
+            # Test
+
+            Lorem (ipsum).
+        '''), encoding='utf-8')
+
+        with article_path.open("r") as fd:
+            fm = article_parser.load_front_matter(fd)
+
+        assert fm == {
+            'outdated': True,
+            'tags': ['a', 'aaa', 'юниcode'],
+        }
+
+        fm['outdated_since'] = '0000b4dc0ffee000'
+        article_parser.save_front_matter(str(article_path), fm)
+
+        new_contents = article_path.read_text(encoding='utf-8')
+        assert new_contents == textwrap.dedent('''
+            ---
+            outdated: true
+            tags:
+              - a
+              - aaa
+              - юниcode
+            outdated_since: 0000b4dc0ffee000
+            ---
+
+            # Test
+            
+            Lorem (ipsum).
+        ''').lstrip()

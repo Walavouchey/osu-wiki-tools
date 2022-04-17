@@ -1,13 +1,14 @@
 import os
 import sys
 
+import py
 import pytest
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
 @pytest.fixture(scope='function')
-def root(tmpdir):
+def root(tmpdir: py.path.local):
     root = tmpdir.join('wiki')
     root.mkdir()
 
@@ -19,7 +20,7 @@ def root(tmpdir):
     os.chdir(curdir)
 
 
-def create_files(root, *articles):
+def create_files(root: py.path.local, *articles):
     for path, contents in articles:
         article_folder = root.join(os.path.dirname(path))
         article_folder.ensure(dir=1)
