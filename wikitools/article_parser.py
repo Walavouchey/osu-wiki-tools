@@ -89,13 +89,12 @@ def save_front_matter(filepath: str, fm: collections.OrderedDict):
         ))
         new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
 
-        write_ok = False
         with open(filepath, "r") as old_file:
             for line in old_file:
                 if line.startswith(TITLE_INDICATOR):
-                    write_ok = True
-                if write_ok:
                     new_file.write(line)
+                    new_file.write(old_file.read())
+                    break
 
     shutil.move(new_path, filepath)
 
