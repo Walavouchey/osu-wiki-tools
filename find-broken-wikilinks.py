@@ -49,7 +49,7 @@ def parse_args(args):
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
-    parser.add_argument("--outdated", action='store_true', help="check links to/in outdated articles")
+    parser.add_argument("--outdated", action='store_true', help="check links in outdated articles")
     return parser.parse_args(args)
 
 

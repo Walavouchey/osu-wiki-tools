@@ -77,7 +77,7 @@ def check_link(
 
 def check_article(
     article: article_parser.Article, redirects: redirect_parser.Redirects,
-    all_articles: typing.Dict[str, article_parser.Article],
+    all_articles: typing.Dict[str, article_parser.Article]
 ) -> typing.Dict[int, typing.List[errors.LinkError]]:
     """
     Try resolving links in the article to other articles or files.
