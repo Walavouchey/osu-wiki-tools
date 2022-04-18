@@ -64,7 +64,7 @@ def file_iterator(roots: list):
             yield item
 
 
-def _identifier_suggestions(e, articles):
+def identifier_suggestions(e, articles):
     return '\n\t'.join((
         'line {}: {}'.format(lineno, identifier)
         for identifier, lineno in sorted(
@@ -130,7 +130,7 @@ def main():
                 print(e.pretty())
                 if isinstance(e, error_types.MissingIdentifierError):
                     print(
-                        '{}\n\t{}'.format(console.blue('Suggestions:'), _identifier_suggestions(e, articles))
+                        '{}\n\t{}'.format(console.blue('Suggestions:'), identifier_suggestions(e, articles))
                     )
 
             print()
