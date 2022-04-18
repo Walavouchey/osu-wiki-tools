@@ -68,6 +68,7 @@ def check_link(
         # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
         all_articles[raw_path] = article_parser.parse(target_file)
     target_article = all_articles[raw_path]
+
     if parsed_location.fragment not in target_article.identifiers:
         return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, is_translation_available)
 

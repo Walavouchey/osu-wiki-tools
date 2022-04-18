@@ -1,8 +1,22 @@
 import collections
+import io
 import pathlib
+import shutil
 import typing
 
+import yaml
+
 from wikitools import code_block_parser, link_parser, comment_parser, identifier_parser, reference_parser
+
+FRONT_MATTER_DELIMITER = '---'
+TITLE_INDICATOR = '# '
+
+
+# Workaround to make yaml.Dumper write lists with leading indentation
+# (taken from https://github.com/yaml/pyyaml/issues/234#issuecomment-765894586)
+class Dumper(yaml.Dumper):
+    def increase_indent(self, flow=False, *args, **kwargs):
+        return super().increase_indent(flow=flow, indentless=False)
 
 
 class ArticleLine(typing.NamedTuple):
@@ -23,22 +37,66 @@ class Article:
     lines: typing.Dict[int, ArticleLine]
     references: reference_parser.References
     identifiers: set
+    front_matter: collections.OrderedDict
 
     def __init__(
         self, path: pathlib.Path,
         lines: typing.Dict[int, ArticleLine],
         references: reference_parser.References,
         identifiers: set,
+        front_matter: collections.OrderedDict,
     ):
         self.filename = path.name
         self.directory = str(path.parent.as_posix())
         self.lines = lines
         self.references = references
         self.identifiers = identifiers
+        self.front_matter = front_matter
 
     @property
     def path(self) -> str:
         return '/'.join((self.directory, self.filename))
+
+
+def load_front_matter(fileobj: typing.TextIO) -> collections.OrderedDict:
+    delimiters = 0
+    buffer = io.StringIO()
+
+    offset = fileobj.tell()
+    for line in fileobj:
+        if line.split('#')[0].strip() == FRONT_MATTER_DELIMITER:
+            delimiters += 1
+        # Stop on second delimiter, or when it's clear there won't be front matter at all
+        if delimiters == 2 or line.startswith(TITLE_INDICATOR):
+            break
+        buffer.write(line)
+    fileobj.seek(offset)
+
+    if delimiters == 2:
+        return yaml.safe_load(buffer.getvalue())
+    return collections.OrderedDict()
+
+
+def save_front_matter(filepath: str, fm: collections.OrderedDict):
+    if not fm:
+        return
+
+    new_path = filepath + '.new'
+    with open(new_path, 'w', encoding='utf-8') as new_file:
+        new_file.write(FRONT_MATTER_DELIMITER + '\n')
+        new_file.write(yaml.dump(
+            fm, Dumper=Dumper, default_flow_style=False, indent=2, sort_keys=False, allow_unicode=True,
+        ))
+        new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
+
+        with open(filepath, "r", encoding='utf-8') as old_file:
+            for line in old_file:
+                if line.startswith(TITLE_INDICATOR):
+                    new_file.write(line)
+                    new_file.write(old_file.read())
+                    break
+
+    shutil.move(new_path, filepath)
 
 
 def parse(path: typing.Union[str, pathlib.Path]) -> Article:
@@ -58,6 +116,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
     comment_reader = comment_parser.CommentParser()
     code_block_reader = code_block_parser.CodeBlockParser()
     with path.open('r', encoding='utf-8') as fd:
+        front_matter = load_front_matter(fd)
         for lineno, line in enumerate(fd, start=1):
             comments = comment_reader.parse(line)
             code_blocks = code_block_reader.parse(line)
@@ -90,4 +149,4 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
                 if reference is not None:
                     references[reference.name] = reference
 
-    return Article(path, saved_lines, references, identifiers)
+    return Article(path, saved_lines, references, identifiers, front_matter)
