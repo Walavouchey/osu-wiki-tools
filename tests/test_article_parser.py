@@ -41,7 +41,7 @@ class TestArticleParser:
 
         assert article.directory == 'wiki/Article'
         assert article.filename == 'en.md'
-        assert article.identifiers == {'list-of-references'}
+        assert article.identifiers == {'list-of-references': 11}
         assert article.references == {
             'links_ref': reference_parser.Reference(
                 lineno=16, name='links_ref', raw_location='https://example.com',
@@ -120,12 +120,12 @@ class TestArticleParser:
 
         article = article_parser.parse('wiki/Ranking_criteria/en.md')
         assert article.identifiers == {
-            'section',
-            'section.1',
-            'something-else',
-            'random',
-            'random.1',
-            'section.2',
+            'section': 3,
+            'section.1': 5,
+            'something-else': 7,
+            'random': 9,
+            'random.1': 11,
+            'section.2': 13,
         }
 
     def test__ignore_comments(self, root):

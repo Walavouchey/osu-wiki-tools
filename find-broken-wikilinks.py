@@ -64,6 +64,15 @@ def file_iterator(roots: list):
             yield item
 
 
+def _identifier_suggestions(e, articles):
+    return '\n\t'.join((
+        'line {}: {}'.format(lineno, identifier)
+        for identifier, lineno in sorted(
+            articles[e.path].identifiers.items(), key=lambda tuple_: tuple_[1]
+        )
+    ))
+
+
 def main():
     args = parse_args(sys.argv[1:])
     if not args.target and not args.all:
@@ -119,6 +128,10 @@ def main():
                 print(e.pretty_location(a.path, lineno))
             for e in errors_on_line:
                 print(e.pretty())
+                if isinstance(e, error_types.MissingIdentifierError):
+                    print(
+                        '{}\n\t{}'.format(console.blue('Suggestions:'), _identifier_suggestions(e, articles))
+                    )
 
             print()
             if args.separate:
