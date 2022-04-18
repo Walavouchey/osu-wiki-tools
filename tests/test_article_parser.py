@@ -41,7 +41,7 @@ class TestArticleParser:
 
         assert article.directory == 'wiki/Article'
         assert article.filename == 'en.md'
-        assert article.identifiers == {'list-of-references': 11}
+        assert article.identifiers == {'list-of-references': 18}
         assert article.references == {
             'links_ref': reference_parser.Reference(
                 lineno=16, name='links_ref', raw_location='https://example.com',
