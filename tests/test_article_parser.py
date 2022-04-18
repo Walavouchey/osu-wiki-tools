@@ -214,7 +214,7 @@ class TestFrontMatter:
             Lorem (ipsum).
         '''), encoding='utf-8')
 
-        with article_path.open("r") as fd:
+        with article_path.open("r", encoding='utf-8') as fd:
             fm = article_parser.load_front_matter(fd)
 
         assert fm == {

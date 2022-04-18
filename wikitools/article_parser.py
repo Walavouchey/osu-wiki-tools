@@ -82,14 +82,14 @@ def save_front_matter(filepath: str, fm: collections.OrderedDict):
         return
 
     new_path = filepath + '.new'
-    with open(new_path, 'w') as new_file:
+    with open(new_path, 'w', encoding='utf-8') as new_file:
         new_file.write(FRONT_MATTER_DELIMITER + '\n')
         new_file.write(yaml.dump(
             fm, Dumper=Dumper, default_flow_style=False, indent=2, sort_keys=False, allow_unicode=True,
         ))
         new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
 
-        with open(filepath, "r") as old_file:
+        with open(filepath, "r", encoding='utf-8') as old_file:
             for line in old_file:
                 if line.startswith(TITLE_INDICATOR):
                     new_file.write(line)
