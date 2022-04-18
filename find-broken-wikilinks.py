@@ -104,7 +104,7 @@ def main():
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
-        errors = link_checker.check_article(a, redirects, articles, check_outdated=args.outdated)
+        errors = link_checker.check_article(a, redirects, articles)
         if not errors:
             continue
 
