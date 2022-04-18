@@ -36,15 +36,15 @@ class Article:
     filename: str
     lines: typing.Dict[int, ArticleLine]
     references: reference_parser.References
-    identifiers: set
+    identifiers: typing.Dict[str, int]
     front_matter: collections.OrderedDict
 
     def __init__(
         self, path: pathlib.Path,
         lines: typing.Dict[int, ArticleLine],
         references: reference_parser.References,
-        identifiers: set,
-        front_matter: collections.OrderedDict,
+        identifiers: typing.Dict[str, int],
+        front_matter: collections.OrderedDict
     ):
         self.filename = path.name
         self.directory = str(path.parent.as_posix())
@@ -111,7 +111,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
     saved_lines = {}
     references = {}
     cnt: typing.Counter[str] = collections.Counter()
-    identifiers = set()
+    identifiers: typing.Dict[str, int] = {}
 
     comment_reader = comment_parser.CommentParser()
     code_block_reader = code_block_parser.CodeBlockParser()
@@ -142,7 +142,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
                 cnt[identifier] += 1
                 if identifier in identifiers:
                     identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
-                identifiers.add(identifier)
+                identifiers[identifier] = lineno
 
             if line.startswith('['):
                 reference = reference_parser.extract(line.strip(), lineno=lineno)

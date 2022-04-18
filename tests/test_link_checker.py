@@ -281,7 +281,7 @@ class TestSectionLinks:
             )
         )
         new_article = article_parser.parse('wiki/New_article/en.md')
-        assert new_article.identifiers == {'some-real-heading'}
+        assert new_article.identifiers == {'some-real-heading': 3}
         all_articles = {new_article.path: new_article}
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-real-heading).')
