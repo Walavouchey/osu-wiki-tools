@@ -137,12 +137,15 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
             if links_on_line:
                 saved_lines[lineno] = ArticleLine(raw_line=line, links=links_on_line)
 
-            identifier = identifier_parser.extract_identifier(line, links_on_line)
-            if identifier is not None:
-                cnt[identifier] += 1
-                if identifier in identifiers:
-                    identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
-                identifiers[identifier] = lineno
+            identifier, pos = identifier_parser.extract_identifier(line, links_on_line)
+            # if a comment contains identifiers, this assumes such a comment at least
+            # doesn't appear before an actual identifier. this is a rare occurrence anyway
+            if identifier is not None and not comment_parser.is_in_comment(pos, comments):
+                    cnt[identifier] += 1
+                    # duplicate identifiers get a suffix
+                    if identifier in identifiers:
+                        identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
+                    identifiers[identifier] = lineno
 
             if line.startswith('['):
                 reference = reference_parser.extract(line.strip(), lineno=lineno)

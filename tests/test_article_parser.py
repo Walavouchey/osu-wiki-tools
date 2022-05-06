@@ -82,7 +82,10 @@ class TestArticleParser:
                     In my [test](/wiki/Not_a_test)?
 
                     [blue_ref]: /wiki/Blue
+                    A wild {id=identifier}
                     -->
+
+                    <!-- Another wild {#identifier} -->
                 ''').strip()
             )
         )
@@ -94,6 +97,7 @@ class TestArticleParser:
         links = sum((line.links for line in article.lines.values()), start=[])
         locations = set(_.raw_location for _ in links)
         assert locations == {'/wiki/Red', 'img/violet.png', 'blue_ref'}
+        assert article.identifiers == {}
 
     def test__repeating_headings(self, root):
         conftest.create_files(
@@ -110,6 +114,8 @@ class TestArticleParser:
                     ## Something else
 
                     ## Random
+                    
+                    <!-- A {#random} comment -->
 
                     ## Tricky section {#random}
 
@@ -124,8 +130,8 @@ class TestArticleParser:
             'section.1': 5,
             'something-else': 7,
             'random': 9,
-            'random.1': 11,
-            'section.2': 13,
+            'random.1': 13,
+            'section.2': 15,
         }
 
     def test__ignore_comments(self, root):

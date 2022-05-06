@@ -9,7 +9,7 @@ class TestIdentifierParser:
             ('### Game modifiers', 'game-modifiers'),
             ('#### Game modifiers', 'game-modifiers'),
         ):
-            assert identifier_parser.extract_identifier(heading) == identifier
+            assert identifier_parser.extract_identifier(heading) == (identifier, 0)
 
     # this uses real-life examples
     def test__punctuation(self):
@@ -25,7 +25,7 @@ class TestIdentifierParser:
                 'what-is-"restricted"-mode,-exactly?'
             ),
         ):
-            assert identifier_parser.extract_identifier(heading) == identifier
+            assert identifier_parser.extract_identifier(heading) == (identifier, 0)
 
     def test__figure(self):
         for heading, identifier in (
@@ -33,7 +33,7 @@ class TestIdentifierParser:
             ('### Mani ![osu!mania icon](/wiki/shared/mode/mania.png) Mari', 'mani-mari'),
             ('### osu! ![][osu!]', 'osu!'),
         ):
-            assert identifier_parser.extract_identifier(heading) == identifier
+            assert identifier_parser.extract_identifier(heading) == (identifier, 0)
 
     def test__link(self):
         for heading, identifier in (
@@ -42,18 +42,18 @@ class TestIdentifierParser:
             ('## A [b](/wiki/B) c d!', 'a-b-c-d!'),
             ('## A [wild](/wiki/B) l[ink](/wiki/Ink) appears ![abc](/img/abc.png)', 'a-wild-link-appears'),
         ):
-            assert identifier_parser.extract_identifier(heading) == identifier
+            assert identifier_parser.extract_identifier(heading) == (identifier, 0)
 
     def test__custom(self):
-        for line, identifier in (
-            ('osu! is a free-to-win game.', None),
-            ('## How to play better {#get-good}', 'get-good'),
-            ('## osu.ppy.sh {id=website}', 'website'),
-            ('A regular line, but with an anchor. {id=tag}', 'tag'),
-            ('{id=only-identifier-here}', 'only-identifier-here'),
-            ('Now this is a story all about how my life got flipped. {#turned-upside-down}', 'turned-upside-down'),
+        for line, identifier, pos in (
+            ('osu! is a free-to-win game.', None, 0),
+            ('## How to play better {#get-good}', 'get-good', 24),
+            ('## osu.ppy.sh {id=website}', 'website', 18),
+            ('A regular line, but with an anchor. {id=tag}', 'tag', 40),
+            ('{id=only-identifier-here}', 'only-identifier-here', 4),
+            ('Now this is a story all about how my life got flipped. {#turned-upside-down}', 'turned-upside-down', 57),
         ):
-            assert identifier_parser.extract_identifier(line) == identifier
+            assert identifier_parser.extract_identifier(line) == (identifier, pos)
 
     def test__unicode(self):
         for heading, identifier in (
@@ -61,4 +61,4 @@ class TestIdentifierParser:
             ('### 当我违反规定时会发生什么？', '当我违反规定时会发生什么？'),
             ('### Écran des résultats', 'écran-des-résultats'),
         ):
-            assert identifier_parser.extract_identifier(heading) == identifier
+            assert identifier_parser.extract_identifier(heading) == (identifier, 0)
