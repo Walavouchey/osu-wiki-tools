@@ -76,7 +76,7 @@ def identifier_suggestions(e, articles):
 def main():
     args = parse_args(sys.argv[1:])
     if not args.target and not args.all:
-        print("Notice: No articles to check.")
+        print(f"{console.grey('Notice:')} No articles to check.")
         sys.exit(0)
 
     filenames = []
