@@ -94,7 +94,6 @@ def main():
             not filename.endswith(".md"),
             "TEMPLATE" in filename,
             "README" in filename,
-            "Article_styling_criteria" in filename,
         )):
             continue
 
