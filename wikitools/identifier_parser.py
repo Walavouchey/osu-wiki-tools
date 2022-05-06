@@ -4,6 +4,22 @@ from wikitools import link_parser
 
 ID_PREFIXES = {'#', 'id='}
 
+ESCAPEABLE_CHARS = { '\\', '(' , ')', '[', ']', '{', '}', '<', '>', '#', '*', '~', '`', '_', '-', '+', '|', '\'', '"', '@', '$', ';', ':', ',', '.' }
+
+# backslashes are sometimes used (perhaps unnecessarily) to avoid remark errors
+def unescape(s: str) -> str:
+    unescaped = ""
+    i = 0
+    while i < len(s):
+        if s[i] == '\\' and i < len(s) - 1 and s[i + 1] in ESCAPEABLE_CHARS:
+            unescaped += s[i + 1]
+            i += 2
+        else:
+            unescaped += s[i]
+            i += 1
+
+    return unescaped
+
 
 def extract_identifier(
     s: str, links_on_line: typing.Optional[typing.List[link_parser.Link]] = None
@@ -60,4 +76,4 @@ def extract_identifier(
             if k == len(links_on_line) - 1:
                 heading += s[start:]
 
-    return ("-".join((word.lower() for word in heading.strip().split())), 0)
+    return ("-".join(word.lower() for word in unescape(heading).strip().split()), 0)

@@ -23,6 +23,37 @@ class TestIdentifierParser:
             ), (
                 '## What is "restricted" mode, exactly?',
                 'what-is-"restricted"-mode,-exactly?'
+            ), (
+                '### Can someone make this skin from that show/game?',
+                'can-someone-make-this-skin-from-that-show/game?'
+            ),
+        ):
+            assert identifier_parser.extract_identifier(heading) == (identifier, 0)
+
+    # this uses real-life examples
+    def test__escape_sequences(self):
+        for heading, identifier in (
+            (
+                r"## \[Colours\]",
+                "[colours]"
+            ), (
+                r"## Step \#1",
+                "step-#1"
+            ), (
+                r"#### Чи я можу грати на тому ком\'ютері, який osu! користувач раніше використовував?",
+                "чи-я-можу-грати-на-тому-ком'ютері,-який-osu!-користувач-раніше-використовував?"
+            ), ( # except these ones
+                r"#### A \ B",
+                r"a-\-b"
+            ), (
+                r"#### A \\ B",
+                r"a-\-b"
+            ), (
+                r"#### A \\\ B",
+                r"a-\\-b"
+            ), (
+                r"#### A \\\\ B",
+                r"a-\\-b"
             ),
         ):
             assert identifier_parser.extract_identifier(heading) == (identifier, 0)
