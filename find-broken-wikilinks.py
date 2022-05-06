@@ -129,9 +129,9 @@ def main():
             for e in errors_on_line:
                 print(e.pretty())
                 if isinstance(e, error_types.MissingIdentifierError):
-                    print(
-                        '{}\n\t{}'.format(console.blue('Suggestions:'), identifier_suggestions(e, articles))
-                    )
+                    suggestions = identifier_suggestions(e, articles)
+                    if suggestions:
+                        print('{}\n\t{}'.format(console.blue('Suggestions:'), suggestions))
 
             print()
             if args.separate:
