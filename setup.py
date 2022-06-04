@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fd:
 
 setuptools.setup(
     name="osu-wiki-tools",
-    version="0.0.1",
+    version="0.0.2",
     author="Walavouchey",
     author_email="wala@yui.tv",
     description="Various tools for osu! wiki contributors",
@@ -23,9 +23,11 @@ setuptools.setup(
     ],
     test_suite="tests",
     packages=setuptools.find_packages(),
-    scripts=[
-        "find-broken-wikilinks.py",
-        "outdate-translations.py",
-    ],
+    entry_points={
+        "console_scripts": [
+            "find-broken-wikilinks=wikitools_cli.find_broken_wikilinks:main",
+            "outdate-translations=wikitools_cli.outdate_translations:main",
+        ],
+    },
     python_requires=">=3.10",
 )
