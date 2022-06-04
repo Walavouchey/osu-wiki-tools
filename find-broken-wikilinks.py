@@ -106,7 +106,7 @@ def main():
     file_count = 0
 
     for _, a in sorted(articles.items()):
-        if a.front_matter.get("outdated", False) and not args.outdated:
+        if a.front_matter.get("outdated", False) and a.front_matter.get("outdated_translation", False) and not args.outdated:
             continue
 
         link_count += sum(len(_.links) for _ in a.lines.values())
