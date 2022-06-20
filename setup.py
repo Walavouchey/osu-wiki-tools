@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fd:
 
 setuptools.setup(
     name="osu-wiki-tools",
-    version="0.0.2",
+    version="0.0.3",
     author="Walavouchey",
     author_email="wala@yui.tv",
     description="Various tools for osu! wiki contributors",
