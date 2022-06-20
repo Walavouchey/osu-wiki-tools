@@ -155,12 +155,18 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
 
         if state == State.START:
             if brackets.closed(c):
-                # the end of a bracket. the link may continue
-                # to be inline- or reference-style
                 if len(s) <= i + 1:
+                    # end of the line
                     state = State.IDLE
                     continue
 
+                if s[start + 1] == '^':
+                    # found a footnote -> ignore
+                    state = State.IDLE
+                    continue
+
+                # the end of a bracket. the link may continue
+                # to be inline- or reference-style
                 if s[i + 1] == '(':
                     state = State.INLINE
                     location = i + 2
