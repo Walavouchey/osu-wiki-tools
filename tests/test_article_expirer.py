@@ -13,7 +13,8 @@ def stage_all_and_commit(commit_message):
     git_utils.git("commit", "-m", commit_message)
 
 
-def set_dummy_commit_author():
+def set_up_dummy_repo():
+    git_utils.git("init")
     git_utils.git("config", "user.name", "John Smith")
     git_utils.git("config", "user.email", "john.smith@example.com")
 
@@ -35,8 +36,7 @@ class TestArticleExpirer:
         assert list(expirer.list_translations(["wiki/Article"])) == article_paths_with_root[1:4]
 
     def test__list_modified_translations(self, root):
-        git_utils.git("init")
-        set_dummy_commit_author()
+        set_up_dummy_repo()
         article_paths = [
             'Article/en.md',
             'Article/fr.md',
@@ -79,8 +79,7 @@ class TestArticleExpirer:
         assert modified_translations == set(filter(lambda x : "fr.md" in x, article_paths_with_root))
 
     def test__list_modified_originals(self, root):
-        git_utils.git("init")
-        set_dummy_commit_author()
+        set_up_dummy_repo()
         article_paths = [
             'Article/en.md',
             'Article2/en.md',
@@ -108,8 +107,7 @@ class TestArticleExpirer:
         assert modified_originals == article_paths_with_root[0:2]
 
     def test__validate_hashes(self, root):
-        git_utils.git("init")
-        set_dummy_commit_author()
+        set_up_dummy_repo()
         article_paths = [
             'Article/en.md',
             'Article/fr.md',
