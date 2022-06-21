@@ -5,7 +5,7 @@ import conftest
 
 from wikitools import article_parser, git_utils
 
-from wikitools_cli import check_expired_articles as expirer
+from wikitools_cli import check_outdated_articles as outdater
 
 
 def stage_all_and_commit(commit_message):
@@ -19,7 +19,7 @@ def set_up_dummy_repo():
     git_utils.git("config", "user.email", "john.smith@example.com")
 
 
-class TestArticleExpirer:
+class TestArticleOutdater:
     def test__list_all_translations(self, root):
         article_paths = [
             'Article/en.md',
@@ -33,7 +33,7 @@ class TestArticleExpirer:
 
         conftest.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert collections.Counter(expirer.list_translations(["wiki/Article"])) == collections.Counter(article_paths_with_root[1:4])
+        assert collections.Counter(outdater.list_all_translations(["wiki/Article"])) == collections.Counter(article_paths_with_root[1:4])
 
     def test__list_modified_translations(self, root):
         set_up_dummy_repo()
@@ -65,7 +65,7 @@ class TestArticleExpirer:
         # note that at least two existing commits are necessary to get a diff using `revision^`
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
-        modified_translations = expirer.list_modified_translations(commit_hash)
+        modified_translations = outdater.list_modified_translations(commit_hash)
         assert collections.Counter(modified_translations) == collections.Counter(filter(lambda x : "en.md" not in x, article_paths_with_root))
 
         conftest.create_files(root,
@@ -75,7 +75,7 @@ class TestArticleExpirer:
         stage_all_and_commit("add article content")
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
-        modified_translations = expirer.list_modified_translations(commit_hash)
+        modified_translations = outdater.list_modified_translations(commit_hash)
         assert collections.Counter(modified_translations) == collections.Counter(filter(lambda x : "fr.md" in x, article_paths_with_root))
 
     def test__list_modified_originals(self, root):
@@ -103,11 +103,11 @@ class TestArticleExpirer:
         stage_all_and_commit("add article content")
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
-        modified_originals = expirer.list_modified_originals(commit_hash)
+        modified_originals = outdater.list_modified_originals(commit_hash)
         assert collections.Counter(modified_originals) == collections.Counter(article_paths_with_root[0:2])
 
 
-    def test__list_expired_translations(self, root):
+    def test__list_outdated_translations(self, root):
         set_up_dummy_repo()
         article_paths = [
             'Article/en.md',
@@ -130,15 +130,15 @@ class TestArticleExpirer:
         ]))
         stage_all_and_commit("add english article content")
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
-        translations_to_expire = list(expirer.list_expired_translations(
+        translations_to_outdate = list(outdater.list_outdated_translations(
             filter(lambda x : "en.md" not in x, article_paths_with_root),
             ()
         ))
 
-        assert collections.Counter(translations_to_expire) == collections.Counter(filter(lambda x : "en.md" not in x, article_paths_with_root))
+        assert collections.Counter(translations_to_outdate) == collections.Counter(filter(lambda x : "en.md" not in x, article_paths_with_root))
 
 
-    def test__expire_translations(self, root):
+    def test__outdate_translations(self, root):
         set_up_dummy_repo()
         article_paths = [
             'Article2/en.md',
@@ -162,21 +162,21 @@ class TestArticleExpirer:
         stage_all_and_commit("add english article content")
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
-        to_expire_zh_tw = list(filter(lambda x : "zh-tw.md" in x, article_paths_with_root))
-        expirer.expire_translations(*to_expire_zh_tw, expiration_hash=commit_hash)
-        expired_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
+        to_outdate_zh_tw = list(filter(lambda x : "zh-tw.md" in x, article_paths_with_root))
+        outdater.outdate_translations(*to_outdate_zh_tw, outdated_hash=commit_hash)
+        outdated_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
         stage_all_and_commit("outdate zh-tw")
 
-        assert collections.Counter(expired_translations) == collections.Counter(to_expire_zh_tw)
+        assert collections.Counter(outdated_translations) == collections.Counter(to_outdate_zh_tw)
 
-        to_expire_all = list(filter(lambda x : "en.md" not in x, article_paths_with_root))
-        expirer.expire_translations(*to_expire_all, expiration_hash=commit_hash)
-        expired_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
+        to_outdate_all = list(filter(lambda x : "en.md" not in x, article_paths_with_root))
+        outdater.outdate_translations(*to_outdate_all, outdated_hash=commit_hash)
+        outdated_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
         stage_all_and_commit("outdate the rest of the translations")
 
-        assert collections.Counter(expired_translations) == collections.Counter(to_expire_all) - collections.Counter(to_expire_zh_tw)
+        assert collections.Counter(outdated_translations) == collections.Counter(to_outdate_all) - collections.Counter(to_outdate_zh_tw)
 
-        for article in to_expire_all:
+        for article in to_outdate_all:
             with open(article, "r", encoding='utf-8') as fd:
                 content = fd.read()
             assert content == textwrap.dedent('''
@@ -186,7 +186,7 @@ class TestArticleExpirer:
                 ---
 
                 # Article
-            ''').strip().format(expirer.EXPIRED_TRANSLATION_TAG, expirer.EXPIRATION_HASH_TAG, commit_hash)
+            ''').strip().format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash)
 
 
     def test__validate_hashes(self, root):
@@ -206,13 +206,13 @@ class TestArticleExpirer:
         stage_all_and_commit("modify english article")
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
-        expirer.expire_translations(*article_paths_with_root[1:], expiration_hash=commit_hash)
+        outdater.outdate_translations(*article_paths_with_root[1:], outdated_hash=commit_hash)
         stage_all_and_commit("outdate translations")
 
         with open(article_paths_with_root[1], "r", encoding='utf-8') as fd:
             front_matter = article_parser.load_front_matter(fd)
-        front_matter[expirer.EXPIRATION_HASH_TAG] = "bogus-commit-hash"
+        front_matter[outdater.OUTDATED_HASH_TAG] = "bogus-commit-hash"
         article_parser.save_front_matter(article_paths_with_root[1], front_matter)
         stage_all_and_commit("corrupt hash")
 
-        assert collections.Counter(expirer.check_commit_hashes(article_paths_with_root[1:])) == collections.Counter(article_paths_with_root[1:2])
+        assert collections.Counter(outdater.check_commit_hashes(article_paths_with_root[1:])) == collections.Counter(article_paths_with_root[1:2])
