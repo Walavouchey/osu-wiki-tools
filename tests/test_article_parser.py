@@ -209,11 +209,11 @@ class TestFrontMatter:
         article_path = root.join("en.md")
         article_path.write_text(textwrap.dedent('''
             ---
-            outdated: true
             tags:
               - a
               - aaa
               - юниcode
+            outdated: true
             ---
 
             # Test
@@ -225,8 +225,8 @@ class TestFrontMatter:
             fm = article_parser.load_front_matter(fd)
 
         assert collections.OrderedDict(fm) == collections.OrderedDict({
-            'outdated': True,
             'tags': ['a', 'aaa', 'юниcode'],
+            'outdated': True,
         })
 
         fm['outdated_since'] = '0000b4dc0ffee000'
@@ -235,11 +235,11 @@ class TestFrontMatter:
         new_contents = article_path.read_text(encoding='utf-8')
         assert new_contents == textwrap.dedent('''
             ---
-            outdated: true
             tags:
               - a
               - aaa
               - юниcode
+            outdated: true
             outdated_since: 0000b4dc0ffee000
             ---
 
@@ -258,8 +258,8 @@ class TestFrontMatter:
 
         with open(article_path, "r", encoding='utf-8') as fd:
             front_matter = article_parser.load_front_matter(fd)
-        front_matter['outdated'] = True
         front_matter['tags'] = ['a', 'aaa', 'юниcode']
+        front_matter['outdated'] = True
         article_parser.save_front_matter(article_path, front_matter)
 
         with article_path.open("r", encoding='utf-8') as fd:
@@ -268,8 +268,8 @@ class TestFrontMatter:
             fm = article_parser.load_front_matter(fd)
 
         assert collections.OrderedDict(fm) == collections.OrderedDict({
-            'outdated': True,
             'tags': ['a', 'aaa', 'юниcode'],
+            'outdated': True,
         })
 
         fm['outdated_since'] = '0000b4dc0ffee000'
@@ -278,11 +278,11 @@ class TestFrontMatter:
         new_contents = article_path.read_text(encoding='utf-8')
         assert new_contents == textwrap.dedent('''
             ---
-            outdated: true
             tags:
               - a
               - aaa
               - юниcode
+            outdated: true
             outdated_since: 0000b4dc0ffee000
             ---
 
