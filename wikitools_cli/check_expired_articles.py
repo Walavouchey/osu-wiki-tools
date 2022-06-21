@@ -117,7 +117,7 @@ def expire_translations(*translations, expiration_hash=""):
     """
 
     for article_file in translations:
-        with open(article_file, "r") as fd:
+        with open(article_file, "r", encoding='utf-8') as fd:
             front_matter = article_parser.load_front_matter(fd)
         front_matter[EXPIRED_TRANSLATION_TAG] = True
         front_matter[EXPIRATION_HASH_TAG] = expiration_hash
