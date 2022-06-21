@@ -13,6 +13,11 @@ def stage_all_and_commit(commit_message):
     git_utils.git("commit", "-m", commit_message)
 
 
+def set_dummy_commit_author():
+    git_utils.git("config", "user.name", "John Smith")
+    git_utils.git("config", "user.email", "john.smith@example.com")
+
+
 class TestArticleExpirer:
     def test__list_all_translations(self, root):
         article_paths = [
@@ -31,6 +36,7 @@ class TestArticleExpirer:
 
     def test__list_modified_translations(self, root):
         git_utils.git("init")
+        set_dummy_commit_author()
         article_paths = [
             'Article/en.md',
             'Article/fr.md',
@@ -74,6 +80,7 @@ class TestArticleExpirer:
 
     def test__list_modified_originals(self, root):
         git_utils.git("init")
+        set_dummy_commit_author()
         article_paths = [
             'Article/en.md',
             'Article2/en.md',
@@ -102,6 +109,7 @@ class TestArticleExpirer:
 
     def test__validate_hashes(self, root):
         git_utils.git("init")
+        set_dummy_commit_author()
         article_paths = [
             'Article/en.md',
             'Article/fr.md',
