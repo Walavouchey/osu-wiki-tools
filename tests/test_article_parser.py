@@ -1,3 +1,4 @@
+import collections
 import textwrap
 from urllib import parse
 
@@ -204,7 +205,7 @@ class TestArticleParser:
 
 
 class TestFrontMatter:
-    def test__read_write(self, root):
+    def test__read_write_to_existing_front_matter(self, root):
         article_path = root.join("en.md")
         article_path.write_text(textwrap.dedent('''
             ---
@@ -223,10 +224,53 @@ class TestFrontMatter:
         with article_path.open("r", encoding='utf-8') as fd:
             fm = article_parser.load_front_matter(fd)
 
-        assert fm == {
+        assert collections.OrderedDict(fm) == collections.OrderedDict({
             'outdated': True,
             'tags': ['a', 'aaa', 'юниcode'],
-        }
+        })
+
+        fm['outdated_since'] = '0000b4dc0ffee000'
+        article_parser.save_front_matter(str(article_path), fm)
+
+        new_contents = article_path.read_text(encoding='utf-8')
+        assert new_contents == textwrap.dedent('''
+            ---
+            outdated: true
+            tags:
+              - a
+              - aaa
+              - юниcode
+            outdated_since: 0000b4dc0ffee000
+            ---
+
+            # Test
+
+            Lorem (ipsum).
+        ''').lstrip()
+
+    def test__read_write_to_no_existing_front_matter(self, root):
+        article_path = root.join("en.md")
+        article_path.write_text(textwrap.dedent('''
+            # Test
+
+            Lorem (ipsum).
+        '''), encoding='utf-8')
+
+        with open(article_path, "r", encoding='utf-8') as fd:
+            front_matter = article_parser.load_front_matter(fd)
+        front_matter['outdated'] = True
+        front_matter['tags'] = ['a', 'aaa', 'юниcode']
+        article_parser.save_front_matter(article_path, front_matter)
+
+        with article_path.open("r", encoding='utf-8') as fd:
+            print("Article contents:\n" + fd.read())
+            fd.seek(0)
+            fm = article_parser.load_front_matter(fd)
+
+        assert collections.OrderedDict(fm) == collections.OrderedDict({
+            'outdated': True,
+            'tags': ['a', 'aaa', 'юниcode'],
+        })
 
         fm['outdated_since'] = '0000b4dc0ffee000'
         article_parser.save_front_matter(str(article_path), fm)
