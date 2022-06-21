@@ -83,7 +83,7 @@ def list_translations(modified_articles_dirs):
             ):
                 continue
 
-            yield os.path.join(d, filename)
+            yield os.path.join(d, filename).replace("\\", "/")
 
 
 def list_expired_translations(all_translations, modified_translations):
@@ -95,7 +95,7 @@ def list_expired_translations(all_translations, modified_translations):
         if article_file in modified_translations:
             continue
 
-        with open(article_file, "r") as fd:
+        with open(article_file, "r", encoding='utf-8') as fd:
             front_matter = article_parser.load_front_matter(fd)
         if EXPIRATION_HASH_TAG in front_matter or front_matter.get(EXPIRED_TRANSLATION_TAG, False):
             continue
