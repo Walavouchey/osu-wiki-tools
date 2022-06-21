@@ -33,7 +33,7 @@ class TestArticleExpirer:
 
         conftest.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert list(expirer.list_translations(["wiki/Article"])) == article_paths_with_root[1:4]
+        assert collections.Counter(expirer.list_translations(["wiki/Article"])) == collections.Counter(article_paths_with_root[1:4])
 
     def test__list_modified_translations(self, root):
         set_up_dummy_repo()
@@ -66,7 +66,7 @@ class TestArticleExpirer:
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
         modified_translations = expirer.list_modified_translations(commit_hash)
-        assert modified_translations == set(filter(lambda x : "en.md" not in x, article_paths_with_root))
+        assert collections.Counter(modified_translations) == collections.Counter(filter(lambda x : "en.md" not in x, article_paths_with_root))
 
         conftest.create_files(root,
             *((path, '# Article\n\nCeci est un article en français.') for path in
@@ -76,7 +76,7 @@ class TestArticleExpirer:
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
         modified_translations = expirer.list_modified_translations(commit_hash)
-        assert modified_translations == set(filter(lambda x : "fr.md" in x, article_paths_with_root))
+        assert collections.Counter(modified_translations) == collections.Counter(filter(lambda x : "fr.md" in x, article_paths_with_root))
 
     def test__list_modified_originals(self, root):
         set_up_dummy_repo()
@@ -104,7 +104,8 @@ class TestArticleExpirer:
         commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
         modified_originals = expirer.list_modified_originals(commit_hash)
-        assert modified_originals == article_paths_with_root[0:2]
+        assert collections.Counter(modified_originals) == collections.Counter(article_paths_with_root[0:2])
+
 
     def test__validate_hashes(self, root):
         set_up_dummy_repo()
@@ -132,4 +133,4 @@ class TestArticleExpirer:
         article_parser.save_front_matter(article_paths_with_root[1], front_matter)
         stage_all_and_commit("corrupt hash")
 
-        assert list(expirer.check_commit_hashes(article_paths_with_root[1:])) == article_paths_with_root[1:2]
+        assert collections.Counter(expirer.check_commit_hashes(article_paths_with_root[1:])) == collections.Counter(article_paths_with_root[1:2])
