@@ -17,7 +17,7 @@ import os
 import subprocess as sp
 import sys
 
-from wikitools import article_parser, console
+from wikitools import article_parser, console, git_utils
 
 # A pull request string which disables the check (has no effect here, listed for informational purposes only)
 PULL_REQUEST_TAG = "SKIP_OUTDATED_CHECK"
@@ -65,29 +65,6 @@ def parse_args(args):
     parser.add_argument("-o", "--outdated-since", default="", help=f"commit hash for the {EXPIRATION_HASH_TAG} tag")
     parser.add_argument(f"--{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{EXPIRATION_HASH_TAG}: {{hash}}` to expired articles")
     return parser.parse_args(args)
-
-
-def git(*args, expected_code=0):
-    cmd = ["git"] + list(map(str, args))
-    proc = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE)
-    out, err = proc.communicate()
-    out = out.decode("utf-8") if out else ""
-    err = err.decode("utf-8") if err else ""
-    if proc.returncode != expected_code:
-        raise RuntimeError(
-            "{} failed:\n"
-            "- exit code: {}\n"
-            "- stdout: {!r}\n"
-            "- stderr: {!r}\n".format(
-                cmd, proc.returncode, out, err
-            )
-        )
-    return out
-
-
-def git_diff(*args, base_commit=""):
-    res = git("diff", "--diff-filter=d", "--name-only", f"{base_commit}^", *args)
-    return res.splitlines()
 
 
 def list_translations(modified_articles_dirs):
@@ -157,7 +134,7 @@ def check_commit_hashes(modified_translations):
             continue
 
         try:
-            git("show", expiration_hash, "--")
+            git_utils.git("show", expiration_hash, "--")
             good_hashes.add(expiration_hash)
         except RuntimeError:
             bad_hashes.add(expiration_hash)
@@ -168,14 +145,14 @@ def main():
     args = parse_args(sys.argv[1:])
     exit_code = 0
 
-    modified_translations = set(git_diff('wiki/**/*.md', ':(exclude)*/en.md', base_commit=args.base_commit))
+    modified_translations = set(git_utils.git_diff('wiki/**/*.md', ':(exclude)*/en.md', base_commit=args.base_commit))
     with_bad_hashes = list(check_commit_hashes(modified_translations))
     if with_bad_hashes:
         print_bad_hash_error(*with_bad_hashes, expiration_hash=args.outdated_since or args.base_commit)
         print()
         exit_code = 1
 
-    modified_originals = git_diff('wiki/**/en.md', base_commit=args.base_commit)
+    modified_originals = git_utils.git_diff('wiki/**/en.md', base_commit=args.base_commit)
     if modified_originals:
         all_translations = list_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
         translations_to_expire = list(list_expired_translations(all_translations, modified_translations))
