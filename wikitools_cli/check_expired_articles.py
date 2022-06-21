@@ -103,6 +103,14 @@ def list_expired_translations(all_translations, modified_translations):
         yield article_file
 
 
+def list_modified_translations(base_commit):
+    return set(git_utils.git_diff('wiki/**/*.md', ':(exclude)*/en.md', base_commit=base_commit))
+
+
+def list_modified_originals(base_commit):
+    return git_utils.git_diff('wiki/**/en.md', base_commit=base_commit)
+
+
 def expire_translations(*translations, expiration_hash=""):
     """
     Write expiration hash and marker to several translations at once.
@@ -145,14 +153,14 @@ def main():
     args = parse_args(sys.argv[1:])
     exit_code = 0
 
-    modified_translations = set(git_utils.git_diff('wiki/**/*.md', ':(exclude)*/en.md', base_commit=args.base_commit))
+    modified_translations = list_modified_translations(args.base_commit)
     with_bad_hashes = list(check_commit_hashes(modified_translations))
     if with_bad_hashes:
         print_bad_hash_error(*with_bad_hashes, expiration_hash=args.outdated_since or args.base_commit)
         print()
         exit_code = 1
 
-    modified_originals = git_utils.git_diff('wiki/**/en.md', base_commit=args.base_commit)
+    modified_originals = list_modified_originals(args.base_commit)
     if modified_originals:
         all_translations = list_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
         translations_to_expire = list(list_expired_translations(all_translations, modified_translations))
