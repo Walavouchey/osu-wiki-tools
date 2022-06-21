@@ -107,6 +107,88 @@ class TestArticleExpirer:
         assert collections.Counter(modified_originals) == collections.Counter(article_paths_with_root[0:2])
 
 
+    def test__list_expired_translations(self, root):
+        set_up_dummy_repo()
+        article_paths = [
+            'Article/en.md',
+            'Article2/en.md',
+            'Article/fr.md',
+            'Article2/fr.md',
+            'Article/pt-br.md',
+            'Article2/pt-br.md',
+            'Article/zh-tw.md',
+            'Article2/zh-tw.md',
+        ]
+        article_paths_with_root = ["wiki/" + path for path in article_paths]
+
+        conftest.create_files(root, *((path, '# Article') for path in article_paths))
+        stage_all_and_commit("add some articles")
+
+        conftest.create_files(root, *zip(article_paths[0:2], [
+            '# Article\n\nThis is an article in English.',
+            '# Article\n\nThis is another article in English.',
+        ]))
+        stage_all_and_commit("add english article content")
+        commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
+        translations_to_expire = list(expirer.list_expired_translations(
+            filter(lambda x : "en.md" not in x, article_paths_with_root),
+            ()
+        ))
+
+        assert collections.Counter(translations_to_expire) == collections.Counter(filter(lambda x : "en.md" not in x, article_paths_with_root))
+
+
+    def test__expire_translations(self, root):
+        set_up_dummy_repo()
+        article_paths = [
+            'Article2/en.md',
+            'Article/en.md',
+            'Article2/fr.md',
+            'Article/fr.md',
+            'Article2/pt-br.md',
+            'Article/pt-br.md',
+            'Article2/zh-tw.md',
+            'Article/zh-tw.md',
+        ]
+        article_paths_with_root = ["wiki/" + path for path in article_paths]
+
+        conftest.create_files(root, *((path, '# Article') for path in article_paths))
+        stage_all_and_commit("add some articles")
+
+        conftest.create_files(root, *zip(article_paths[0:2], [
+            '# Article\n\nThis is an article in English.',
+            '# Article\n\nThis is another article in English.',
+        ]))
+        stage_all_and_commit("add english article content")
+        commit_hash = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
+
+        to_expire_zh_tw = list(filter(lambda x : "zh-tw.md" in x, article_paths_with_root))
+        expirer.expire_translations(*to_expire_zh_tw, expiration_hash=commit_hash)
+        expired_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
+        stage_all_and_commit("outdate zh-tw")
+
+        assert collections.Counter(expired_translations) == collections.Counter(to_expire_zh_tw)
+
+        to_expire_all = list(filter(lambda x : "en.md" not in x, article_paths_with_root))
+        expirer.expire_translations(*to_expire_all, expiration_hash=commit_hash)
+        expired_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
+        stage_all_and_commit("outdate the rest of the translations")
+
+        assert collections.Counter(expired_translations) == collections.Counter(to_expire_all) - collections.Counter(to_expire_zh_tw)
+
+        for article in to_expire_all:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+            assert content == textwrap.dedent('''
+                ---
+                {}: true
+                {}: {}
+                ---
+
+                # Article
+            ''').strip().format(expirer.EXPIRED_TRANSLATION_TAG, expirer.EXPIRATION_HASH_TAG, commit_hash)
+
+
     def test__validate_hashes(self, root):
         set_up_dummy_repo()
         article_paths = [
