@@ -179,6 +179,7 @@ class TestArticleOutdater:
         for article in to_outdate_all:
             with open(article, "r", encoding='utf-8') as fd:
                 content = fd.read()
+
             assert content == textwrap.dedent('''
                 ---
                 {}: true
@@ -216,3 +217,81 @@ class TestArticleOutdater:
         stage_all_and_commit("corrupt hash")
 
         assert collections.Counter(outdater.check_commit_hashes(article_paths_with_root[1:])) == collections.Counter(article_paths_with_root[1:2])
+
+    def test__full_autofix_flow(self, root):
+        set_up_dummy_repo()
+        article_paths = [
+            'Article/en.md',
+            'Article/fr.md',
+            'Article/pt-br.md',
+            'Article/zh-tw.md',
+            'Category1/Article/en.md',
+            'Category1/Article/fr.md',
+            'Category1/Article/pt-br.md',
+            'Category1/Article/zh-tw.md',
+            'Category1/Category2/Article/en.md',
+            'Category1/Category2/Article/fr.md',
+            'Category1/Category2/Article/pt-br.md',
+            'Category1/Category2/Article/zh-tw.md',
+            'Category1/Category2/Category3/Article/en.md',
+            'Category1/Category2/Category3/Article/fr.md',
+            'Category1/Category2/Category3/Article/pt-br.md',
+            'Category1/Category2/Category3/Article/zh-tw.md',
+        ]
+        article_paths_with_root = ["wiki/" + path for path in article_paths]
+
+        conftest.create_files(root, *((path, '# Article') for path in article_paths))
+        stage_all_and_commit("add articles")
+        commit_hash_1 = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
+
+        already_outdated_translations = list(filter(lambda x : "zh-tw.md" in x, article_paths_with_root))
+        outdater.outdate_translations(*already_outdated_translations, outdated_hash=commit_hash_1)
+        stage_all_and_commit("outdate chinese translations")
+
+        conftest.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            filter(lambda x : "en.md" in x, article_paths)
+        ))
+        stage_all_and_commit("modify english articles")
+        commit_hash_2 = git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
+
+
+        exit_code = outdater.main("--base-commit", commit_hash_2, f"--{outdater.AUTOFIX_FLAG}")
+
+        assert exit_code == 0
+
+        outdated_translations = git_utils.git("diff", "--diff-filter=d", "--name-only").splitlines()
+
+        non_chinese_translations = filter(lambda x : "en.md" not in x and "zh-tw.md" not in x, article_paths_with_root)
+        assert collections.Counter(outdated_translations) == collections.Counter(non_chinese_translations)
+
+        expected_content = textwrap.dedent('''
+            ---
+            {}: true
+            {}: {}
+            ---
+
+            # Article
+        ''').strip()
+
+        for article in already_outdated_translations:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == expected_content.format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash_1)
+
+        for article in outdated_translations:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == expected_content.format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash_2)
+
+        for article in filter(lambda x : "en.md" in x, article_paths_with_root):
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == '# Article\n\nThis is an article in English.'
+
+        log = git_utils.git("--no-pager", "log", "--pretty=oneline").splitlines()
+
+        assert len(log) == 3

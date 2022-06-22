@@ -149,8 +149,8 @@ def check_commit_hashes(modified_translations):
             yield article_file
 
 
-def main():
-    args = parse_args(sys.argv[1:])
+def main(*args):
+    args = parse_args(args)
     exit_code = 0
 
     modified_translations = set(list_modified_translations(args.base_commit))
@@ -185,8 +185,8 @@ def main():
     else:
         print(f"{console.grey('Notice:')} no originals are edited, not going to check translations.")
 
-    sys.exit(exit_code)
+    return exit_code
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main(*sys.argv[1:]))
