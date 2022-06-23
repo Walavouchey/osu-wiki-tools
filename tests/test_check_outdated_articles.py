@@ -39,7 +39,7 @@ def remove(the_list, *may_not_contain):
     return list(filter(lambda item : all(thing not in item for thing in may_not_contain), the_list))
 
 
-class TestArticleOutdater:
+class TestCheckOutdatedArticles:
     def test__list_all_translations(self, root):
         article_paths = [
             'Article/en.md',
