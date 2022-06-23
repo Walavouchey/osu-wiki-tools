@@ -190,6 +190,9 @@ def main(*args):
                     print(console.green('Done! The changes have been committed for you.'))
                     print()
                     print(git_utils.git("show", "HEAD", "--no-patch"))
+                    print("Changed files:")
+                    for file_path in translations_to_outdate:
+                        print(console.green(f"* {file_path}"))
             else:
                 print_translations_to_outdate(*translations_to_outdate, outdated_hash=outdated_hash)
                 exit_code = 1
