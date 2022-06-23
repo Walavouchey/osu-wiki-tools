@@ -28,16 +28,20 @@ OUTDATED_TRANSLATION_TAG = "outdated_translation"
 # The front matter tag which contains the commit hash since which the translation is not up to date
 OUTDATED_HASH_TAG = "outdated_since"
 
-# The script flag which will automatically outdate the translations
-AUTOFIX_FLAG = "auto"
+# The script flag which will automatically outdate translations
+AUTOFIX_FLAG = "--autofix"
+AUTOFIX_FLAG_SHORT = "-f"
 
+# The script flag which will automatically commit changes
+AUTOCOMMIT_FLAG = "--autocommit"
+AUTOCOMMIT_FLAG_SHORT = "-c"
 
 def print_translations_to_outdate(*filenames, outdated_hash=None):
     print(f"{console.red('Error:')} You have edited some original articles (en.md), but did not outdate their translations:")
     print("\n".join(console.red(f"* {filename}") for filename in filenames))
     print(f"\nIf your changes DON'T NEED to be added to the translations, add {console.red(PULL_REQUEST_TAG)} anywhere in the description of your pull request.")
     print(
-        f"Otherwise, rerun the script with {console.green('--' + AUTOFIX_FLAG)}, or "
+        f"Otherwise, rerun the script with {console.green(AUTOFIX_FLAG)} (and perhaps {console.green(AUTOCOMMIT_FLAG)}), or "
         "add the following to each article's front matter (https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#front-matter):"
     )
     print()
@@ -63,7 +67,8 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-b", "--base-commit", required=True, help="commit since which to look for changes")
     parser.add_argument("-o", "--outdated-since", default="", help=f"commit hash for the {OUTDATED_HASH_TAG} tag")
-    parser.add_argument(f"--{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
+    parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
+    parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
     return parser.parse_args(args)
 
 
@@ -168,19 +173,29 @@ def main(*args):
             # non-empty args.outdated_since => running on GitHub Action host
             outdated_hash = args.outdated_since or args.base_commit
 
-            if getattr(args, AUTOFIX_FLAG, False):
-                print(console.green('--{} detected, outdating the translations...'.format(AUTOFIX_FLAG)))
+            should_autofix = getattr(args, AUTOFIX_FLAG[2:], False)
+            should_autocommit = getattr(args, AUTOCOMMIT_FLAG[2:], False)
+            if should_autofix:
+                print(console.green('{} specified, outdating translations...'.format(AUTOFIX_FLAG)))
                 outdate_translations(*translations_to_outdate, outdated_hash=outdated_hash)
-                print(console.green('Done! To commit the changes, run:'))
-                print(console.green('\tgit add {} && git commit -m "outdate translations"'.format(
-                    " ".join(translations_to_outdate)
-                )))
+                if not should_autocommit:
+                    print(console.green('Done! To commit the changes, run:'))
+                    print(console.green('\tgit add {}; git commit -m "outdate translations"'.format(
+                        " ".join(translations_to_outdate)
+                    )))
+                else:
+                    print(console.green('{} specified, committing changes...'.format(AUTOCOMMIT_FLAG)))
+                    git_utils.git("add", *translations_to_outdate)
+                    git_utils.git("commit", "-m", "outdate translations")
+                    print(console.green('Done! The changes have been committed for you.'))
+                    print()
+                    print(git_utils.git("show", "HEAD", "--no-patch"))
             else:
                 print_translations_to_outdate(*translations_to_outdate, outdated_hash=outdated_hash)
                 exit_code = 1
 
         else:
-            print(f"{console.grey('Notice:')} all unedited translations are properly outdated")
+            print(f"{console.grey('Notice:')} all unedited translations are properly outdated.")
 
     else:
         print(f"{console.grey('Notice:')} no originals are edited, not going to check translations.")
