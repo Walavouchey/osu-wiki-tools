@@ -37,14 +37,14 @@ class Article:
     lines: typing.Dict[int, ArticleLine]
     references: reference_parser.References
     identifiers: typing.Dict[str, int]
-    front_matter: collections.OrderedDict
+    front_matter: dict
 
     def __init__(
         self, path: pathlib.Path,
         lines: typing.Dict[int, ArticleLine],
         references: reference_parser.References,
         identifiers: typing.Dict[str, int],
-        front_matter: collections.OrderedDict
+        front_matter: dict
     ):
         self.filename = path.name
         self.directory = str(path.parent.as_posix())
@@ -58,7 +58,7 @@ class Article:
         return '/'.join((self.directory, self.filename))
 
 
-def load_front_matter(fileobj: typing.TextIO) -> collections.OrderedDict:
+def load_front_matter(fileobj: typing.TextIO) -> dict:
     delimiters = 0
     buffer = io.StringIO()
 
@@ -74,10 +74,10 @@ def load_front_matter(fileobj: typing.TextIO) -> collections.OrderedDict:
 
     if delimiters == 2:
         return yaml.safe_load(buffer.getvalue())
-    return collections.OrderedDict()
+    return dict()
 
 
-def save_front_matter(filepath: str, fm: collections.OrderedDict):
+def save_front_matter(filepath: str, fm: dict):
     if not fm:
         return
 

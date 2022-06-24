@@ -2,6 +2,7 @@ import pathlib
 import textwrap
 
 import conftest
+import utils
 from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
 
 
@@ -13,7 +14,7 @@ def dummy_article(path):
 
 class TestArticleLinks:
     def test__valid_absolute_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('First_article/en.md', '# First article')
         )
@@ -25,7 +26,7 @@ class TestArticleLinks:
         assert error is None
 
     def test__invalid_absolute_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Another_article/en.md', '# Another article')
         )
@@ -41,7 +42,7 @@ class TestArticleLinks:
             assert isinstance(error, error_types.LinkNotFoundError)
 
     def test__valid_reference(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('My_article/en.md', '# My article')
         )
@@ -54,7 +55,7 @@ class TestArticleLinks:
         assert error is None
 
     def test__invalid_reference(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Obscure_article/en.md', '# First article')
         )
@@ -68,7 +69,7 @@ class TestArticleLinks:
         assert error.link.raw_location == 'article_ref'
 
     def test__valid_relative_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Batteries/en.md', '# Batteries'),
             ('Batteries/Included/en.md', '# Included'),
@@ -88,7 +89,7 @@ class TestArticleLinks:
             assert error is None
 
     def test__invalid_relative_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Existing_article/en.md', '# Existing article')
         )
@@ -102,7 +103,7 @@ class TestArticleLinks:
 
 class TestImageLinks:
     def test__valid_absolute_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Article/en.md', '# Article'),
             ('img/battery.png', '')
@@ -115,7 +116,7 @@ class TestImageLinks:
         assert error is None
 
     def test__invalid_absolute_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('New_article/en.md', '# New article'),
             ('img/battery.png', '')
@@ -128,7 +129,7 @@ class TestImageLinks:
         assert isinstance(error, error_types.LinkNotFoundError)
 
     def test__valid_relative_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Beatmap/en.md', '# Beatmap'),
             ('Beatmap/img/beatmap.png', '')
@@ -142,7 +143,7 @@ class TestImageLinks:
 
     # this is wrong as per ASC but still semantically correct
     def test__valid_relative_link__in_article_directory(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Beatmap/en.md', '# Beatmap'),
             ('Beatmap/beatmap.png', '')
@@ -155,7 +156,7 @@ class TestImageLinks:
         assert error is None
 
     def test__invalid_relative_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('Difficulty/en.md', '# Difficulty'),
             ('Difficulty/img/difficulty.png', '')
@@ -168,7 +169,7 @@ class TestImageLinks:
         assert isinstance(error, error_types.LinkNotFoundError)
 
     def test__invalid_reference_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('OWC_2030/en.md', '# OWC 2030'),
             ('img/dummy.png', '')
@@ -190,7 +191,7 @@ class TestImageLinks:
 
 class TestRedirectedLinks:
     def test__valid_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('redirect.yaml', '"old_link": "New_article"'),
             ('New_article/en.md', '# New article'),
@@ -204,7 +205,7 @@ class TestRedirectedLinks:
         assert error is None
 
     def test__invalid_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'redirect.yaml', textwrap.dedent('''
@@ -267,7 +268,7 @@ class TestMalformedLink:
 
 class TestSectionLinks:
     def test__valid_absolute_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'New_article/en.md',
@@ -291,7 +292,7 @@ class TestSectionLinks:
         assert error is None
 
     def test__valid_absolute_link__translation(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('New_article/en.md', '# New article'),
             (
@@ -316,7 +317,7 @@ class TestSectionLinks:
         assert error is None
 
     def test__invalid_absolute_link__missing_heading(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('New_article/en.md', '# New article'),
         )
@@ -333,7 +334,7 @@ class TestSectionLinks:
         assert not error.translation_available
 
     def test__invalid_absolute_link__missing_translation(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'New_article/en.md',
@@ -359,7 +360,7 @@ class TestSectionLinks:
         assert error.path == 'wiki/New_article/en.md'
 
     def test__valid_relative_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('New_article/en.md', '# New article'),
             (
@@ -385,7 +386,7 @@ class TestSectionLinks:
         assert error is None
 
     def test__invalid_relative_link(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('New_article/en.md', '# New article'),
             (
@@ -413,7 +414,7 @@ class TestSectionLinks:
         assert error.path == 'wiki/New_article/Included_article/en.md'
 
     def test__valid_redirect(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('redirect.yaml', '"old_location": "Target_article"'),
             ('New_article/en.md', '# New article'),
@@ -441,7 +442,7 @@ class TestSectionLinks:
         assert error is None
 
     def test__invalid_redirect(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             ('redirect.yaml', '"old_location": "Target_article"'),
             ('New_article/en.md', '# New article'),
@@ -473,7 +474,7 @@ class TestSectionLinks:
 
 class TestArticleChecker:
     def test__check_article__clean(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Article/en.md',
@@ -502,7 +503,7 @@ class TestArticleChecker:
         assert link_checker.check_article(article, redirects, all_articles={}) == {}
 
     def test__check_article__bad(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Article/en.md',
