@@ -169,7 +169,6 @@ def main(*args):
         all_translations = file_utils.list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
         translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
         if translations_to_outdate:
-            # non-empty args.outdated_since => running on GitHub Action host
             outdated_hash = args.outdated_since or base_commit
 
             should_autofix = getattr(args, AUTOFIX_FLAG[2:], False)
