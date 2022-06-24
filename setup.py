@@ -26,7 +26,7 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "find-broken-wikilinks=wikitools_cli.find_broken_wikilinks:main",
-            "outdate-translations=wikitools_cli.outdate_translations:main",
+            "check-outdated-articles=wikitools_cli.check_outdated_articles:console_main",
         ],
     },
     python_requires=">=3.10",

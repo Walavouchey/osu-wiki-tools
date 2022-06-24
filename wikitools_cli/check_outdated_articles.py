@@ -205,5 +205,9 @@ def main(*args):
     return exit_code
 
 
+def console_main():
+    sys.exit(main(*sys.argv[1:]))
+
+
 if __name__ == '__main__':
     sys.exit(main(*sys.argv[1:]))
