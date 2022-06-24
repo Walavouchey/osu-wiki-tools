@@ -3,13 +3,14 @@ import textwrap
 from urllib import parse
 
 import conftest
+import utils
 
 from wikitools import article_parser, reference_parser, link_parser
 
 
 class TestArticleParser:
     def test__read_article(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Article/en.md',
@@ -61,7 +62,7 @@ class TestArticleParser:
         assert article.lines[10].raw_line == 'Links! [Links](https://example.com)!\n'
 
     def test__read_article__with_comments(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Article/en.md',
@@ -101,7 +102,7 @@ class TestArticleParser:
         assert article.identifiers == {}
 
     def test__repeating_headings(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Ranking_criteria/en.md',
@@ -136,7 +137,7 @@ class TestArticleParser:
         }
 
     def test__ignore_comments(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Comments/en.md',
@@ -163,7 +164,7 @@ class TestArticleParser:
         assert article.lines[9].links[0].raw_location == "/wiki/No"
 
     def test__ignore_code_blocks(self, root):
-        conftest.create_files(
+        utils.create_files(
             root,
             (
                 'Code_blocks/en.md',
