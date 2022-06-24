@@ -89,7 +89,7 @@ def list_outdated_translations(all_translations, modified_translations):
 
 
 def list_modified_translations(base_commit):
-    return git_utils.git_diff('wiki/**/*.md', ':(exclude)*/en.md', base_commit=base_commit)
+    return filter(file_utils.is_translation, git_utils.git_diff('wiki/**/*.md', base_commit=base_commit))
 
 
 def list_modified_originals(base_commit):

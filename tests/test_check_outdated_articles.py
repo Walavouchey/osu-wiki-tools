@@ -20,6 +20,7 @@ class TestCheckOutdatedArticles:
             'Category1/Article/fr.md',
             'Category1/Article/pt-br.md',
             'Category1/Article/zh-tw.md',
+            'Category1/Article/TEMPLATE.md',
             'Category1/Category2/Article/en.md',
             'Category1/Category2/Article/fr.md',
             'Category1/Category2/Article/pt-br.md',
@@ -41,7 +42,7 @@ class TestCheckOutdatedArticles:
         # note that at least two existing commits are necessary to get a diff using `revision^`
         modified_translations = outdater.list_modified_translations(commit_hash)
 
-        assert utils.has_same_elements(modified_translations, utils.remove(article_paths_with_root, "en.md"))
+        assert utils.has_same_elements(modified_translations, utils.remove(article_paths_with_root, "en.md", "TEMPLATE.md"))
 
         utils.create_files(root,
             *((path, '# Article\n\nCeci est un article en français.') for path in
