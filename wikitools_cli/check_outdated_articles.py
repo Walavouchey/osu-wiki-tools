@@ -3,7 +3,7 @@
 """
 This script does the following:
 
-1) Validates commit hashes of the edited outdated translations
+1) Validates commit hashes of edited outdated translations (or all translations with --all)
 2) Obtains directories of the modified en.md files, then lists translations in them which:
     * are not modified in the PR (assuming that the PR author took care of the rest), and
     * don't have the outdated markers/hashes
@@ -51,7 +51,7 @@ def print_translations_to_outdate(*filenames, outdated_hash=None):
 
 def print_bad_hash_error(*filenames, outdated_hash=None):
     print(
-        "{} The following translations are incorrectly outdated (the {} hash is invalid){}.".format(
+        "{} The following translations are incorrectly outdated (the {} hash is invalid).{}".format(
             console.red("Error:"),
             console.red(OUTDATED_HASH_TAG),
             "" if outdated_hash is None else " Did you mean to use {} instead?".format(
@@ -64,8 +64,9 @@ def print_bad_hash_error(*filenames, outdated_hash=None):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-b", "--base-commit", required=True, help="commit since which to look for changes")
-    parser.add_argument("-o", "--outdated-since", default="", help=f"commit hash for the {OUTDATED_HASH_TAG} tag")
+    parser.add_argument("-b", "--base-commit", help="commit since which to look for changes")
+    parser.add_argument("-o", "--outdated-since", default="", help=f"commit hash for the {OUTDATED_HASH_TAG} tag, uses the value of --base-commit if unspecified")
+    parser.add_argument("-a", "--all", default=False, action="store_true", help="look for incorrect hashes in all outdated articles")
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
     return parser.parse_args(args)
@@ -138,12 +139,23 @@ def main(*args):
     args = parse_args(args)
     exit_code = 0
 
-    modified_translations = set(list_modified_translations(args.base_commit))
-    with_bad_hashes = list(check_commit_hashes(modified_translations))
+    modified_translations = set()
+    with_bad_hashes = set()
+
+    if not args.all and args.base_commit:
+        modified_translations = set(list_modified_translations(args.base_commit))
+        with_bad_hashes = list(check_commit_hashes(modified_translations))
+    elif args.all:
+        all_translations = file_utils.list_all_translations(file_utils.list_all_article_dirs())
+        with_bad_hashes = list(check_commit_hashes(all_translations))
+
     if with_bad_hashes:
         print_bad_hash_error(*with_bad_hashes, outdated_hash=args.outdated_since or args.base_commit)
         print()
         exit_code = 1
+
+    if not args.base_commit:
+        return exit_code
 
     modified_originals = list_modified_originals(args.base_commit)
     if modified_originals:
