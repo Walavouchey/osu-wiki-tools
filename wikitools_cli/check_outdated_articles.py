@@ -12,12 +12,10 @@ Alternatively, it can be run with {AUTOFIX_FLAG} (see the source below) to outda
 """
 
 import argparse
-import fnmatch
 import os
-import subprocess as sp
 import sys
 
-from wikitools import article_parser, console, git_utils
+from wikitools import article_parser, console, git_utils, file_utils
 
 # A pull request string which disables the check (has no effect here, listed for informational purposes only)
 PULL_REQUEST_TAG = "SKIP_OUTDATED_CHECK"
@@ -36,6 +34,7 @@ AUTOFIX_FLAG_SHORT = "-f"
 AUTOCOMMIT_FLAG = "--autocommit"
 AUTOCOMMIT_FLAG_SHORT = "-c"
 
+
 def print_translations_to_outdate(*filenames, outdated_hash=None):
     print(f"{console.red('Error:')} You have edited some original articles (en.md), but did not outdate their translations:")
     print("\n".join(console.red(f"* {filename}") for filename in filenames))
@@ -52,10 +51,10 @@ def print_translations_to_outdate(*filenames, outdated_hash=None):
 
 def print_bad_hash_error(*filenames, outdated_hash=None):
     print(
-        "{} The following translations are incorrectly outdated (the {} hash is invalid){}".format(
+        "{} The following translations are incorrectly outdated (the {} hash is invalid){}.".format(
             console.red("Error:"),
             console.red(OUTDATED_HASH_TAG),
-            "." if outdated_hash is None else ". Did you mean to use {} instead?".format(
+            "" if outdated_hash is None else " Did you mean to use {} instead?".format(
                 console.green(f"{OUTDATED_HASH_TAG}: {outdated_hash}")
             )
         )
@@ -70,25 +69,6 @@ def parse_args(args):
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
     return parser.parse_args(args)
-
-
-def list_all_translations(modified_articles_dirs):
-    """
-    List ALL translations inside the folders of the modified articles.
-    """
-
-    for d in modified_articles_dirs:
-        for filename in sorted(os.listdir(d)):
-            if (
-                filename == "en.md" or
-                not (
-                    fnmatch.fnmatch(filename, "??.md") or
-                    fnmatch.fnmatch(filename, "??-??.md")
-                )
-            ):
-                continue
-
-            yield os.path.join(d, filename).replace("\\", "/")
 
 
 def list_outdated_translations(all_translations, modified_translations):
@@ -167,7 +147,7 @@ def main(*args):
 
     modified_originals = list_modified_originals(args.base_commit)
     if modified_originals:
-        all_translations = list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
+        all_translations = file_utils.list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
         translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
         if translations_to_outdate:
             # non-empty args.outdated_since => running on GitHub Action host
