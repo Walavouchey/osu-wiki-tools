@@ -139,31 +139,38 @@ def main(*args):
     args = parse_args(args)
     exit_code = 0
 
-    modified_translations = set()
-    with_bad_hashes = set()
+    base_commit = args.base_commit or git_utils.get_first_branch_commit()
 
-    if not args.all and args.base_commit:
-        modified_translations = set(list_modified_translations(args.base_commit))
+    if not base_commit and not args.all:
+        print(f"{console.red('Error:')} neither --base-commit (unable to obtain automatically) nor --all were specified; nothing to do.")
+        exit_code = 1
+        return exit_code
+
+    modified_translations = set()
+    with_bad_hashes = list()
+
+    if not args.all and base_commit:
+        modified_translations = set(list_modified_translations(base_commit))
         with_bad_hashes = list(check_commit_hashes(modified_translations))
     elif args.all:
         all_translations = file_utils.list_all_translations(file_utils.list_all_article_dirs())
         with_bad_hashes = list(check_commit_hashes(all_translations))
 
     if with_bad_hashes:
-        print_bad_hash_error(*with_bad_hashes, outdated_hash=args.outdated_since or args.base_commit)
+        print_bad_hash_error(*with_bad_hashes, outdated_hash=args.outdated_since or base_commit)
         print()
         exit_code = 1
 
-    if not args.base_commit:
+    if not base_commit:
         return exit_code
 
-    modified_originals = list_modified_originals(args.base_commit)
+    modified_originals = list_modified_originals(base_commit)
     if modified_originals:
         all_translations = file_utils.list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
         translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
         if translations_to_outdate:
             # non-empty args.outdated_since => running on GitHub Action host
-            outdated_hash = args.outdated_since or args.base_commit
+            outdated_hash = args.outdated_since or base_commit
 
             should_autofix = getattr(args, AUTOFIX_FLAG[2:], False)
             should_autocommit = getattr(args, AUTOCOMMIT_FLAG[2:], False)
