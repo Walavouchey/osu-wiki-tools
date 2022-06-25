@@ -48,7 +48,7 @@ def pretty_location(path, lineno, pos, location):
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage="%(prog)s find-broken-wikilinks [options]")
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
@@ -76,8 +76,8 @@ def identifier_suggestions(e, articles):
     ))
 
 
-def main():
-    args = parse_args(sys.argv[1:])
+def main(*args):
+    args = parse_args(args)
     if not args.target and not args.all:
         print(f"{console.grey('Notice:')} No articles to check.")
         sys.exit(0)
@@ -147,8 +147,8 @@ def main():
         print()
 
     print_count(error_count, link_count, error_file_count, file_count)
-    sys.exit(exit_code)
+    return exit_code
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(*sys.argv[1:]))

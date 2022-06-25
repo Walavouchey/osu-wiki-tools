@@ -1,12 +1,14 @@
 # type: ignore
 import setuptools
 
+from wikitools_cli.VERSION import VERSION
+
 with open("README.md", "r", encoding="utf-8") as fd:
     long_description = fd.read()
 
 setuptools.setup(
     name="osu-wiki-tools",
-    version="0.0.3",
+    version=VERSION,
     author="Walavouchey",
     author_email="wala@yui.tv",
     description="Various tools for osu! wiki contributors",
@@ -25,8 +27,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         "console_scripts": [
-            "find-broken-wikilinks=wikitools_cli.find_broken_wikilinks:main",
-            "check-outdated-articles=wikitools_cli.check_outdated_articles:console_main",
+            "osu-wiki-tools=wikitools_cli.osu_wiki_tools:console_main",
         ],
     },
     python_requires=">=3.10",

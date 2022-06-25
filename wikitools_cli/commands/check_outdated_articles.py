@@ -63,7 +63,7 @@ def print_bad_hash_error(*filenames, outdated_hash=None):
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter, usage="%(prog)s check-outdated-articles [options]")
     parser.add_argument("-b", "--base-commit", help="commit since which to look for changes")
     parser.add_argument("-o", "--outdated-since", default="", help=f"commit hash for the {OUTDATED_HASH_TAG} tag, uses the value of --base-commit if unspecified")
     parser.add_argument("-a", "--all", default=False, action="store_true", help="look for incorrect hashes in all outdated articles")
@@ -202,10 +202,6 @@ def main(*args):
         print(f"{console.grey('Notice:')} no originals are edited, not going to check translations.")
 
     return exit_code
-
-
-def console_main():
-    sys.exit(main(*sys.argv[1:]))
 
 
 if __name__ == '__main__':

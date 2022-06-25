@@ -6,7 +6,7 @@ import utils
 
 from wikitools import article_parser, git_utils
 
-from wikitools_cli import check_outdated_articles as outdater
+from wikitools_cli.commands import check_outdated_articles as outdater
 
 
 class TestCheckOutdatedArticles:
