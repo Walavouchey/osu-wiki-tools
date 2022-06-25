@@ -32,7 +32,7 @@ class TestFileUtils:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert multiset(list(file_utils.list_all_article_files())) == multiset(utils.remove(article_paths_with_root, "TEMPLATE.md", "TRANSLATING.md"))
+        assert multiset(file_utils.list_all_article_files()) == multiset(utils.remove(article_paths_with_root, "TEMPLATE.md", "TRANSLATING.md"))
 
     def test__list_all_article_dirs(self, root):
         article_paths = [
