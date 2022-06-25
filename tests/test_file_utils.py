@@ -1,3 +1,4 @@
+from collections import Counter as multiset
 import os
 
 import conftest
@@ -31,7 +32,7 @@ class TestFileUtils:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert utils.has_same_elements(list(file_utils.list_all_article_files()), utils.remove(article_paths_with_root, "TEMPLATE.md", "TRANSLATING.md"))
+        assert multiset(list(file_utils.list_all_article_files())) == multiset(utils.remove(article_paths_with_root, "TEMPLATE.md", "TRANSLATING.md"))
 
     def test__list_all_article_dirs(self, root):
         article_paths = [
@@ -58,10 +59,7 @@ class TestFileUtils:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert utils.has_same_elements(
-            list(file_utils.list_all_article_dirs()),
-            list(set(os.path.dirname(path) for path in article_paths_with_root))
-        )
+        assert multiset(file_utils.list_all_article_dirs()) == multiset(set(os.path.dirname(path) for path in article_paths_with_root))
 
     def test__list_all_translations(self, root):
         article_paths = [
@@ -76,5 +74,5 @@ class TestFileUtils:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert utils.has_same_elements(file_utils.list_all_translations(["wiki/Article"]), article_paths_with_root[1:4])
+        assert multiset(file_utils.list_all_translations(["wiki/Article"])) == multiset(article_paths_with_root[1:4])
 

@@ -32,10 +32,6 @@ def get_last_commit_hash():
     return git_utils.git("show", "HEAD", "--pretty=format:%H", "-s")
 
 
-def has_same_elements(a, b):
-    return collections.Counter(a) == collections.Counter(b)
-
-
 def take(the_list, *may_contain):
     return list(filter(lambda item : any(thing in item for thing in may_contain), the_list))
 

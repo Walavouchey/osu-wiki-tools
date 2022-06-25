@@ -1,3 +1,4 @@
+from collections import Counter as multiset
 import textwrap
 
 import conftest
@@ -42,7 +43,7 @@ class TestCheckOutdatedArticles:
         # note that at least two existing commits are necessary to get a diff using `revision^`
         modified_translations = outdater.list_modified_translations(commit_hash)
 
-        assert utils.has_same_elements(modified_translations, utils.remove(article_paths_with_root, "en.md", "TEMPLATE.md"))
+        assert multiset(modified_translations) == multiset(utils.remove(article_paths_with_root, "en.md", "TEMPLATE.md"))
 
         utils.create_files(root,
             *((path, '# Article\n\nCeci est un article en français.') for path in
@@ -53,7 +54,7 @@ class TestCheckOutdatedArticles:
 
         modified_translations = outdater.list_modified_translations(commit_hash)
 
-        assert utils.has_same_elements(modified_translations, utils.take(article_paths_with_root, "fr.md"))
+        assert multiset(modified_translations) == multiset(utils.take(article_paths_with_root, "fr.md"))
 
     def test__list_modified_originals(self, root):
         utils.set_up_dummy_repo()
@@ -81,7 +82,7 @@ class TestCheckOutdatedArticles:
         commit_hash = utils.get_last_commit_hash()
 
         modified_originals = outdater.list_modified_originals(commit_hash)
-        assert utils.has_same_elements(modified_originals, utils.take(article_paths_with_root, "en.md"))
+        assert multiset(modified_originals) == multiset(utils.take(article_paths_with_root, "en.md"))
 
     def test__list_outdated_translations(self, root):
         utils.set_up_dummy_repo()
@@ -110,7 +111,7 @@ class TestCheckOutdatedArticles:
             set()
         ))
 
-        assert utils.has_same_elements(translations_to_outdate, utils.remove(article_paths_with_root, "en.md"))
+        assert multiset(translations_to_outdate) == multiset(utils.remove(article_paths_with_root, "en.md"))
 
     def test__outdate_translations(self, root):
         utils.set_up_dummy_repo()
@@ -141,14 +142,14 @@ class TestCheckOutdatedArticles:
         outdated_translations = utils.get_changed_files()
         utils.stage_all_and_commit("outdate zh-tw")
 
-        assert utils.has_same_elements(outdated_translations, to_outdate_zh_tw)
+        assert multiset(outdated_translations) == multiset(to_outdate_zh_tw)
 
         to_outdate_all = utils.remove(article_paths_with_root, "en.md")
         outdater.outdate_translations(*to_outdate_all, outdated_hash=commit_hash)
         outdated_translations = utils.get_changed_files()
         utils.stage_all_and_commit("outdate the rest of the translations")
 
-        assert utils.has_same_elements(outdated_translations, utils.remove(article_paths_with_root, "en.md", "zh-tw.md"))
+        assert multiset(outdated_translations) == multiset(utils.remove(article_paths_with_root, "en.md", "zh-tw.md"))
 
         for article in to_outdate_all:
             with open(article, "r", encoding='utf-8') as fd:
@@ -189,7 +190,7 @@ class TestCheckOutdatedArticles:
         article_parser.save_front_matter(article_paths_with_root[1], front_matter)
         utils.stage_all_and_commit("corrupt hash")
 
-        assert utils.has_same_elements(outdater.check_commit_hashes(article_paths_with_root[1:]), article_paths_with_root[1:2])
+        assert multiset(outdater.check_commit_hashes(article_paths_with_root[1:])) == multiset(article_paths_with_root[1:2])
 
     def test__full_autofix_flow(self, root):
         utils.set_up_dummy_repo()
@@ -236,7 +237,7 @@ class TestCheckOutdatedArticles:
 
         non_chinese_translations = utils.remove(article_paths_with_root, "en.md", "zh-tw.md")
 
-        assert utils.has_same_elements(outdated_translations, non_chinese_translations)
+        assert multiset(outdated_translations) == multiset(non_chinese_translations)
 
         expected_content = textwrap.dedent('''
             ---
@@ -320,7 +321,7 @@ class TestCheckOutdatedArticles:
 
         non_chinese_translations = utils.remove(article_paths_with_root, "en.md", "zh-tw.md")
 
-        assert utils.has_same_elements(outdated_translations, non_chinese_translations)
+        assert multiset(outdated_translations) == multiset(non_chinese_translations)
 
         expected_content = textwrap.dedent('''
             ---
