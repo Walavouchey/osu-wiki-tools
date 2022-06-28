@@ -47,7 +47,7 @@ def pretty_location(path, lineno, pos, location):
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(usage="%(prog)s find-broken-wikilinks [options]")
+    parser = argparse.ArgumentParser(usage="%(prog)s check-links [options]")
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
