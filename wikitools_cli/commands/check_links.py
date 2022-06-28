@@ -72,7 +72,7 @@ def main(*args):
 
     filenames = []
     if args.all:
-        filenames = file_utils.list_all_files()
+        filenames = file_utils.list_all_articles_and_newsposts()
     else:
         filenames = list(filter(lambda x: file_utils.is_article(x) or file_utils.is_newspost(x), args.target))
 

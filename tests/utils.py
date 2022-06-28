@@ -10,7 +10,10 @@ def create_files(root: py.path.local, *articles):
     for path, contents in articles:
         article_folder = root.join(os.path.dirname(path))
         article_folder.ensure(dir=1)
-        article_folder.join(os.path.basename(path)).write_text(contents, encoding='utf-8')
+        if type(contents) == bytes:
+            article_folder.join(os.path.basename(path)).write_binary(contents)
+        else:
+            article_folder.join(os.path.basename(path)).write_text(contents, encoding='utf-8')
 
 
 def stage_all_and_commit(commit_message):
