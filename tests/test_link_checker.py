@@ -16,7 +16,7 @@ class TestArticleLinks:
     def test__valid_absolute_link(self, root):
         utils.create_files(
             root,
-            ('First_article/en.md', '# First article')
+            ('wiki/First_article/en.md', '# First article')
         )
 
         link = link_parser.find_link('Check the [first article](/wiki/First_article).')
@@ -28,7 +28,7 @@ class TestArticleLinks:
     def test__invalid_absolute_link(self, root):
         utils.create_files(
             root,
-            ('Another_article/en.md', '# Another article')
+            ('wiki/Another_article/en.md', '# Another article')
         )
 
         for line in (
@@ -44,7 +44,7 @@ class TestArticleLinks:
     def test__valid_reference(self, root):
         utils.create_files(
             root,
-            ('My_article/en.md', '# My article')
+            ('wiki/My_article/en.md', '# My article')
         )
 
         link = link_parser.find_link('This link is [working][article_ref].')
@@ -57,7 +57,7 @@ class TestArticleLinks:
     def test__invalid_reference(self, root):
         utils.create_files(
             root,
-            ('Obscure_article/en.md', '# First article')
+            ('wiki/Obscure_article/en.md', '# First article')
         )
 
         link = link_parser.find_link('This link is [not working][article_ref].')
@@ -71,9 +71,9 @@ class TestArticleLinks:
     def test__valid_relative_link(self, root):
         utils.create_files(
             root,
-            ('Batteries/en.md', '# Batteries'),
-            ('Batteries/Included/en.md', '# Included'),
-            ('Batteries/Included/And_even_more/en.md', '# And even more!')
+            ('wiki/Batteries/en.md', '# Batteries'),
+            ('wiki/Batteries/Included/en.md', '# Included'),
+            ('wiki/Batteries/Included/And_even_more/en.md', '# And even more!')
         )
 
         for line in (
@@ -91,7 +91,7 @@ class TestArticleLinks:
     def test__invalid_relative_link(self, root):
         utils.create_files(
             root,
-            ('Existing_article/en.md', '# Existing article')
+            ('wiki/Existing_article/en.md', '# Existing article')
         )
 
         link = link_parser.find_link('This link [does not work](Broken_link).')
@@ -105,8 +105,8 @@ class TestImageLinks:
     def test__valid_absolute_link(self, root):
         utils.create_files(
             root,
-            ('Article/en.md', '# Article'),
-            ('img/battery.png', '')
+            ('wiki/Article/en.md', '# Article'),
+            ('wiki/img/battery.png', '')
         )
 
         link = link_parser.find_link('Check this ![out](/wiki/img/battery.png).')
@@ -118,8 +118,8 @@ class TestImageLinks:
     def test__invalid_absolute_link(self, root):
         utils.create_files(
             root,
-            ('New_article/en.md', '# New article'),
-            ('img/battery.png', '')
+            ('wiki/New_article/en.md', '# New article'),
+            ('wiki/img/battery.png', '')
         )
 
         link = link_parser.find_link('Do not check this ![out](/wiki/img/nonsense.png).')
@@ -131,8 +131,8 @@ class TestImageLinks:
     def test__valid_relative_link(self, root):
         utils.create_files(
             root,
-            ('Beatmap/en.md', '# Beatmap'),
-            ('Beatmap/img/beatmap.png', '')
+            ('wiki/Beatmap/en.md', '# Beatmap'),
+            ('wiki/Beatmap/img/beatmap.png', '')
         )
 
         link = link_parser.find_link('Behold, the beatmap ![beatmap](img/beatmap.png "Wow!").')
@@ -145,8 +145,8 @@ class TestImageLinks:
     def test__valid_relative_link__in_article_directory(self, root):
         utils.create_files(
             root,
-            ('Beatmap/en.md', '# Beatmap'),
-            ('Beatmap/beatmap.png', '')
+            ('wiki/Beatmap/en.md', '# Beatmap'),
+            ('wiki/Beatmap/beatmap.png', '')
         )
 
         link = link_parser.find_link('Behold, the relative image of a ![beatmap](beatmap.png "Wow!").')
@@ -158,8 +158,8 @@ class TestImageLinks:
     def test__invalid_relative_link(self, root):
         utils.create_files(
             root,
-            ('Difficulty/en.md', '# Difficulty'),
-            ('Difficulty/img/difficulty.png', '')
+            ('wiki/Difficulty/en.md', '# Difficulty'),
+            ('wiki/Difficulty/img/difficulty.png', '')
         )
 
         link = link_parser.find_link('Nothing to see here ![please](img/none.png "disperse").')
@@ -171,8 +171,8 @@ class TestImageLinks:
     def test__invalid_reference_link(self, root):
         utils.create_files(
             root,
-            ('OWC_2030/en.md', '# OWC 2030'),
-            ('img/dummy.png', '')
+            ('wiki/OWC_2030/en.md', '# OWC 2030'),
+            ('wiki/img/dummy.png', '')
         )
 
         references = reference_parser.extract_all('[flag_XX]: /wiki/shared/img/XX.gif')
@@ -193,11 +193,11 @@ class TestRedirectedLinks:
     def test__valid_link(self, root):
         utils.create_files(
             root,
-            ('redirect.yaml', '"old_link": "New_article"'),
-            ('New_article/en.md', '# New article'),
+            ('wiki/redirect.yaml', '"old_link": "New_article"'),
+            ('wiki/New_article/en.md', '# New article'),
         )
 
-        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
         link = link_parser.find_link('Please read the [old article](/wiki/Old_LiNK).')
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
@@ -208,15 +208,15 @@ class TestRedirectedLinks:
         utils.create_files(
             root,
             (
-                'redirect.yaml', textwrap.dedent('''
+                'wiki/redirect.yaml', textwrap.dedent('''
                     # junk comment to fill the lines
                     "old_link": "Wrong_redirect"
                 ''').strip()
             ),
-            ('New_article/en.md', '# New article'),
+            ('wiki/New_article/en.md', '# New article'),
         )
 
-        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
         link = link_parser.find_link('Please read the [old article](/wiki/Old_link).')
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
@@ -271,7 +271,7 @@ class TestSectionLinks:
         utils.create_files(
             root,
             (
-                'New_article/en.md',
+                'wiki/New_article/en.md',
                 textwrap.dedent('''
                     # New article
 
@@ -294,9 +294,9 @@ class TestSectionLinks:
     def test__valid_absolute_link__translation(self, root):
         utils.create_files(
             root,
-            ('New_article/en.md', '# New article'),
+            ('wiki/New_article/en.md', '# New article'),
             (
-                'New_article/ru.md',
+                'wiki/New_article/ru.md',
                 textwrap.dedent(u'''
                     # New article
 
@@ -319,7 +319,7 @@ class TestSectionLinks:
     def test__invalid_absolute_link__missing_heading(self, root):
         utils.create_files(
             root,
-            ('New_article/en.md', '# New article'),
+            ('wiki/New_article/en.md', '# New article'),
         )
         new_article = dummy_article('wiki/New_article/en.md')
         all_articles = {new_article.path: new_article}
@@ -337,7 +337,7 @@ class TestSectionLinks:
         utils.create_files(
             root,
             (
-                'New_article/en.md',
+                'wiki/New_article/en.md',
                 textwrap.dedent('''
                     # New article
 
@@ -362,9 +362,9 @@ class TestSectionLinks:
     def test__valid_relative_link(self, root):
         utils.create_files(
             root,
-            ('New_article/en.md', '# New article'),
+            ('wiki/New_article/en.md', '# New article'),
             (
-                'New_article/Included_article/en.md',
+                'wiki/New_article/Included_article/en.md',
                 textwrap.dedent('''
                     # Included article
 
@@ -388,9 +388,9 @@ class TestSectionLinks:
     def test__invalid_relative_link(self, root):
         utils.create_files(
             root,
-            ('New_article/en.md', '# New article'),
+            ('wiki/New_article/en.md', '# New article'),
             (
-                'New_article/Included_article/en.md',
+                'wiki/New_article/Included_article/en.md',
                 textwrap.dedent('''
                     # Included article
 
@@ -416,10 +416,10 @@ class TestSectionLinks:
     def test__valid_redirect(self, root):
         utils.create_files(
             root,
-            ('redirect.yaml', '"old_location": "Target_article"'),
-            ('New_article/en.md', '# New article'),
+            ('wiki/redirect.yaml', '"old_location": "Target_article"'),
+            ('wiki/New_article/en.md', '# New article'),
             (
-                'Target_article/en.md',
+                'wiki/Target_article/en.md',
                 textwrap.dedent('''
                     # Included article
 
@@ -433,7 +433,7 @@ class TestSectionLinks:
             path: article_parser.parse(path)
             for path in ('wiki/New_article/en.md', 'wiki/Target_article/en.md')
         }
-        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
 
         link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#subheading).")
         error = link_checker.check_link(
@@ -444,10 +444,10 @@ class TestSectionLinks:
     def test__invalid_redirect(self, root):
         utils.create_files(
             root,
-            ('redirect.yaml', '"old_location": "Target_article"'),
-            ('New_article/en.md', '# New article'),
+            ('wiki/redirect.yaml', '"old_location": "Target_article"'),
+            ('wiki/New_article/en.md', '# New article'),
             (
-                'Target_article/en.md',
+                'wiki/Target_article/en.md',
                 textwrap.dedent('''
                     # Included article
 
@@ -461,7 +461,7 @@ class TestSectionLinks:
             path: article_parser.parse(path)
             for path in ('wiki/New_article/en.md', 'wiki/Target_article/en.md')
         }
-        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
 
         link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#totally-wrong-heading).")
         error = link_checker.check_link(
@@ -477,7 +477,7 @@ class TestArticleChecker:
         utils.create_files(
             root,
             (
-                'Article/en.md',
+                'wiki/Article/en.md',
                 textwrap.dedent('''
                     # An article
 
@@ -492,13 +492,13 @@ class TestArticleChecker:
                     [r]: #references
                 ''').strip()
             ),
-            ('Article/Subarticle/en.md', ''),
-            ('Brticle/en.md', ''),
-            ('Article/img/line.png', ''),
-            ('redirect.yaml', '"old_link": "Article/Subarticle"')
+            ('wiki/Article/Subarticle/en.md', ''),
+            ('wiki/Brticle/en.md', ''),
+            ('wiki/Article/img/line.png', ''),
+            ('wiki/redirect.yaml', '"old_link": "Article/Subarticle"')
         )
 
-        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
         article = article_parser.parse('wiki/Article/en.md')
         assert link_checker.check_article(article, redirects, all_articles={}) == {}
 
@@ -506,7 +506,7 @@ class TestArticleChecker:
         utils.create_files(
             root,
             (
-                'Article/en.md',
+                'wiki/Article/en.md',
                 textwrap.dedent('''
                     # An article
 
@@ -526,12 +526,12 @@ class TestArticleChecker:
                     [sure_ref]: /wiki/Article
                 ''').strip()
             ),
-            ('Article/img/yep.png', ''),
-            ('Valid_link/en.md', ''),
-            ('redirect.yaml', '"broken_redirect": "Another_missing_article"')
+            ('wiki/Article/img/yep.png', ''),
+            ('wiki/Valid_link/en.md', ''),
+            ('wiki/redirect.yaml', '"broken_redirect": "Another_missing_article"')
         )
 
-        redirects = redirect_parser.load_redirects(root.join('redirect.yaml'))
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
         article = article_parser.parse('wiki/Article/en.md')
         errors = link_checker.check_article(article, redirects, all_articles={})
         assert sum(len(ee) for ee in errors.values()) == 5

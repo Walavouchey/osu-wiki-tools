@@ -13,7 +13,7 @@ class TestArticleParser:
         utils.create_files(
             root,
             (
-                'Article/en.md',
+                'wiki/Article/en.md',
                 textwrap.dedent('''
                     ---
                     stub: true
@@ -65,7 +65,7 @@ class TestArticleParser:
         utils.create_files(
             root,
             (
-                'Article/en.md',
+                'wiki/Article/en.md',
                 textwrap.dedent('''
                     # An article
 
@@ -105,7 +105,7 @@ class TestArticleParser:
         utils.create_files(
             root,
             (
-                'Ranking_criteria/en.md',
+                'wiki/Ranking_criteria/en.md',
                 textwrap.dedent('''
                     # Ranking criteria
 
@@ -140,7 +140,7 @@ class TestArticleParser:
         utils.create_files(
             root,
             (
-                'Comments/en.md',
+                'wiki/Comments/en.md',
                 textwrap.dedent('''
                     # Comments
 
@@ -167,7 +167,7 @@ class TestArticleParser:
         utils.create_files(
             root,
             (
-                'Code_blocks/en.md',
+                'wiki/Code_blocks/en.md',
                 textwrap.dedent('''
                     # Code blocks
 
