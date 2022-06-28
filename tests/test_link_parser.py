@@ -233,6 +233,7 @@ class TestIdentifierLinks:
             ("No [reference](/wiki/No).", (3, 23)),
         ):
             link = link_parser.find_link(example)
+            assert link
             assert link.start == start
             assert link.fragment_start == fragment_start
             print(link.end)
@@ -245,10 +246,14 @@ class TestLinkObject:
             ('Cats are cute. [[1]][r]', '[r]: #references', ('#references', parse.urlparse("#references"))),
         ):
             link = link_parser.find_link(link)
+            assert link
             reference = reference_parser.extract(reference, lineno=1)
+            assert reference
 
-            assert link.resolve({reference.name: reference}).raw_location == reference.raw_location
-            assert link.resolve({reference.name: reference}).raw_location == raw_location
-            assert link.resolve({reference.name: reference}).parsed_location == reference.parsed_location
-            assert link.resolve({reference.name: reference}).parsed_location == parsed_location
-        assert link.resolve({}) is None
+            resolved_reference = link.resolve({reference.name: reference})
+            assert resolved_reference
+            assert resolved_reference.raw_location == reference.raw_location
+            assert resolved_reference.raw_location == raw_location
+            assert resolved_reference.parsed_location == reference.parsed_location
+            assert resolved_reference.parsed_location == parsed_location
+            assert link.resolve({}) is None

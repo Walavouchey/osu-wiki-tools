@@ -8,7 +8,7 @@ from wikitools import article_parser, link_checker, link_parser, redirect_parser
 
 def dummy_article(path):
     return article_parser.Article(
-        pathlib.Path(path), lines=[], references=[], identifiers=set(), front_matter={}
+        pathlib.Path(path), lines={}, references={}, identifiers={}, front_matter={}
     )
 
 
@@ -20,6 +20,7 @@ class TestArticleLinks:
         )
 
         link = link_parser.find_link('Check the [first article](/wiki/First_article).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -36,6 +37,7 @@ class TestArticleLinks:
             'This link is [broken](/wiki/A_random_directory), too.'
         ):
             link = link_parser.find_link(line)
+            assert link
             error = link_checker.check_link(
                 article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
             )
@@ -48,6 +50,7 @@ class TestArticleLinks:
         )
 
         link = link_parser.find_link('This link is [working][article_ref].')
+        assert link
         references = reference_parser.extract_all('[article_ref]: /wiki/My_article "Something something"')
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
@@ -61,6 +64,7 @@ class TestArticleLinks:
         )
 
         link = link_parser.find_link('This link is [not working][article_ref].')
+        assert link
         references = reference_parser.extract_all('[other_ref]: /wiki/Obscure_article "Something something"')
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
@@ -83,6 +87,7 @@ class TestArticleLinks:
             '[Alkaline FTW](Included/And_even_more).'
         ):
             link = link_parser.find_link(line)
+            assert link
             error = link_checker.check_link(
                 article=dummy_article('wiki/Batteries/en.md'), link=link, redirects={}, references={}, all_articles={}
             )
@@ -95,6 +100,7 @@ class TestArticleLinks:
         )
 
         link = link_parser.find_link('This link [does not work](Broken_link).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Existing_article/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -110,6 +116,7 @@ class TestImageLinks:
         )
 
         link = link_parser.find_link('Check this ![out](/wiki/img/battery.png).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -123,6 +130,7 @@ class TestImageLinks:
         )
 
         link = link_parser.find_link('Do not check this ![out](/wiki/img/nonsense.png).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -136,6 +144,7 @@ class TestImageLinks:
         )
 
         link = link_parser.find_link('Behold, the beatmap ![beatmap](img/beatmap.png "Wow!").')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Beatmap/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -150,6 +159,7 @@ class TestImageLinks:
         )
 
         link = link_parser.find_link('Behold, the relative image of a ![beatmap](beatmap.png "Wow!").')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Beatmap/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -163,6 +173,7 @@ class TestImageLinks:
         )
 
         link = link_parser.find_link('Nothing to see here ![please](img/none.png "disperse").')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Difficulty/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -177,6 +188,7 @@ class TestImageLinks:
 
         references = reference_parser.extract_all('[flag_XX]: /wiki/shared/img/XX.gif')
         link = link_parser.find_link('![][flag_XX] "The XXth Country"')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/OWC_2030/en.md'), link=link, redirects={}, references=references, all_articles={}
         )
@@ -199,6 +211,7 @@ class TestRedirectedLinks:
 
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
         link = link_parser.find_link('Please read the [old article](/wiki/Old_LiNK).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
         )
@@ -218,6 +231,7 @@ class TestRedirectedLinks:
 
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
         link = link_parser.find_link('Please read the [old article](/wiki/Old_link).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
         )
@@ -236,6 +250,7 @@ class TestExternalLinks:
             'I am [not even trying](htttttttttttttttttps://example.com).',
         ):
             link = link_parser.find_link(line)
+            assert link
             error = link_checker.check_link(
                 article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
             )
@@ -249,6 +264,7 @@ class TestExternalLinks:
             ('I am [not even trying][aaa].', '[aaa]: htttttttttttttttttps://example.com'),
         ):
             link = link_parser.find_link(line)
+            assert link
             references = reference_parser.extract_all(reference)
             error = link_checker.check_link(
                 article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
@@ -259,6 +275,7 @@ class TestExternalLinks:
 class TestMalformedLink:
     def test__missing_scheme(self):
         link = link_parser.find_link('Forgot to add a [scheme](//example.com)',)
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
@@ -286,6 +303,7 @@ class TestSectionLinks:
         all_articles = {new_article.path: new_article}
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-real-heading).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
         )
@@ -311,6 +329,7 @@ class TestSectionLinks:
         }
 
         link = link_parser.find_link('См. [другую статью](/wiki/New_article#заголовок-(translated)).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Some_other_article/ru.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
@@ -325,6 +344,7 @@ class TestSectionLinks:
         all_articles = {new_article.path: new_article}
 
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-nonexistent-heading).')
+        assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
         )
@@ -352,6 +372,7 @@ class TestSectionLinks:
 
         # pretend we're linking from a French page
         link = link_parser.find_link("Merci de lire l'[article](/wiki/New_article#auto-contrôle).")
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Some_other_article/fr.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
@@ -380,6 +401,7 @@ class TestSectionLinks:
         }
 
         link = link_parser.find_link("Please follow the [included article](Included_article#subheading).")
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
@@ -406,6 +428,7 @@ class TestSectionLinks:
         }
 
         link = link_parser.find_link("Please follow the [included article](Included_article#wrong-subheading).")
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
@@ -436,6 +459,7 @@ class TestSectionLinks:
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
 
         link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#subheading).")
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )
@@ -464,6 +488,7 @@ class TestSectionLinks:
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
 
         link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#totally-wrong-heading).")
+        assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )

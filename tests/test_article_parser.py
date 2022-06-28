@@ -5,7 +5,7 @@ from urllib import parse
 import conftest
 import utils
 
-from wikitools import article_parser, reference_parser, link_parser
+from wikitools import article_parser, reference_parser
 
 
 class TestArticleParser:
