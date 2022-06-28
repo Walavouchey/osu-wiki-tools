@@ -72,22 +72,15 @@ def main(*args):
 
     filenames = []
     if args.all:
-        filenames = file_utils.list_all_files(["wiki", "news"])
+        filenames = file_utils.list_all_files()
     else:
-        filenames = args.target
+        filenames = list(filter(lambda x: file_utils.is_article(x) or file_utils.is_newspost(x), args.target))
 
     redirects = redirect_parser.load_redirects("wiki/redirect.yaml")
     exit_code = 0
 
     articles: typing.Dict[str, article_parser.Article] = {}
     for filename in filenames:
-        if any((
-            not filename.endswith(".md"),
-            "TEMPLATE" in filename,
-            "README" in filename,
-        )):
-            continue
-
         a = article_parser.parse(filename)
         articles[a.path] = a
 
