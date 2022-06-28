@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 import sys
 import typing
 
-from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types
+from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
 
 def print_error():
@@ -56,17 +55,6 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def file_iterator(roots: list):
-    for item in roots:
-        if os.path.isdir(item):
-            for root, _, filenames in os.walk(item):
-                for f in filenames:
-                    filepath = os.path.join(root, f)
-                    yield filepath
-        elif os.path.isfile(item):
-            yield item
-
-
 def identifier_suggestions(e, articles):
     return '\n\t'.join((
         'line {}: {}'.format(lineno, identifier)
@@ -84,7 +72,7 @@ def main(*args):
 
     filenames = []
     if args.all:
-        filenames = file_iterator(["wiki", "news"])
+        filenames = file_utils.list_all_files(["wiki", "news"])
     else:
         filenames = args.target
 
