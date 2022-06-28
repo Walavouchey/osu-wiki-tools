@@ -151,7 +151,7 @@ class TestImageLinks:
         assert error is None
 
     # this is wrong as per ASC but still semantically correct
-    def test__valid_relative_link__in_article_directory(self, root):
+    def test__valid_relative_link_in_article_directory(self, root):
         utils.create_files(
             root,
             ('wiki/Beatmap/en.md', '# Beatmap'),
@@ -239,6 +239,55 @@ class TestRedirectedLinks:
         assert error.redirect_lineno == 2
         assert error.resolved_location == 'Old_link'
         assert error.redirect_destination == 'Wrong_redirect'
+
+
+class TestNewspostLinks:
+    def test__valid_newspost_link(self, root):
+        utils.create_files(
+            root,
+            (
+                'news/newspost.md', textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2022-03-10 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+                ''').strip()
+            ),
+            ('wiki/New_article/en.md', '# New article'),
+        )
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert error is None
+
+    def test__invalid_newspost_link(self, root):
+        utils.create_files(
+            root,
+            (
+                'news/newspost.md', textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2022-03-10 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+                ''').strip()
+            ),
+            ('wiki/New_article/en.md', '# New article'),
+        )
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/not-a-newspost).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert error
+        assert isinstance(error, error_types.LinkNotFoundError)
 
 
 class TestExternalLinks:

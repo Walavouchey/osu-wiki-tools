@@ -26,6 +26,18 @@ def check_link(
     location = reference.parsed_location.path if reference else link.parsed_location.path
     parsed_location = reference.parsed_location if reference else link.parsed_location
 
+    # news post link
+    if ((parsed_location.scheme == "http" or parsed_location.scheme == "https") and
+        parsed_location.netloc == "osu.ppy.sh" and location.startswith("/home/news/")):
+        target = pathlib.Path(location[1:] + ".md").relative_to("home")
+        location = '/' + target.as_posix()
+
+        if not target.exists():
+            # news posts don't have redirects
+            return errors.LinkNotFoundError(link, reference, location)
+        else:
+            return None
+
     # some external link; don't care
     if parsed_location.scheme:
         return None
