@@ -3,6 +3,7 @@ import pathlib
 import typing
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
+from wikitools import console
 
 
 def check_link(
@@ -36,7 +37,18 @@ def check_link(
             # news posts don't have redirects
             return errors.LinkNotFoundError(link, reference, location)
         else:
-            return None
+            if not parsed_location.fragment:
+                return None
+
+            raw_path = target.as_posix()
+            if raw_path not in all_articles:
+                all_articles[raw_path] = article_parser.parse(raw_path)
+            target_article = all_articles[raw_path]
+
+            if parsed_location.fragment not in target_article.identifiers:
+                return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, True)
+            else:
+                return None
 
     # some external link; don't care
     if parsed_location.scheme:

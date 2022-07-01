@@ -256,7 +256,6 @@ class TestNewspostLinks:
                     Today we have big news!!!!
                 ''').strip()
             ),
-            ('wiki/New_article/en.md', '# New article'),
         )
         link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost).')
         assert link
@@ -279,7 +278,6 @@ class TestNewspostLinks:
                     Today we have big news!!!!
                 ''').strip()
             ),
-            ('wiki/New_article/en.md', '# New article'),
         )
         link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/not-a-newspost).')
         assert link
@@ -288,6 +286,69 @@ class TestNewspostLinks:
         )
         assert error
         assert isinstance(error, error_types.LinkNotFoundError)
+
+
+class TestNewspostSectionLinks:
+    def test__valid_newspost_section_link(self, root):
+        utils.create_files(
+            root,
+            (
+                'news/newspost.md', textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2022-03-10 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+
+                    ## The news
+                ''').strip()
+            ),
+        )
+        article = article_parser.parse("news/newspost.md")
+        assert article.identifiers == {'the-news': 9}
+        all_articles = {article.path: article}
+
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost#the-news).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert error is None
+
+    def test__invalid_newspost_section_link(self, root):
+        utils.create_files(
+            root,
+            (
+                'news/newspost.md', textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2022-03-10 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+
+                    ## The news
+                ''').strip()
+            ),
+        )
+        article = article_parser.parse("news/newspost.md")
+        assert article.identifiers == {'the-news': 9}
+        all_articles = {article.path: article}
+
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost#the-fake-news).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert error
+        assert isinstance(error, error_types.MissingIdentifierError)
+        assert error.link == link
+        assert error.path == "news/newspost.md"
+        assert error.identifier == "the-fake-news"
+        assert error.translation_available == True
 
 
 class TestExternalLinks:

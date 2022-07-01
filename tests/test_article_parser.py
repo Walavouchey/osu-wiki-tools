@@ -43,6 +43,7 @@ class TestArticleParser:
 
         assert article.directory == 'wiki/Article'
         assert article.filename == 'en.md'
+        assert article.path == 'wiki/Article/en.md'
         assert article.identifiers == {'list-of-references': 18}
         assert article.references == {
             'links_ref': reference_parser.Reference(
@@ -60,6 +61,57 @@ class TestArticleParser:
         assert set(article.lines.keys()) == {10, 12, 14}
         # lines are stored as-is, with trailing line breaks
         assert article.lines[10].raw_line == 'Links! [Links](https://example.com)!\n'
+
+    def test__read_newspost(self, root):
+        utils.create_files(
+            root,
+            (
+                'news/newspost.md',
+                textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2021-10-21 15:00:00 +0000
+                    ---
+
+                    Links! [Links](https://example.com)!
+
+                    Links, [zwo](/wiki/Article_two), [drei](Nested_article), [vier][vier_ref]!
+
+                    [Links][links_ref]!
+
+                    [links_ref]: https://example.com
+
+                    ## List of references
+
+                    [vier_ref]: /wiki/Article_three "Links!"
+                ''').strip()
+            )
+        )
+
+        article = article_parser.parse('news/newspost.md')
+
+        assert article.directory == 'news'
+        assert article.filename == 'newspost.md'
+        assert article.path == 'news/newspost.md'
+        assert article.identifiers == {'list-of-references': 15}
+        assert article.references == {
+            'links_ref': reference_parser.Reference(
+                lineno=13, name='links_ref', raw_location='https://example.com',
+                parsed_location=parse.urlparse('https://example.com'), title=''
+            ),
+            'vier_ref': reference_parser.Reference(
+                lineno=17, name='vier_ref', raw_location='/wiki/Article_three',
+                parsed_location=parse.urlparse('/wiki/Article_three'), title='Links!'
+            )
+        }
+        assert article.front_matter["layout"] == "post"
+        assert article.front_matter["title"] == "News!!!"
+        assert article.front_matter["date"] == "2021-10-21 15:00:00 +0000"
+
+        assert set(article.lines.keys()) == {7, 9, 11}
+        # lines are stored as-is, with trailing line breaks
+        assert article.lines[7].raw_line == 'Links! [Links](https://example.com)!\n'
 
     def test__read_article__with_comments(self, root):
         utils.create_files(
