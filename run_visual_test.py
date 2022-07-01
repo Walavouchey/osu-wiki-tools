@@ -12,7 +12,7 @@ Press Esc to quit.
 import argparse
 import importlib
 import pkgutil
-from pynput.keyboard import Key, Listener
+from pynput.keyboard import Key, Listener # type: ignore
 import sys
 
 
