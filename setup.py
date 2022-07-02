@@ -23,7 +23,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(exclude=["tests", "visual_tests"]),
+    test_suite="tests",
+    packages=setuptools.find_packages(exclude=["tests"]),
     entry_points={
         "console_scripts": [
             "osu-wiki-tools=wikitools_cli.osu_wiki_tools:console_main",

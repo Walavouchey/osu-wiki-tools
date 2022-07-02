@@ -1,4 +1,4 @@
-from visual_tests.conftest import VisualTest, VisualTestCase
+from tests.conftest import VisualTest, VisualTestCase
 
 from wikitools_cli import osu_wiki_tools
 from wikitools_cli.commands import check_links, check_outdated_articles

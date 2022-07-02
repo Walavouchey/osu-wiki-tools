@@ -1,8 +1,8 @@
 from collections import Counter as multiset
 import os
 
-import conftest
-import utils
+import tests.conftest
+import tests.utils as utils
 
 from wikitools import file_utils
 

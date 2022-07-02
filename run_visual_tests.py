@@ -16,7 +16,7 @@ from pynput.keyboard import Key, Listener # type: ignore
 import sys
 
 
-import visual_tests
+import tests.visual
 from wikitools import console
 
 
@@ -25,8 +25,8 @@ def get_tests():
         importlib.import_module(module).test for module in
         (
             module for _, module, _ in pkgutil.walk_packages(
-                path=visual_tests.__path__,
-                prefix=visual_tests.__name__ + '.',
+                path=tests.visual.__path__,
+                prefix=tests.visual.__name__ + '.',
                 onerror=lambda _: None
             )
         )

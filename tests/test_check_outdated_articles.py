@@ -1,8 +1,8 @@
 from collections import Counter as multiset
 import textwrap
 
-import conftest
-import utils
+import tests.conftest
+import tests.utils as utils
 
 from wikitools import article_parser, git_utils
 

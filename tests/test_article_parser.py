@@ -2,8 +2,8 @@ import collections
 import textwrap
 from urllib import parse
 
-import conftest
-import utils
+import tests.conftest
+import tests.utils as utils
 
 from wikitools import article_parser, reference_parser
 

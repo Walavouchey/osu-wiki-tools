@@ -1,8 +1,8 @@
 import pathlib
 import textwrap
 
-import conftest
-import utils
+import tests.conftest
+import tests.utils as utils
 from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
 
 
