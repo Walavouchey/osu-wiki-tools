@@ -7,7 +7,7 @@ Tools useful for osu! wiki contributors
 import argparse
 import sys
 
-from wikitools_cli.commands import check_outdated_articles, check_links
+from wikitools_cli.commands import check_outdated_articles, check_links, what_links_here
 
 from wikitools_cli.VERSION import VERSION
 
@@ -21,6 +21,11 @@ commands = [
     "name": "check-links",
     "help": "find broken wikilinks",
     "entry": check_links.main,
+    },
+    {
+    "name": "what-links-here",
+    "help": "find links that link to an article",
+    "entry": what_links_here.main,
     },
 ]
 
