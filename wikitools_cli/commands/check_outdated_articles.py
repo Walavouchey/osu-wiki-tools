@@ -69,6 +69,7 @@ def parse_args(args):
     parser.add_argument("-a", "--all", default=False, action="store_true", help="look for incorrect hashes in all outdated articles")
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
+    parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
 
@@ -139,11 +140,16 @@ def main(*args):
     args = parse_args(args)
     exit_code = 0
 
+    if args.root:
+        changed_cwd = file_utils.ChangeDirectory(args.root)
+
     base_commit = args.base_commit or git_utils.get_first_branch_commit()
 
     if not base_commit and not args.all:
         print(f"{console.red('Error:')} neither --base-commit (unable to obtain automatically) nor --all were specified; nothing to do.")
         exit_code = 1
+        if args.root:
+            del changed_cwd
         return exit_code
 
     modified_translations = set()
@@ -162,6 +168,8 @@ def main(*args):
         exit_code = 1
 
     if not base_commit:
+        if args.root:
+            del changed_cwd
         return exit_code
 
     modified_originals = list_modified_originals(base_commit)
@@ -201,6 +209,8 @@ def main(*args):
     else:
         print(f"{console.grey('Notice:')} no originals are edited, not going to check translations.")
 
+    if args.root:
+        del changed_cwd
     return exit_code
 
 

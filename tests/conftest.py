@@ -17,8 +17,6 @@ def root(tmpdir: py.path.local):
     wiki.mkdir()
     news.mkdir()
 
-    # XXX(TicClick): this is a hack, since most functions expect the 'wiki' directory is in our sight.
-    # when the --root flag is added, this may be changed
     curdir = os.getcwd()
     os.chdir(tmpdir)
     yield tmpdir

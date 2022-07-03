@@ -3,6 +3,17 @@ import os
 import typing
 
 
+class ChangeDirectory:
+    cwd: str
+
+    def __init__(self, repo_root: str):
+        self.cwd = os.getcwd()
+        os.chdir(repo_root)
+
+    def __del__(self):
+        os.chdir(self.cwd)
+
+
 def is_newspost(path: str) -> bool:
     return (
         os.path.dirname(path).endswith("news") and
@@ -33,7 +44,7 @@ def is_original(path: str) -> bool:
     return os.path.basename(path) == "en.md"
 
 
-def list_all_files(roots: typing.List[str]=["wiki"]) -> typing.Generator[str, None, None]:
+def list_all_files(roots: typing.Iterable[str]=["wiki"]) -> typing.Generator[str, None, None]:
     for item in roots:
         for root, _, filenames in os.walk(item):
             for f in filenames:
@@ -81,7 +92,7 @@ def list_all_articles_and_newsposts() -> typing.Generator[str, None, None]:
             yield filepath
 
 
-def list_all_translations(article_dirs: typing.List[str]) -> typing.Generator[str, None, None]:
+def list_all_translations(article_dirs: typing.Iterable[str]) -> typing.Generator[str, None, None]:
     """
     List ALL translations inside the articles specified
     """

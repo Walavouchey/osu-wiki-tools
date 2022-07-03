@@ -48,10 +48,11 @@ def pretty_location(path, lineno, pos, location):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s check-links [options]")
-    parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check")
+    parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
     parser.add_argument("--outdated", action='store_true', help="check links in outdated articles")
+    parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
 
@@ -69,6 +70,9 @@ def main(*args):
     if not args.target and not args.all:
         print(f"{console.grey('Notice:')} No articles to check.")
         sys.exit(0)
+
+    if args.root:
+        changed_cwd = file_utils.ChangeDirectory(args.root)
 
     filenames = []
     if args.all:
@@ -128,6 +132,8 @@ def main(*args):
         print()
 
     print_count(error_count, link_count, error_file_count, file_count)
+    if args.root:
+        del changed_cwd
     return exit_code
 
 

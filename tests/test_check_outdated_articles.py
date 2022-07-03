@@ -4,7 +4,7 @@ import textwrap
 import tests.conftest
 import tests.utils as utils
 
-from wikitools import article_parser, git_utils
+from wikitools import article_parser, git_utils, file_utils
 
 from wikitools_cli.commands import check_outdated_articles as outdater
 
@@ -301,6 +301,170 @@ class TestCheckOutdatedArticles:
         commit_hash_2 = utils.get_last_commit_hash()
 
         exit_code = outdater.main("--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}", f"{outdater.AUTOCOMMIT_FLAG}")
+
+        assert exit_code == 0
+
+        commit_hash_3 = utils.get_last_commit_hash()
+
+        assert commit_hash_3 != commit_hash_2
+
+        assert utils.get_changed_files() == []
+
+        outdated_translations = outdater.list_modified_translations(commit_hash_3)
+
+        non_chinese_translations = utils.remove(article_paths, "en.md", "zh-tw.md")
+
+        assert multiset(outdated_translations) == multiset(non_chinese_translations)
+
+        expected_content = textwrap.dedent('''
+            ---
+            {}: true
+            {}: {}
+            ---
+
+            # Article
+        ''').strip()
+
+        for article in already_outdated_translations:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == expected_content.format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash_1)
+
+        for article in outdated_translations:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == expected_content.format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash_2)
+
+        for article in utils.take(article_paths, "en.md"):
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == '# Article\n\nThis is an article in English.'
+
+        log = git_utils.git("--no-pager", "log", "--pretty=oneline").splitlines()
+
+        assert len(log) == 4
+
+    def test__full_autofix_flow_with_changed_root(self, root):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/Article/en.md',
+            'wiki/Article/fr.md',
+            'wiki/Article/pt-br.md',
+            'wiki/Article/zh-tw.md',
+            'wiki/Category1/Article/en.md',
+            'wiki/Category1/Article/fr.md',
+            'wiki/Category1/Article/pt-br.md',
+            'wiki/Category1/Article/zh-tw.md',
+            'wiki/Category1/Category2/Article/en.md',
+            'wiki/Category1/Category2/Article/fr.md',
+            'wiki/Category1/Category2/Article/pt-br.md',
+            'wiki/Category1/Category2/Article/zh-tw.md',
+            'wiki/Category1/Category2/Category3/Article/en.md',
+            'wiki/Category1/Category2/Category3/Article/fr.md',
+            'wiki/Category1/Category2/Category3/Article/pt-br.md',
+            'wiki/Category1/Category2/Category3/Article/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths))
+        utils.stage_all_and_commit("add articles")
+        commit_hash_1 = utils.get_last_commit_hash()
+
+        already_outdated_translations = utils.take(article_paths, "zh-tw.md")
+        outdater.outdate_translations(*already_outdated_translations, outdated_hash=commit_hash_1)
+        utils.stage_all_and_commit("outdate chinese translations")
+
+        utils.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            utils.take(article_paths, "en.md")
+        ))
+        utils.stage_all_and_commit("modify english articles")
+        commit_hash_2 = utils.get_last_commit_hash()
+
+        cd = file_utils.ChangeDirectory("wiki")
+        exit_code = outdater.main("--root", "..", "--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}")
+        del cd
+
+        assert exit_code == 0
+
+        outdated_translations = utils.get_changed_files()
+
+        non_chinese_translations = utils.remove(article_paths, "en.md", "zh-tw.md")
+
+        assert multiset(outdated_translations) == multiset(non_chinese_translations)
+
+        expected_content = textwrap.dedent('''
+            ---
+            {}: true
+            {}: {}
+            ---
+
+            # Article
+        ''').strip()
+
+        for article in already_outdated_translations:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == expected_content.format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash_1)
+
+        for article in outdated_translations:
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == expected_content.format(outdater.OUTDATED_TRANSLATION_TAG, outdater.OUTDATED_HASH_TAG, commit_hash_2)
+
+        for article in utils.take(article_paths, "en.md"):
+            with open(article, "r", encoding='utf-8') as fd:
+                content = fd.read()
+
+            assert content == '# Article\n\nThis is an article in English.'
+
+        log = git_utils.git("--no-pager", "log", "--pretty=oneline").splitlines()
+
+        assert len(log) == 3
+
+    def test__full_autocommit_flow_with_changed_root(self, root):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/Article/en.md',
+            'wiki/Article/fr.md',
+            'wiki/Article/pt-br.md',
+            'wiki/Article/zh-tw.md',
+            'wiki/Category1/Article/en.md',
+            'wiki/Category1/Article/fr.md',
+            'wiki/Category1/Article/pt-br.md',
+            'wiki/Category1/Article/zh-tw.md',
+            'wiki/Category1/Category2/Article/en.md',
+            'wiki/Category1/Category2/Article/fr.md',
+            'wiki/Category1/Category2/Article/pt-br.md',
+            'wiki/Category1/Category2/Article/zh-tw.md',
+            'wiki/Category1/Category2/Category3/Article/en.md',
+            'wiki/Category1/Category2/Category3/Article/fr.md',
+            'wiki/Category1/Category2/Category3/Article/pt-br.md',
+            'wiki/Category1/Category2/Category3/Article/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths))
+        utils.stage_all_and_commit("add articles")
+        commit_hash_1 = utils.get_last_commit_hash()
+
+        already_outdated_translations = utils.take(article_paths, "zh-tw.md")
+        outdater.outdate_translations(*already_outdated_translations, outdated_hash=commit_hash_1)
+        utils.stage_all_and_commit("outdate chinese translations")
+
+        utils.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            utils.take(article_paths, "en.md")
+        ))
+        utils.stage_all_and_commit("modify english articles")
+        commit_hash_2 = utils.get_last_commit_hash()
+
+        cd = file_utils.ChangeDirectory("wiki")
+        exit_code = outdater.main("--root", "..", "--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}", f"{outdater.AUTOCOMMIT_FLAG}")
+        del cd
 
         assert exit_code == 0
 
