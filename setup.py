@@ -24,7 +24,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     test_suite="tests",
-    packages=setuptools.find_packages(exclude=["tests"]),
+    packages=setuptools.find_packages(exclude=["tests", "tests.visual"]),
     entry_points={
         "console_scripts": [
             "osu-wiki-tools=wikitools_cli.osu_wiki_tools:console_main",
