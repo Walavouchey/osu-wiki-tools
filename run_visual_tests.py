@@ -67,6 +67,8 @@ def run_test(tests, test_index, case_index):
     except Exception as e:
         print()
         print(console.red("Exception raised:"), e)
+    print()
+    print("Navigate with arrow keys. Press Esc to quit.")
 
 
 test_index = 0
@@ -79,21 +81,21 @@ def key_handler(key, tests):
 
     if key == Key.up:
         test_index -= 1
-        if test_index < 0:
-            test_index = len(tests) - 1
     elif key == Key.down:
         test_index += 1
-        if test_index >= len(tests):
-            test_index = 0
-
     elif key == Key.left:
         case_index -= 1
-        if case_index < 0:
-            case_index = len(tests[test_index].cases) - 1
     elif key == Key.right:
         case_index += 1
-        if case_index >= len(tests[test_index].cases):
-            case_index = 0
+
+    if test_index < 0:
+        test_index = len(tests) - 1
+    elif test_index >= len(tests):
+        test_index = 0
+    if case_index < 0:
+        case_index = len(tests[test_index].cases) - 1
+    elif case_index >= len(tests[test_index].cases):
+        case_index = 0
 
     elif key == Key.esc:
         print()

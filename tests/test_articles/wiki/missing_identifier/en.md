@@ -1,0 +1,3 @@
+[](#fake-heading)
+
+# Heading
