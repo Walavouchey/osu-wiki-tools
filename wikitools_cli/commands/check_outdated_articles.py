@@ -8,7 +8,7 @@ This script does the following:
     * are not modified in the PR (assuming that the PR author took care of the rest), and
     * don't have the outdated markers/hashes
 
-Alternatively, it can be run with {AUTOFIX_FLAG} (see the source below) to outdate the translations automatically.
+Alternatively, it can be run with --autofix (and --autocommit, or just -fc) to outdate the translations automatically.
 """
 
 import argparse
@@ -35,14 +35,19 @@ AUTOCOMMIT_FLAG = "--autocommit"
 AUTOCOMMIT_FLAG_SHORT = "-c"
 
 
-def print_translations_to_outdate(*filenames, outdated_hash=None):
+def print_translations_to_outdate(*filenames, outdated_hash=None, workflow=False):
     print(f"{console.red('Error:')} You have edited some original articles (en.md), but did not outdate their translations:")
     print("\n".join(console.red(f"* {filename}") for filename in filenames))
     print(f"\nIf your changes DON'T NEED to be added to the translations, add {console.red(PULL_REQUEST_TAG)} anywhere in the description of your pull request.")
-    print(
-        f"Otherwise, rerun the script with {console.green(AUTOFIX_FLAG)} (and perhaps {console.green(AUTOCOMMIT_FLAG)}), or "
-        "add the following to each article's front matter (https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#front-matter):"
-    )
+    if not workflow:
+        print(
+            f"Otherwise, rerun the script with {console.green(AUTOFIX_FLAG)} (and perhaps {console.green(AUTOCOMMIT_FLAG)}), or "
+            "add the following to each article's front matter (https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#front-matter):"
+        )
+    else:
+        print(
+            f"Otherwise, add the following to each article's front matter (https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#front-matter):"
+        )
     print()
     outdated_block = "" if outdated_hash is None else f"\n{OUTDATED_HASH_TAG}: {outdated_hash}"
     front_matter = f"---{outdated_block}\n{OUTDATED_TRANSLATION_TAG}: true\n---"
@@ -70,6 +75,7 @@ def parse_args(args):
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
+    parser.add_argument("--workflow", action='store_true', help="whether the script is run from a github workflow")
     return parser.parse_args(args)
 
 
@@ -143,7 +149,9 @@ def main(*args):
     if args.root:
         changed_cwd = file_utils.ChangeDirectory(args.root)
 
-    base_commit = args.base_commit or git_utils.get_first_branch_commit()
+    base_commit = args.base_commit
+    if not args.workflow and not base_commit:
+        base_commit = git_utils.get_first_branch_commit()
 
     if not base_commit and not args.all:
         print(f"{console.red('Error:')} neither --base-commit (unable to obtain automatically) nor --all were specified; nothing to do.")
@@ -200,7 +208,7 @@ def main(*args):
                     for file_path in translations_to_outdate:
                         print(console.green(f"* {file_path}"))
             else:
-                print_translations_to_outdate(*translations_to_outdate, outdated_hash=outdated_hash)
+                print_translations_to_outdate(*translations_to_outdate, outdated_hash=outdated_hash, workflow=args.workflow)
                 exit_code = 1
 
         else:

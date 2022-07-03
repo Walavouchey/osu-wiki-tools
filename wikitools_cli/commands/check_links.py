@@ -16,7 +16,7 @@ def print_error():
     print("- The link works, but contains URL-escaped characters (https://en.wikipedia.org/wiki/Percent-encoding). This only applies for links to articles and images inside the wiki.")
     print("- The link works, but incurs multiple redirects. Use a direct link instead.")
     print("\nFor more information on link style, see https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#links.")
-    print("\nIf you need to bypass this check, add SKIP_WIKILINK_CHECK anywhere in the PR description.\n")
+    print(f"\nIf you need to bypass this check, add {console.red('SKIP_WIKILINK_CHECK')} anywhere in the PR description.\n")
 
 
 def print_clean():
