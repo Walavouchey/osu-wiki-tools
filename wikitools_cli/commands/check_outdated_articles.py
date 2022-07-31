@@ -119,7 +119,7 @@ def outdate_translations(*translations, outdated_hash=""):
 
 def check_commit_hashes(modified_translations):
     """
-    Validate commit hashes using git show (check if they exist).
+    Validate commit hashes by checking if git has an associated object.
     """
 
     good_hashes, bad_hashes = set(), set()
@@ -135,7 +135,7 @@ def check_commit_hashes(modified_translations):
             continue
 
         try:
-            git_utils.git("show", outdated_hash, "--")
+            git_utils.git("cat-file", "-e", f"{outdated_hash}^{{commit}}")
             good_hashes.add(outdated_hash)
         except RuntimeError:
             bad_hashes.add(outdated_hash)
