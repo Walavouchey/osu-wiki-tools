@@ -1,1 +1,1 @@
-[Broken redirect](/wiki/Broken_redirect)
+[Broken redirect](/wiki/Redirected_article)
