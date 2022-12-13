@@ -26,6 +26,9 @@ OUTDATED_TRANSLATION_TAG = "outdated_translation"
 # The front matter tag which contains the commit hash since which the translation is not up to date
 OUTDATED_HASH_TAG = "outdated_since"
 
+# The front matter tag which shows that the article is outdated since some unknown moment of time
+OUTDATED_TAG = "outdated"
+
 # The script flag which will automatically outdate translations
 AUTOFIX_FLAG = "--autofix"
 AUTOFIX_FLAG_SHORT = "-f"
@@ -90,7 +93,11 @@ def list_outdated_translations(all_translations, modified_translations):
 
         with open(article_file, "r", encoding='utf-8') as fd:
             front_matter = article_parser.load_front_matter(fd)
-        if OUTDATED_HASH_TAG in front_matter or front_matter.get(OUTDATED_TRANSLATION_TAG, False):
+        if (
+            OUTDATED_HASH_TAG in front_matter or
+            front_matter.get(OUTDATED_TRANSLATION_TAG, False) or
+            front_matter.get(OUTDATED_TAG, False)
+        ):
             continue
 
         yield article_file
