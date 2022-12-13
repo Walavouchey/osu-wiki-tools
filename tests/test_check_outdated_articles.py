@@ -110,6 +110,36 @@ class TestCheckOutdatedArticles:
 
         assert multiset(translations_to_outdate) == multiset(utils.remove(article_paths, "en.md"))
 
+    def test__list_outdated_translations__no_specific_hash(self, root):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/Article/en.md',
+            'wiki/Article/fr.md',
+            'wiki/Article/pt-br.md',
+            'wiki/Article/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths[:-1]))
+
+        zh_tw_contents = textwrap.dedent("""
+        ---
+        outdated: true
+        ---
+
+        # Article
+        """)
+        utils.create_files(root, (article_paths[-1], zh_tw_contents))
+        utils.stage_all_and_commit("add some articles")
+
+        utils.create_files(root, (article_paths[0], '# Article\n\nThis is an article in English.'))
+        utils.stage_all_and_commit("add english article content")
+        translations_to_outdate = list(outdater.list_outdated_translations(
+            set(utils.remove(article_paths, "en.md")),
+            set()
+        ))
+
+        assert multiset(translations_to_outdate) == multiset(utils.remove(article_paths, "en.md", "zh-tw.md"))
+
     def test__outdate_translations(self, root):
         utils.set_up_dummy_repo()
         article_paths = [
