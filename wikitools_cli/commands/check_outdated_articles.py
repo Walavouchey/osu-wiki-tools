@@ -124,7 +124,7 @@ def check_commit_hashes(modified_translations):
 
     good_hashes, bad_hashes = set(), set()
     for article_file in modified_translations:
-        with open(article_file, "r") as fd:
+        with open(article_file, "r", encoding='utf-8') as fd:
             front_matter = article_parser.load_front_matter(fd)
         outdated_hash = front_matter.get(OUTDATED_HASH_TAG)
         if outdated_hash is None or outdated_hash in good_hashes:
