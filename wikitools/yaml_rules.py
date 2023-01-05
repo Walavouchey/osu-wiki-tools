@@ -152,3 +152,8 @@ class AllowedTagsRule(_FrontMatterRule):
             value = token.value  # type: ignore
             if value not in ALLOWED_FRONT_MATTER_TAGS:
                 return self._make_problem(token, f"bad front matter: {value!r} is not in the list of allowed tags")
+
+
+OSU_WIKI_RULES = filter(
+    lambda c: issubclass(c, _FrontMatterRule), locals().values()
+)

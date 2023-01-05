@@ -18,11 +18,7 @@ MARKDOWN_EXTENSION = ".md"
 
 
 def install_custom_checks(config: yamllint.config.YamlLintConfig):
-    for rule_cls in (
-        yaml_rules.NestedStructureRule,
-        yaml_rules.TopLevelRule,
-        yaml_rules.AllowedTagsRule,
-    ):
+    for rule_cls in yaml_rules.OSU_WIKI_RULES:
         config.rules[rule_cls.ID] = yamllint.rules._RULES[rule_cls.ID] = rule_cls()
 
 
