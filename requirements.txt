@@ -4,3 +4,4 @@ pytest-mypy==0.9.1
 pytest==7.1.1
 PyYAML==6.0
 types-PyYAML==6.0.6
+yamllint==1.26.3
