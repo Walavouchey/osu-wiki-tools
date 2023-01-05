@@ -16,6 +16,8 @@ from wikitools import yaml_rules
 FRONT_MATTER_DELIMITER = "---"
 MARKDOWN_EXTENSION = ".md"
 
+DEFAULT_CONFIG_CONTENT = 'extends: default'
+
 
 def install_custom_checks(config: yamllint.config.YamlLintConfig):
     for rule_cls in yaml_rules.OSU_WIKI_RULES:
@@ -83,7 +85,7 @@ def main(*args):
     if os.path.exists(args.config):
         config = yamllint.config.YamlLintConfig(file=os.path.expanduser(args.config))
     else:
-        config = yamllint.config.YamlLintConfig('extends: default')
+        config = yamllint.config.YamlLintConfig(DEFAULT_CONFIG_CONTENT)
 
     install_custom_checks(config)
 

@@ -1,4 +1,5 @@
 import abc
+import typing
 
 import yaml
 import yamllint.rules  # type: ignore
@@ -154,6 +155,8 @@ class AllowedTagsRule(_FrontMatterRule):
                 return self._make_problem(token, f"bad front matter: {value!r} is not in the list of allowed tags")
 
 
-OSU_WIKI_RULES = filter(
-    lambda c: issubclass(c, _FrontMatterRule), locals().values()
-)
+OSU_WIKI_RULES: typing.List[typing.Type[_FrontMatterRule]] = [
+    NestedStructureRule,
+    TopLevelRule,
+    AllowedTagsRule,
+]
