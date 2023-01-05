@@ -5,16 +5,25 @@ import os
 import sys
 import typing
 
-import yamllint.cli
-import yamllint.config
-import yamllint.linter
+import yamllint.cli  # type: ignore
+import yamllint.config  # type: ignore
+import yamllint.linter  # type: ignore
+import yamllint.rules  # type: ignore
+
+from wikitools import console
+from wikitools import yaml_rules
 
 FRONT_MATTER_DELIMITER = "---"
 MARKDOWN_EXTENSION = ".md"
 
 
-def grey(s):
-    return f"\x1b[90m{s}\x1b[0m"
+def install_custom_checks(config: yamllint.config.YamlLintConfig):
+    for rule_cls in (
+        yaml_rules.NestedStructureRule,
+        yaml_rules.TopLevelRule,
+        yaml_rules.AllowedTagsRule,
+    ):
+        config.rules[rule_cls.ID] = yamllint.rules._RULES[rule_cls.ID] = rule_cls()
 
 
 def front_matter(fileobj: typing.TextIO, filepath: str) -> str:
@@ -80,6 +89,8 @@ def main(*args):
     else:
         config = yamllint.config.YamlLintConfig('extends: default')
 
+    install_custom_checks(config)
+
     max_level = 0
     for path in file_iterator(args.target, config):
         try:
@@ -95,7 +106,7 @@ def main(*args):
     if max_level == yamllint.linter.PROBLEM_LEVELS["error"]:
         sys.exit(1)
 
-    print(f"{grey('Notice:')} No errors in YAML files detected.")
+    print(f"{console.grey('Notice:')} No errors in YAML files detected.")
 
 
 if __name__ == '__main__':
