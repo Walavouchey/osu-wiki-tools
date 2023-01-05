@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 import sys
@@ -60,7 +62,7 @@ def parse_args(args: list):
     parser = argparse.ArgumentParser(
         description="Check YAML files and front matter of the Markdown documents for common mistakes"
     )
-    parser.add_argument("--config", help="path to the yamllint config")
+    parser.add_argument("--config", help="path to the yamllint config", default="./.yamllint.yaml")
     parser.add_argument(
         "--target", nargs="+", default=(".",),
         help="files or directories to lint (by default, assumes current working directory)"
@@ -71,9 +73,12 @@ def parse_args(args: list):
     return parser.parse_args(args)
 
 
-def main():
-    args = parse_args(sys.argv[1:])
-    config = yamllint.config.YamlLintConfig(file=os.path.expanduser(args.config))
+def main(*args):
+    args = parse_args(args)
+    if os.path.exists(args.config):
+        config = yamllint.config.YamlLintConfig(file=os.path.expanduser(args.config))
+    else:
+        config = yamllint.config.YamlLintConfig('extends: default')
 
     max_level = 0
     for path in file_iterator(args.target, config):
@@ -93,5 +98,5 @@ def main():
     print(f"{grey('Notice:')} No errors in YAML files detected.")
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    sys.exit(main(*sys.argv[1:]))
