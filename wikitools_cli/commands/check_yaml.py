@@ -43,7 +43,7 @@ def front_matter(fileobj: typing.TextIO, filepath: str) -> str:
 
 
 def read_yaml(filepath: str):
-    with open(filepath, "r") as fd:
+    with open(filepath, "r", encoding='utf-8') as fd:
         if filepath.endswith(MARKDOWN_EXTENSION):
             return front_matter(fd, filepath)
         else:
