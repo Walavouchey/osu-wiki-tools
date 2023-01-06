@@ -31,16 +31,18 @@ def check_link(
     if ((parsed_location.scheme == "http" or parsed_location.scheme == "https") and
         parsed_location.netloc == "osu.ppy.sh" and location.startswith("/home/news/")):
         target = pathlib.Path(location[1:] + ".md").relative_to("home")
-        location = '/' + target.as_posix()
+        year = target.name.split("-")[0]
+        repo_target = pathlib.Path(f"news/{year}/{target.name}")
+        location = '/' + repo_target.as_posix()
 
-        if not target.exists():
+        if not repo_target.exists():
             # news posts don't have redirects
             return errors.LinkNotFoundError(link, reference, location)
         else:
             if not parsed_location.fragment:
                 return None
 
-            raw_path = target.as_posix()
+            raw_path = repo_target.as_posix()
             if raw_path not in all_articles:
                 all_articles[raw_path] = article_parser.parse(raw_path)
             target_article = all_articles[raw_path]

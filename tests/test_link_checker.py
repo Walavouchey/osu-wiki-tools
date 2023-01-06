@@ -246,18 +246,18 @@ class TestNewspostLinks:
         utils.create_files(
             root,
             (
-                'news/newspost.md', textwrap.dedent('''
+                'news/2007/2007-01-01-newspost.md', textwrap.dedent('''
                     ---
                     layout: post
                     title: News!!!
-                    date: 2022-03-10 12:00:00 +0000
+                    date: 2007-01-01 12:00:00 +0000
                     ---
 
                     Today we have big news!!!!
                 ''').strip()
             ),
         )
-        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost).')
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/2007-01-01-newspost).')
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
@@ -268,18 +268,18 @@ class TestNewspostLinks:
         utils.create_files(
             root,
             (
-                'news/newspost.md', textwrap.dedent('''
+                'news/2007/2007-01-01-newspost.md', textwrap.dedent('''
                     ---
                     layout: post
                     title: News!!!
-                    date: 2022-03-10 12:00:00 +0000
+                    date: 2007-01-01 12:00:00 +0000
                     ---
 
                     Today we have big news!!!!
                 ''').strip()
             ),
         )
-        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/not-a-newspost).')
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/2007-01-01-not-a-newspost).')
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
@@ -293,11 +293,11 @@ class TestNewspostSectionLinks:
         utils.create_files(
             root,
             (
-                'news/newspost.md', textwrap.dedent('''
+                'news/2007/2007-01-01-newspost.md', textwrap.dedent('''
                     ---
                     layout: post
                     title: News!!!
-                    date: 2022-03-10 12:00:00 +0000
+                    date: 2007-01-01 12:00:00 +0000
                     ---
 
                     Today we have big news!!!!
@@ -306,11 +306,11 @@ class TestNewspostSectionLinks:
                 ''').strip()
             ),
         )
-        article = article_parser.parse("news/newspost.md")
+        article = article_parser.parse("news/2007/2007-01-01-newspost.md")
         assert article.identifiers == {'the-news': 9}
         all_articles = {article.path: article}
 
-        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost#the-news).')
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/2007-01-01-newspost#the-news).')
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
@@ -321,11 +321,11 @@ class TestNewspostSectionLinks:
         utils.create_files(
             root,
             (
-                'news/newspost.md', textwrap.dedent('''
+                'news/2007/2007-01-01-newspost.md', textwrap.dedent('''
                     ---
                     layout: post
                     title: News!!!
-                    date: 2022-03-10 12:00:00 +0000
+                    date: 2007-01-01 12:00:00 +0000
                     ---
 
                     Today we have big news!!!!
@@ -334,11 +334,11 @@ class TestNewspostSectionLinks:
                 ''').strip()
             ),
         )
-        article = article_parser.parse("news/newspost.md")
+        article = article_parser.parse("news/2007/2007-01-01-newspost.md")
         assert article.identifiers == {'the-news': 9}
         all_articles = {article.path: article}
 
-        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/newspost#the-fake-news).')
+        link = link_parser.find_link('Please read the [latest news post](https://osu.ppy.sh/home/news/2007-01-01-newspost#the-fake-news).')
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
@@ -346,7 +346,7 @@ class TestNewspostSectionLinks:
         assert error
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.link == link
-        assert error.path == "news/newspost.md"
+        assert error.path == "news/2007/2007-01-01-newspost.md"
         assert error.identifier == "the-fake-news"
         assert error.translation_available == True
 

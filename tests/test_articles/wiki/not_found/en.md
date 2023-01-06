@@ -1,6 +1,6 @@
 [This article does not exist](/wiki/nope)
 
-[This news post does not exist](https://osu.ppy.sh/home/news/not-a-newspost)
+[This news post does not exist](https://osu.ppy.sh/home/news/2007-01-01-not-a-newspost)
 
 ![][flag_AA] No flag here
 
