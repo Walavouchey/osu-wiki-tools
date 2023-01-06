@@ -7,20 +7,25 @@ Tools useful for osu! wiki contributors
 import argparse
 import sys
 
-from wikitools_cli.commands import check_outdated_articles, check_links
+from wikitools_cli.commands import check_outdated_articles, check_links, check_yaml
 
 from wikitools_cli.VERSION import VERSION
 
 commands = [
     {
-    "name": "check-outdated-articles",
-    "help": "check if articles are correctly outdated",
-    "entry": check_outdated_articles.main,
+        "name": "check-outdated-articles",
+        "help": "check if articles are correctly outdated",
+        "entry": check_outdated_articles.main,
     },
     {
-    "name": "check-links",
-    "help": "find broken wikilinks",
-    "entry": check_links.main,
+        "name": "check-links",
+        "help": "find broken wikilinks",
+        "entry": check_links.main,
+    },
+    {
+        "name": "check-yaml",
+        "help": "validate front matter and standalone YAML files",
+        "entry": check_yaml.main,
     },
 ]
 
@@ -73,4 +78,4 @@ def console_main():
 
 
 if __name__ == '__main__':
-    sys.exit(main(*sys.argv[1:]))
+    console_main()
