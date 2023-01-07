@@ -31,4 +31,9 @@ setuptools.setup(
         ],
     },
     python_requires=">=3.10",
+    install_requires=[
+        "PyYAML==6.0",
+        "types-PyYAML==6.0.5",
+        "yamllint==1.26.3",
+    ],
 )
