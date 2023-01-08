@@ -16,6 +16,7 @@ ALLOWED_FRONT_MATTER_TAGS = frozenset({
     "stub",
     "tags",
     "translate_from",  # https://github.com/ppy/osu-wiki/pull/7865/commits/ba6a169add4f3cac620e0147e81323a28cd27376
+    "no_native_review",
 
     # Newspost tags
     "date",
