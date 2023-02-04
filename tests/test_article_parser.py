@@ -259,87 +259,91 @@ class TestArticleParser:
 
 class TestFrontMatter:
     def test__read_write_to_existing_front_matter(self, root):
-        article_path = root.join("en.md")
-        article_path.write_text(textwrap.dedent('''
-            ---
-            tags:
-              - a
-              - aaa
-              - юниcode
-            outdated: true
-            ---
+        cases = ["", "<!-- a comment -->\n\n", "<div> some html </div>\n\n"]
+        for test_case in cases:
+            article_path = root.join("en.md")
+            article_path.write_text(textwrap.dedent('''
+                ---
+                tags:
+                  - a
+                  - aaa
+                  - юниcode
+                outdated: true
+                ---
 
-            # Test
+                {}# Test
 
-            Lorem (ipsum).
-        '''), encoding='utf-8')
+                Lorem (ipsum).
+            ''').format(test_case).strip(), encoding='utf-8')
 
-        with article_path.open("r", encoding='utf-8') as fd:
-            fm = article_parser.load_front_matter(fd)
+            with article_path.open("r", encoding='utf-8') as fd:
+                fm = article_parser.load_front_matter(fd)
 
-        assert collections.OrderedDict(fm) == collections.OrderedDict({
-            'tags': ['a', 'aaa', 'юниcode'],
-            'outdated': True,
-        })
+            assert collections.OrderedDict(fm) == collections.OrderedDict({
+                'tags': ['a', 'aaa', 'юниcode'],
+                'outdated': True,
+            })
 
-        fm['outdated_since'] = '0000b4dc0ffee000'
-        article_parser.save_front_matter(str(article_path), fm)
+            fm['outdated_since'] = '0000b4dc0ffee000'
+            article_parser.save_front_matter(str(article_path), fm)
 
-        new_contents = article_path.read_text(encoding='utf-8')
-        assert new_contents == textwrap.dedent('''
-            ---
-            tags:
-              - a
-              - aaa
-              - юниcode
-            outdated: true
-            outdated_since: 0000b4dc0ffee000
-            ---
+            new_contents = article_path.read_text(encoding='utf-8')
+            assert new_contents == textwrap.dedent('''
+                ---
+                tags:
+                  - a
+                  - aaa
+                  - юниcode
+                outdated: true
+                outdated_since: 0000b4dc0ffee000
+                ---
 
-            # Test
+                {}# Test
 
-            Lorem (ipsum).
-        ''').lstrip()
+                Lorem (ipsum).
+            ''').format(test_case).strip()
 
     def test__read_write_to_no_existing_front_matter(self, root):
-        article_path = root.join("en.md")
-        article_path.write_text(textwrap.dedent('''
-            # Test
+        cases = ["", "<!-- a comment -->\n\n", "<div> some html </div>\n\n"]
+        for test_case in cases:
+            article_path = root.join("en.md")
+            article_path.write_text(textwrap.dedent('''
+                {}# Test
 
-            Lorem (ipsum).
-        '''), encoding='utf-8')
+                Lorem (ipsum).
+            ''').format(test_case).strip(), encoding='utf-8')
 
-        with open(article_path, "r", encoding='utf-8') as fd:
-            front_matter = article_parser.load_front_matter(fd)
-        front_matter['tags'] = ['a', 'aaa', 'юниcode']
-        front_matter['outdated'] = True
-        article_parser.save_front_matter(article_path, front_matter)
+            with open(article_path, "r", encoding='utf-8') as fd:
+                front_matter = article_parser.load_front_matter(fd)
+            front_matter['tags'] = ['a', 'aaa', 'юниcode']
+            front_matter['outdated'] = True
+            article_parser.save_front_matter(article_path, front_matter)
 
-        with article_path.open("r", encoding='utf-8') as fd:
-            print("Article contents:\n" + fd.read())
-            fd.seek(0)
-            fm = article_parser.load_front_matter(fd)
+            with article_path.open("r", encoding='utf-8') as fd:
+                print("Article contents:\n" + fd.read())
+                fd.seek(0)
+                fm = article_parser.load_front_matter(fd)
 
-        assert collections.OrderedDict(fm) == collections.OrderedDict({
-            'tags': ['a', 'aaa', 'юниcode'],
-            'outdated': True,
-        })
+            assert collections.OrderedDict(fm) == collections.OrderedDict({
+                'tags': ['a', 'aaa', 'юниcode'],
+                'outdated': True,
+            })
 
-        fm['outdated_since'] = '0000b4dc0ffee000'
-        article_parser.save_front_matter(str(article_path), fm)
+            fm['outdated_since'] = '0000b4dc0ffee000'
+            article_parser.save_front_matter(str(article_path), fm)
 
-        new_contents = article_path.read_text(encoding='utf-8')
-        assert new_contents == textwrap.dedent('''
-            ---
-            tags:
-              - a
-              - aaa
-              - юниcode
-            outdated: true
-            outdated_since: 0000b4dc0ffee000
-            ---
+            new_contents = article_path.read_text(encoding='utf-8')
+            assert new_contents == textwrap.dedent('''
+                ---
+                tags:
+                  - a
+                  - aaa
+                  - юниcode
+                outdated: true
+                outdated_since: 0000b4dc0ffee000
+                ---
 
-            # Test
-            
-            Lorem (ipsum).
-        ''').lstrip()
+                {}# Test
+
+                Lorem (ipsum).
+            ''').format(test_case).strip()

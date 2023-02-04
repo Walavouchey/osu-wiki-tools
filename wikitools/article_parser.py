@@ -77,6 +77,24 @@ def load_front_matter(fileobj: typing.TextIO) -> dict:
     return dict()
 
 
+class FrontMatterDetector():
+    """
+    Helper class for keeping track of whether a line is part of front matter.
+    Includes delimiter lines.
+    """
+
+    def __init__(self):
+        self.in_front_matter_ = 0
+
+    in_front_matter_ = False
+
+    def in_front_matter(self, line: str):
+        if line.split('#')[0].strip() == FRONT_MATTER_DELIMITER:
+            self.in_front_matter_ = not self.in_front_matter_
+            return True
+        return self.in_front_matter_
+
+
 def save_front_matter(filepath: str, fm: dict):
     if not fm:
         return
@@ -90,8 +108,12 @@ def save_front_matter(filepath: str, fm: dict):
         new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
 
         with open(filepath, "r", encoding='utf-8') as old_file:
+            front_matter_detector = FrontMatterDetector()
             for line in old_file:
-                if line.startswith(TITLE_INDICATOR):
+                # There shouldn't be anything before any front matter, so it's just assumed here
+                # There may be cases where the title is preceded by a comment or HTML tags, however
+                # Such content is preserved
+                if not front_matter_detector.in_front_matter(line) and line.strip():
                     new_file.write(line)
                     new_file.write(old_file.read())
                     break
