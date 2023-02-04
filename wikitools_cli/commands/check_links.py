@@ -51,7 +51,7 @@ def parse_args(args):
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
-    parser.add_argument("--outdated", action='store_true', help="check links in outdated articles")
+    parser.add_argument("--outdated", action='store_true', help="check links in outdated articles and section links to outdated translations")
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
@@ -94,13 +94,29 @@ def main(*args):
     file_count = 0
 
     for _, a in sorted(articles.items()):
-        if (a.front_matter.get("outdated", False) or a.front_matter.get("outdated_translation", False)) and not args.outdated:
+        if not args.outdated and (a.front_matter.get("outdated", False) or a.front_matter.get("outdated_translation", False)):
             continue
 
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
         errors = link_checker.check_article(a, redirects, articles)
+
+        if not args.outdated:
+            errors = {
+                a: b for a, b in {
+                    i: [
+                        e for e in errors_on_line if
+                        not (
+                            isinstance(e, error_types.MissingIdentifierError)
+                            and (e.no_translation_available or e.translation_outdated)
+                        )
+                    ]
+                    for i, errors_on_line in errors.items()
+                }.items()
+                if b
+            }
+
         if not errors:
             continue
 

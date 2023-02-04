@@ -48,7 +48,7 @@ def check_link(
             target_article = all_articles[raw_path]
 
             if parsed_location.fragment not in target_article.identifiers:
-                return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, True)
+                return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, False, False)
             else:
                 return None
 
@@ -85,8 +85,10 @@ def check_link(
     # link to a section -> need to find the target article; it could be a translation
     # XXX(TicClick): this part assumes there is always an English version of the article in a folder
     target_file = target / article.filename
-    is_translation_available = article.filename != 'en.md' and target_file.is_file()
-    if not is_translation_available:
+    translation = target_file # verified to be the case later
+    no_translation_available = not (article.filename != 'en.md' and target_file.is_file())
+
+    if no_translation_available:
         target_file = target / 'en.md'
 
     raw_path = target_file.as_posix()
@@ -96,7 +98,19 @@ def check_link(
     target_article = all_articles[raw_path]
 
     if parsed_location.fragment not in target_article.identifiers:
-        return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, is_translation_available)
+        # collect some additional metadata before reporting
+        translation_outdated = False
+        if not no_translation_available:
+            raw_path_translation = translation.as_posix()
+            if raw_path_translation not in all_articles:
+                # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
+                all_articles[raw_path_translation] = article_parser.parse(translation)
+            translation_outdated = all_articles[raw_path_translation].front_matter.get('outdated_translation', False)
+
+        return errors.MissingIdentifierError(
+            link, raw_path, parsed_location.fragment,
+            no_translation_available, translation_outdated
+        )
 
     return None
 

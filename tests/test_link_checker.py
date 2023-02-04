@@ -348,7 +348,8 @@ class TestNewspostSectionLinks:
         assert error.link == link
         assert error.path == "news/2007/2007-01-01-newspost.md"
         assert error.identifier == "the-fake-news"
-        assert error.translation_available == True
+        assert not error.no_translation_available
+        assert not error.translation_outdated
 
 
 class TestExternalLinks:
@@ -461,7 +462,8 @@ class TestSectionLinks:
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'some-nonexistent-heading'
         assert error.path == 'wiki/New_article/en.md'
-        assert not error.translation_available
+        assert error.no_translation_available
+        assert not error.translation_outdated
 
     def test__invalid_absolute_link__missing_translation(self, root):
         utils.create_files(

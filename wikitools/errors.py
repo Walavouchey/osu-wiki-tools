@@ -96,7 +96,7 @@ class MissingReferenceError(
 
 class MissingIdentifierError(
     LinkError,
-    collections.namedtuple('MissingIdentifier', 'link path identifier translation_available')
+    collections.namedtuple('MissingIdentifier', 'link path identifier no_translation_available translation_outdated')
 ):
     """
     An error indicating that in another article there is no heading or identifier tag
@@ -108,11 +108,16 @@ class MissingIdentifierError(
     link: link_parser.Link
     path: str
     identifier: str
-    translation_available: bool
+    # for news posts, these two should be False
+    no_translation_available: bool # also implies a link to and from a translation
+    translation_outdated: bool
 
     def __repr__(self):
         return 'There is no heading or tag with identifier "{}" in "/{}"{}'.format(
-            self.identifier, self.path, '' if self.translation_available else ' (no translation available)'
+            self.identifier, self.path,
+            ' (no translation available)' if self.no_translation_available
+            else ' (outdated translation)' if self.translation_outdated
+            else ''
         )
 
     @property
