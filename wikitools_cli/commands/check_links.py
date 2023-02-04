@@ -83,7 +83,7 @@ def main(*args):
     redirects = redirect_parser.load_redirects("wiki/redirect.yaml")
     exit_code = 0
 
-    articles: typing.Dict[str, article_parser.Article] = {}
+    articles = {}
     for filename in filenames:
         a = article_parser.parse(filename)
         articles[a.path] = a
