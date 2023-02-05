@@ -14,6 +14,7 @@ import importlib
 import pkgutil
 from pynput.keyboard import Key, Listener # type: ignore
 import sys
+from traceback import format_exc
 
 
 import tests.visual
@@ -46,9 +47,9 @@ def run_all_tests(tests):
             except SystemExit as e:
                 print()
                 print(f"Program exited with {console.red(e.code) if e.code != 0 else console.green(e.code)}")
-            except Exception as e:
+            except Exception:
                 print()
-                print(console.red("Exception raised:"), e)
+                print(console.red("Exception raised:"), format_exc())
 
 
 def run_test(tests, test_index, case_index):
@@ -64,9 +65,9 @@ def run_test(tests, test_index, case_index):
     except SystemExit as e:
         print()
         print(f"Program exited with {console.red(e.code) if e.code != 0 else console.green(e.code)}")
-    except Exception as e:
+    except Exception:
         print()
-        print(console.red("Exception raised:"), e)
+        print(console.red("Exception raised:"), format_exc())
     print()
     print("Navigate with arrow keys. Press Esc to quit.")
 

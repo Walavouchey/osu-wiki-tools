@@ -1,10 +1,13 @@
 import os
 import sys
+import tempfile
 
 import collections
 import py
 import pytest
 import typing
+
+import tests.utils as utils
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -21,6 +24,31 @@ def root(tmpdir: py.path.local):
     os.chdir(tmpdir)
     yield tmpdir
     os.chdir(curdir)
+
+
+class DummyRepository():
+    """
+    The same exact thing as above but the poor man's non-pytest version (for visual tests)
+
+    Usage:
+        with DummyRepository() as root:
+            # do stuff
+        # automatically cleaned up when finished
+    """
+
+    def __init__(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.curdir = os.getcwd()
+        os.chdir(self.tmpdir.name)
+        utils.set_up_dummy_repo()
+
+    def __enter__(self):
+        return py.path.local(self.tmpdir.name)
+
+    def __exit__(self, exc, value, tb):
+        os.chdir(self.curdir)
+        del self.curdir
+        del self.tmpdir
 
 
 class VisualTestCase(collections.namedtuple('VisualTestCase', 'description function')):
