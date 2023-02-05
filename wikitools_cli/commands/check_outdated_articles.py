@@ -51,7 +51,9 @@ def print_translations_to_outdate(*filenames, outdated_hash=None, workflow=False
     print()
     outdated_block = "" if outdated_hash is None else f"\n{OUTDATED_HASH_TAG}: {outdated_hash}"
     front_matter = f"---{outdated_block}\n{OUTDATED_TRANSLATION_TAG}: true\n---"
-    print(console.green(front_matter))
+
+    # the seemingly needless complication here ensures that the github action log displays all three lines in colour
+    print("\n".join([console.green(line) for line in front_matter.split("\n")]))
 
 
 def print_bad_hash_error(*filenames, outdated_hash=None):
