@@ -14,9 +14,16 @@ class ChangeDirectory:
         os.chdir(self.cwd)
 
 
+def normalised(path: str) -> str:
+    normalised = os.path.normpath(path).replace("\\", "/")
+    if normalised.startswith("./"):
+        normalised = normalised[2:]
+    return normalised
+
+
 def is_newspost(path: str) -> bool:
     return (
-        os.path.dirname(path).endswith("news") and
+        normalised(os.path.dirname(path)).startswith("news") and
         path.endswith(".md")
     )
 
