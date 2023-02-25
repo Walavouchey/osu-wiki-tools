@@ -1,7 +1,7 @@
 from tests.conftest import VisualTest, VisualTestCase
 
 from wikitools_cli import osu_wiki_tools
-from wikitools_cli.commands import check_links, check_outdated_articles, check_yaml
+from wikitools_cli.commands import check_links, check_outdated_articles, check_yaml, generate_templates
 
 test = VisualTest(
     name="Print help",
@@ -22,6 +22,10 @@ test = VisualTest(
         VisualTestCase(
             description="check_yaml.main run with --help",
             function=lambda : check_yaml.main("--help")
+        ),
+        VisualTestCase(
+            description="generate_templates.main run with --help",
+            function=lambda : generate_templates.main("--help")
         ),
     ]
 )
