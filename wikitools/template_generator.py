@@ -13,6 +13,7 @@ import yaml
 
 from wikitools.article_parser import FrontMatterDetector
 from wikitools import comment_parser, link_parser
+from wikitools.table_row import TableRow
 
 
 FORMAT_TAG_LEFT = "<<"

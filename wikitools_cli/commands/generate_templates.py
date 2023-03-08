@@ -10,7 +10,10 @@ import textwrap
 import typing
 
 from wikitools import console, file_utils
-from wikitools.table_generator import Table, TableRow, TableTemplateDescriptor, Format, load_template_descriptors, SortOrder
+from wikitools.table_generator import Table
+from wikitools.template_generator import Format, SortOrder
+from wikitools.table_row import TableRow
+from wikitools.template_descriptor import TableTemplateDescriptor, load_template_descriptors
 
 
 class HeadingTracker():
@@ -52,9 +55,6 @@ class HeadingTracker():
             else:
                 break
         return (current_heading, heading_level)
-
-
-#def remove_existing_tables()
 
 
 def skip_while(fileobj: typing.TextIO, heading_tracker: HeadingTracker, predicate_to_reach: typing.Callable[[str, HeadingTracker], bool]) -> typing.Tuple[str, int]:

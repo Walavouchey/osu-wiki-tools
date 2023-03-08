@@ -4,7 +4,7 @@ import textwrap
 import tests.conftest
 import tests.utils as utils
 
-from wikitools_cli.commands import generate_templates as template_generator
+from wikitools_cli.commands import generate_templates
 
 class TestGenerateTemplates:
     @pytest.mark.parametrize(
@@ -73,7 +73,7 @@ class TestGenerateTemplates:
 
         utils.create_files(root, (article[0], article[1] + ''.join(extra)), csv_file)
 
-        exit_code = template_generator.main("--target", article[0])
+        exit_code = generate_templates.main("--target", article[0])
 
         assert exit_code == 0
 
@@ -161,7 +161,7 @@ class TestGenerateTemplates:
 
         utils.create_files(root, (article[0], article[1] + ''.join(extra)), csv_file)
 
-        exit_code = template_generator.main("--target", article[0])
+        exit_code = generate_templates.main("--target", article[0])
 
         assert exit_code == 0
 
@@ -244,7 +244,7 @@ class TestGenerateTemplates:
 
         utils.create_files(root, (article[0], article[1] + ''.join(extra)), csv_file)
 
-        exit_code = template_generator.main("--target", article[0])
+        exit_code = generate_templates.main("--target", article[0])
 
         assert exit_code == 0
 

@@ -3,7 +3,8 @@ import textwrap
 import tests.conftest
 import tests.utils as utils
 
-from wikitools.table_generator import load_template_descriptors, Alignment, SortOrder, Format, Filter
+from wikitools.template_generator import Alignment, SortOrder, Format, Filter
+from wikitools.template_descriptor import load_template_descriptors
 
 class TestTableGenerator:
     def test__load_template_descriptor(self, root):
