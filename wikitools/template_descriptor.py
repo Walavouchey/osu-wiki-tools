@@ -70,7 +70,7 @@ class TableTemplateDescriptor():
     @property
     def filter(self) -> typing.Optional[Filter]:
         match self._get(["table", "filter"]):
-            case str(filter_):
+            case dict(filter_):
                 return Filter(filter_)
             case _:
                 return None

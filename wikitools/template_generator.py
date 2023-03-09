@@ -284,114 +284,120 @@ class Format():
         return pruned
 
     _format: typing.List[typing.Union[str, Tag]]
-    
 
-# Enums have the benefit of being printable
-class FilterOperator(StrEnum):
-    IS = "is"
-    IS_NOT = "is not"
-    HAS = "has"
-    HAS_NOT = "has not"
+
+class FilterMode(StrEnum):
     AND = "and"
     OR = "or"
 
-
-class FilterOperatorFunction():
-    IS: typing.Callable[[str, str], bool] = lambda a, b : a == b
-    IS_NOT: typing.Callable[[str, str], bool] = lambda a, b : a != b
-    HAS: typing.Callable[[str, str], bool] = lambda a, b : b in a
-    HAS_NOT: typing.Callable[[str, str], bool] = lambda a, b : b not in a
+class FilterModeFunction(Enum):
     AND: typing.Callable[[bool, bool], bool] = lambda a, b : a and b
     OR: typing.Callable[[bool, bool], bool] = lambda a, b : a or b
 
+FILTER_MODES = {
+    FilterMode.AND.value: FilterModeFunction.AND,
+    FilterMode.OR.value: FilterModeFunction.OR,
+}
+
+FILTER_MODES_STR = {
+    FilterMode.AND.value: FilterMode.AND,
+    FilterMode.OR.value: FilterMode.OR,
+}
+
+
+class FilterOperator(StrEnum):
+    IS = "is"
+    HAS = "has"
+
+class FilterOperatorFunction(Enum):
+    IS: typing.Callable[[str, str], bool] = lambda a, b : a == b
+    HAS: typing.Callable[[str, str], bool] = lambda a, b : b in a
 
 FILTER_OPERATORS = OrderedDict({
-    FilterOperator.IS_NOT.value: FilterOperatorFunction.IS_NOT,
     FilterOperator.IS.value: FilterOperatorFunction.IS,
-    FilterOperator.HAS_NOT.value: FilterOperatorFunction.HAS_NOT,
     FilterOperator.HAS.value: FilterOperatorFunction.HAS,
-    FilterOperator.AND.value: FilterOperatorFunction.AND,
-    FilterOperator.OR.value: FilterOperatorFunction.OR,
-})
-
-
-FILTER_OPERATORS_STR = OrderedDict({
-    FilterOperator.IS_NOT.value: FilterOperator.IS_NOT,
-    FilterOperator.IS.value: FilterOperator.IS,
-    FilterOperator.HAS_NOT.value: FilterOperator.HAS_NOT,
-    FilterOperator.HAS.value: FilterOperator.HAS,
-    FilterOperator.AND.value: FilterOperator.AND,
-    FilterOperator.OR.value: FilterOperator.OR,
 })
 
 
 class Filter():
     """
     Filter, with extremely simple syntax for ease of implementation (for now).
-    
-    There are no parentheses.
 
-    Operators are evaluated in order:
-        A is not B
-        A is B
-        A has not B
-        A has B
-        A and B [ and C ...]
-        A or B [ or C ...]
+    Example:
+
+        filter:
+          include:
+            - A is B
+            - C is D
+          exclude:
+            - F has G
+            - H is i
+          include_mode: and # default: and
+          exclude_mode: or # default: or
     """
 
-    def __init__(self, filter_string: str):
-        # "A is B and C has D and E is F"
-        # --> ('A', 'is', 'B', 'and', 'C', 'has', 'D', 'and', 'E' is 'F')
-        tokens = tuple(s.strip() for s in regex_split("(" + "|".join(f" {op} " for op in FILTER_OPERATORS.keys()) + ")", filter_string))
+    def __init__(self, filter_descriptor: dict):
+        self.include_mode = self._get_filter_mode(filter_descriptor, "include_mode", self.default_include_mode)
+        self.exclude_mode = self._get_filter_mode(filter_descriptor, "exclude_mode", self.default_exclude_mode)
 
-        match self._build_ast(tokens):
-            case tuple(result):
-                self.op_tree = result
-            case _:
-                raise ValueError
+        self.includes = self._get_filter(filter_descriptor, "include")
+        self.excludes = self._get_filter(filter_descriptor, "exclude")
 
-    def _build_ast(self, tokens: tuple) -> typing.Union[tuple, str]:
-        # ('A', 'is', 'B', 'and', 'C', 'has', 'D', 'and', 'E' is 'F')
-        # --> (and,
-        #         ('A', 'is', 'B'),
-        #         ('C', 'has', 'D', 'and', 'E', 'is', 'F'))
-        # ...
-        # --> (and,
-        #         (is, 'A', 'B'),
-        #         (and,
-        #             (has, 'C', 'D'),
-        #             (is, 'E', 'F')))
-        #
-        # lisp expression
-        for op_name in reversed(FILTER_OPERATORS.keys()):
-            for i, token in enumerate(tokens):
-                if token == op_name:
-                    op = FILTER_OPERATORS_STR[op_name]
-                    arguments = (
-                        self._build_ast(tokens[:i]),
-                        self._build_ast(tokens[i + 1:])
-                    )
-                    return (op, *arguments)
+    def _get_filter_mode(self, filter_descriptor: dict, key: str, default: FilterMode) -> FilterMode:
+        try:
+            match filter_descriptor[key]:
+                case str(filter_mode):
+                    return FILTER_MODES_STR.get(filter_mode, default)
+                case _:
+                    return default
+        except KeyError:
+            return default
 
-        if type(tokens[0]) is not str:
-            raise ValueError
-        return tokens[0]
+    def _get_filter(self, filter_descriptor: dict, key: str) -> typing.List[typing.Tuple[FilterOperatorFunction, Format, str]]:
+        try:
+            match filter_descriptor[key]:
+                case str(predicate):
+                    return [self._parse_predicate(predicate)]
+                case list(predicates):
+                    return [self._parse_predicate(p) for p in predicates]
+                case _:
+                    return []
+        except KeyError:
+            return []
 
     def apply(self, row: TableRow) -> bool:
-        return self._evaluate(self.op_tree, row)
+        # include = predicate_A FilterModeFunction predicate_B ...
+        include = self._reduce_bools(list(
+            filter_op_func(format_.apply(row), value)
+            for filter_op_func, format_, value in self.includes
+        ), FILTER_MODES[self.include_mode.value], True)
 
-    def _evaluate(self, tree: tuple, row: TableRow) -> bool:
-        op = tree[0]
-        args = tree[1:]
-        evaluated_args = tuple(
-            arg
-            if type(arg) is bool else
-            Format(arg).apply(row)
-            if type(arg) is str else
-            self._evaluate(arg, row)
-            for arg in args
-        )
-        return FILTER_OPERATORS[op.value](*evaluated_args)
+        exclude = self._reduce_bools(list(
+            filter_op_func(format_.apply(row), value)
+            for filter_op_func, format_, value in self.excludes
+        ), FILTER_MODES[self.exclude_mode.value], False)
 
-    op_tree: tuple
+        return include and not exclude
+
+    # TODO: stop assuming valid input
+    @staticmethod
+    def _parse_predicate(predicate: str) -> typing.Tuple[FilterOperatorFunction, Format, str]:
+        # predicate: "<<Format>> FilterOperator value"
+        a, filter_mode, b = (s.strip() for s in predicate.split(" ")[:3])
+        return (FILTER_OPERATORS[filter_mode], Format(a), b)
+
+    def _reduce_bools(self, bools: typing.List[bool], filter_mode_function: FilterModeFunction, default: bool) -> bool:
+        if len(bools) == 0:
+            return default
+        if len(bools) == 1:
+            return bools[0]
+        return self._reduce_bools([filter_mode_function(bools[0], bools[1]), *bools[2:]], filter_mode_function, default)
+
+
+    default_include_mode: FilterMode = FilterMode.AND
+    default_exclude_mode: FilterMode = FilterMode.OR
+
+    include_mode: FilterMode
+    exclude_mode: FilterMode
+    includes: typing.List[typing.Tuple[FilterOperatorFunction, Format, str]]
+    excludes: typing.List[typing.Tuple[FilterOperatorFunction, Format, str]]

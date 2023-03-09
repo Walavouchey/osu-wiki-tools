@@ -46,7 +46,9 @@ class TestGenerateTemplates:
                     - "<<icon link: FA listing>> <<icon link: SoundCloud>>"
                     - "[<<Track>>](<<FA listing>>)"
                     - "<<Note>>"
-                filter: "<<Type>> is OST and <<Track>> has not track2"
+                filter:
+                  include: "<<Type>> is OST"
+                  exclude: "<<Track>> has track2"
                 sort:
                     by: Track
                     order: ascending
@@ -125,7 +127,10 @@ class TestGenerateTemplates:
                 sort:
                     by: Track
                     order: ascending
-                filter: "<<Type>> is not TOURNAMENT_COMMUNITY and <<Track>> has not track2"
+                filter:
+                  exclude:
+                    - "<<Type>> is TOURNAMENT_COMMUNITY"
+                    - "<<Track>> has track2"
                 split:
                     by: Type
                     order: ascending
@@ -213,7 +218,10 @@ class TestGenerateTemplates:
                 sort:
                     by: Track
                     order: ascending
-                filter: "<<Type>> is not TOURNAMENT_COMMUNITY and <<Track>> has not track2"
+                filter:
+                  exclude:
+                    - "<<Type>> is TOURNAMENT_COMMUNITY"
+                    - "<<Track>> has track2"
                 split:
                     by: Type
                     order: ascending
