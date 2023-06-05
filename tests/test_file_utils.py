@@ -11,6 +11,7 @@ class TestFileUtils:
         article_paths = [
             'wiki/Article/en.md',
             'wiki/Article/fr.md',
+            'wiki/Article/fil.md',
             'wiki/Article/pt-br.md',
             'wiki/Article/zh-tw.md',
             'wiki/Article/TRANSLATING.md',
@@ -37,6 +38,7 @@ class TestFileUtils:
         article_paths = [
             'wiki/Article/en.md',
             'wiki/Article/fr.md',
+            'wiki/Article/fil.md',
             'wiki/Article/pt-br.md',
             'wiki/Article/zh-tw.md',
             'wiki/Article/TRANSLATING.md',
@@ -63,6 +65,7 @@ class TestFileUtils:
         article_paths = [
             'wiki/Article/en.md',
             'wiki/Article/fr.md',
+            'wiki/Article/fil.md',
             'wiki/Article/pt-br.md',
             'wiki/Article/zh-tw.md',
             'wiki/Article/TRANSLATING.md',
@@ -71,11 +74,12 @@ class TestFileUtils:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert multiset(file_utils.list_all_translations(["wiki/Article"])) == multiset(article_paths[1:4])
+        assert multiset(file_utils.list_all_translations(["wiki/Article"])) == multiset(article_paths[1:5])
 
     def test_list_all_articles_and_newsposts(self, root):
         article_paths = [
             'wiki/Article/en.md',
+            'wiki/Article/fil.md',
             'wiki/Article/fr.md',
             'wiki/Article/pt-br.md',
             'wiki/Article/zh-tw.md',
@@ -97,4 +101,4 @@ class TestFileUtils:
         utils.create_files(root, *((path, '# Article') for path in article_paths))
         utils.create_files(root, *((path, '# News post') for path in newspost_paths))
 
-        assert multiset(file_utils.list_all_articles_and_newsposts()) == multiset(article_paths[0:4] + newspost_paths[0:-1])
+        assert multiset(file_utils.list_all_articles_and_newsposts()) == multiset(article_paths[0:5] + newspost_paths[0:-1])
