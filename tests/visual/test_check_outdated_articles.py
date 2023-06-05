@@ -14,6 +14,7 @@ def check_outdated_articles_test():
         article_paths = [
             'wiki/Article/en.md',
             'wiki/Article/fr.md',
+            'wiki/Article/fil.md',
             'wiki/Article/pt-br.md',
             'wiki/Article/zh-tw.md',
         ]
