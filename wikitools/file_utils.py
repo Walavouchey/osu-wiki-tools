@@ -32,6 +32,7 @@ def is_article(path: str) -> bool:
     filename = os.path.basename(path)
     return (
         fnmatch.fnmatch(filename, "??.md") or
+        fnmatch.fnmatch(filename, "???.md") or
         fnmatch.fnmatch(filename, "??-??.md")
     )
 
@@ -42,6 +43,7 @@ def is_translation(path: str) -> bool:
         filename != "en.md" and
         (
             fnmatch.fnmatch(filename, "??.md") or
+            fnmatch.fnmatch(filename, "???.md") or
             fnmatch.fnmatch(filename, "??-??.md")
         )
     )
