@@ -86,7 +86,7 @@ def check_link(
     # XXX(TicClick): this part assumes there is always an English version of the article in a folder
     target_file = target / article.filename
     translation = target_file # verified to be the case later
-    no_translation_available = not (article.filename != 'en.md' and target_file.is_file())
+    no_translation_available = article.filename != 'en.md' and not target_file.is_file()
 
     if no_translation_available:
         target_file = target / 'en.md'
