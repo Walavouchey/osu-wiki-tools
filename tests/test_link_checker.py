@@ -457,12 +457,12 @@ class TestSectionLinks:
         link = link_parser.find_link('Please read the [article](/wiki/New_article#some-nonexistent-heading).')
         assert link
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
+            article=dummy_article('wiki/Other_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'some-nonexistent-heading'
         assert error.path == 'wiki/New_article/en.md'
-        assert error.no_translation_available
+        assert not error.no_translation_available
         assert not error.translation_outdated
 
     def test__invalid_absolute_link__missing_translation(self, root):
@@ -491,6 +491,8 @@ class TestSectionLinks:
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'auto-contrôle'
         assert error.path == 'wiki/New_article/en.md'
+        assert error.no_translation_available
+        assert not error.translation_outdated
 
     def test__valid_relative_link(self, root):
         utils.create_files(
