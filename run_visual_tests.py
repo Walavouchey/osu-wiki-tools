@@ -18,42 +18,18 @@ from traceback import format_exc
 
 
 import tests.visual
+import tests.conftest
+from tests.conftest import get_visual_tests
 from wikitools import console
 
 
-def get_tests():
-    return [
-        importlib.import_module(module).test for module in
-        (
-            module for _, module, _ in pkgutil.walk_packages(
-                path=tests.visual.__path__,
-                prefix=tests.visual.__name__ + '.',
-                onerror=lambda _: None
-            )
-        )
-        if "conftest" not in module
-    ]
-
-
 def run_all_tests(tests):
-    for test_number, test in enumerate(tests, start=1):
-        print(f"({test_number}/{len(tests)})", console.red(test.name), "-", test.description)
-        for case_number, test_case in enumerate(test.cases, start=1):
-            print()
-            print(f"- ({case_number}/{len(test.cases)})", console.blue(test_case.description))
-            print()
-            try:
-                test_case.function()
-            except SystemExit as e:
-                print()
-                print(f"Program exited with {console.red(e.code) if e.code != 0 else console.green(e.code)}")
-            except Exception:
-                print()
-                print(console.red("Exception raised:"), format_exc())
+    for test_index, test in enumerate(tests):
+        for case_index, test_case in enumerate(test.cases):
+            run_test(tests, test_index, case_index)
 
 
 def run_test(tests, test_index, case_index):
-    print("\033c", end="")
     test = tests[test_index]
     print(f"({test_index + 1}/{len(tests)})", console.red(test.name), "-", test.description)
     test_case = test.cases[case_index]
@@ -68,8 +44,6 @@ def run_test(tests, test_index, case_index):
     except Exception:
         print()
         print(console.red("Exception raised:"), format_exc())
-    print()
-    print("Navigate with arrow keys. Press Esc to quit.")
 
 
 test_index = 0
@@ -102,14 +76,19 @@ def key_handler(key, tests):
         print()
         return False
 
+    print("\033c", end="")
     run_test(tests, test_index, case_index)
+    print()
+    print("Navigate with arrow keys. Press Esc to quit.")
 
 
 def run_interactively(tests):
+    print("\033c", end="")
     run_test(tests, 0, 0)
+    print()
+    print("Navigate with arrow keys. Press Esc to quit.")
     with Listener(on_press=lambda key: key_handler(key, tests)) as listener: # type: ignore
         listener.join()
-
 
 
 def parse_args(args):
@@ -121,7 +100,7 @@ def parse_args(args):
 def main():
     args = parse_args(sys.argv[1:])
 
-    tests = get_tests()
+    tests = get_visual_tests()
     if not tests:
         print(console.red("Error:"), "no tests found")
         sys.exit(1)

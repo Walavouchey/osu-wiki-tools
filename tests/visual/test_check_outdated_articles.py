@@ -37,6 +37,7 @@ test = VisualTest(
     description="This should complain about translations not being outdated properly",
     cases=[
         VisualTestCase(
+            name="non_outdated_articles",
             description="Non-outdated articles (3 errors)",
             function=check_outdated_articles_test
         )
