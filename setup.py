@@ -34,6 +34,6 @@ setuptools.setup(
     install_requires=[
         "PyYAML==6.0",
         "types-PyYAML==6.0.6",
-        "yamllint==1.26.3",
+        "yamllint==1.33.0",
     ],
 )
