@@ -26,6 +26,19 @@ class TestArticleLinks:
         )
         assert error is None
 
+    def test__invalid_absolute_link__wrong_capitalisation(self, root):
+        utils.create_files(
+            root,
+            ('wiki/First_article/en.md', '# First article')
+        )
+
+        link = link_parser.find_link('Check the [first article](/wiki/First_Article).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.LinkNotFoundError)
+
     def test__invalid_absolute_link(self, root):
         utils.create_files(
             root,
