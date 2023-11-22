@@ -1,6 +1,7 @@
 import fnmatch
 import os
 import typing
+import pathlib
 
 
 class ChangeDirectory:
@@ -19,6 +20,24 @@ def normalised(path: str) -> str:
     if normalised.startswith("./"):
         normalised = normalised[2:]
     return normalised
+
+
+def exists(path: pathlib.Path):
+    """
+    Case-sensitive file existence check
+
+    File paths are case-insensitive on some operating systems like Windows, but we rely on file existence checks to take casing into account
+    """
+
+    if os.name == 'nt':
+        try:
+            path_string = path.as_posix()
+            # windows disallows two files that differ only in casing, so there are no special considerations for that
+            return normalised(path_string) == normalised(os.path.relpath(os.path.realpath(path_string, strict=True)))
+        except OSError:
+            return False
+    else:
+        return path.exists()
 
 
 def is_newspost(path: str) -> bool:
