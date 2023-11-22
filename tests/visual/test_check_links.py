@@ -30,7 +30,7 @@ test = VisualTest(
         VisualTestCase(
             name="missing_identifier",
             description="Missing identifier (1 error)",
-            function=lambda : check_links.main("--root", "tests/test_articles", "--outdated",  "--target", "wiki/missing_identifier/en.md")
+            function=lambda : check_links.main("--root", "tests/test_articles",  "--target", "wiki/missing_identifier/en.md")
         ),
     ]
 )
