@@ -25,6 +25,7 @@ def set_up_dummy_repo():
     git_utils.git("init")
     git_utils.git("config", "user.name", "John Smith")
     git_utils.git("config", "user.email", "john.smith@example.com")
+    git_utils.git("config", "commit.gpgsign", "false")
 
 
 def get_changed_files():
