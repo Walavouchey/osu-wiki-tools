@@ -51,7 +51,11 @@ def parse_args(args):
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
-    parser.add_argument("--outdated", action='store_true', help="check links in outdated articles and section links to outdated translations")
+
+    parser.add_argument("--in-outdated-articles", action='store_true', help="check links in outdated articles or translations")
+    parser.add_argument("--to-sections-in-outdated-translations", action='store_true', help="check section links in translations that point to outdated translations of the same language")
+    parser.add_argument("--to-sections-in-missing-translations", action='store_true', help="check section links in translations that point to articles with no available translations of the same language")
+
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
@@ -63,6 +67,21 @@ def identifier_suggestions(e, articles):
             articles[e.path].identifiers.items(), key=lambda tuple_: tuple_[1]
         )
     ))
+
+
+def filter_errors(
+    filter_function: typing.Callable[[error_types.LinkError], typing.Dict[int, typing.List[error_types.LinkError]]],
+    errors: typing.Dict[int, typing.List[error_types.LinkError]]
+) -> typing.Dict[int, typing.List[error_types.LinkError]]:
+    return {
+        a: b for a, b in {
+            i: [
+                e for e in errors_on_line if filter_function(e)
+            ]
+            for i, errors_on_line in errors.items()
+        }.items()
+        if b
+    }
 
 
 def main(*args):
@@ -94,7 +113,7 @@ def main(*args):
     file_count = 0
 
     for _, a in sorted(articles.items()):
-        if not args.outdated and (a.front_matter.get("outdated", False) or a.front_matter.get("outdated_translation", False)):
+        if not args.in_outdated_articles and (a.front_matter.get("outdated", False) or a.front_matter.get("outdated_translation", False)):
             continue
 
         link_count += sum(len(_.links) for _ in a.lines.values())
@@ -102,20 +121,11 @@ def main(*args):
 
         errors = link_checker.check_article(a, redirects, articles)
 
-        if not args.outdated:
-            errors = {
-                a: b for a, b in {
-                    i: [
-                        e for e in errors_on_line if
-                        not (
-                            isinstance(e, error_types.MissingIdentifierError)
-                            and (e.no_translation_available or e.translation_outdated)
-                        )
-                    ]
-                    for i, errors_on_line in errors.items()
-                }.items()
-                if b
-            }
+        if not args.to_sections_in_outdated_translations:
+            errors = filter_errors(lambda e: not (isinstance(e, error_types.MissingIdentifierError) and e.translation_outdated), errors)
+
+        if not args.to_sections_in_missing_translations:
+            errors = filter_errors(lambda e: not (isinstance(e, error_types.MissingIdentifierError) and e.no_translation_available), errors)
 
         if not errors:
             continue
