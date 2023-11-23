@@ -30,7 +30,7 @@ setuptools.setup(
             "osu-wiki-tools=wikitools_cli.osu_wiki_tools:console_main",
         ],
     },
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     install_requires=[
         "PyYAML==6.0",
         "types-PyYAML==6.0.6",
