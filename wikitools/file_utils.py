@@ -32,6 +32,7 @@ def exists_case_sensitive(path: pathlib.Path):
         try:
             path_string = path.as_posix()
             # windows disallows two files that differ only in casing, so there are no special considerations for that
+            # os.path.realpath with strict=True does the existence check
             return normalised(path_string) == normalised(os.path.relpath(os.path.realpath(path_string, strict=True)))
         except OSError:
             return False
@@ -47,9 +48,9 @@ def exists_case_insensitive(path: pathlib.Path):
     if os.name == 'nt':
         return path.exists()
     else:
-        # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems. some caching is needed
+        # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems because os-provided existence checks can't be relied upon
         if not hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
-            article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_articles_and_newsposts(), list_all_article_dirs()))
+            article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_article_dirs(), list_all_files(["wiki", "news"])))
             setattr(exists_case_insensitive, 'all_article_paths_lowercased', article_set)
         all_article_paths_lowercased = getattr(exists_case_insensitive, 'all_article_paths_lowercased')
 
