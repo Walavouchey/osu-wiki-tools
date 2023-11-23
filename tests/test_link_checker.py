@@ -364,6 +364,31 @@ class TestNewspostLinks:
 
 
 class TestNewspostSectionLinks:
+    def test__valid_newspost_section_link_within_post(self, root):
+        utils.create_files(
+            root,
+            (
+                'news/2007/2007-01-01-newspost.md', textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2007-01-01 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+
+                    Skip to [the news](#the-news)!
+
+                    ## The news
+                ''').strip()
+            ),
+        )
+        article = article_parser.parse("news/2007/2007-01-01-newspost.md")
+        assert article.identifiers == {'the-news': 11}
+        all_articles = {article.path: article}
+
+        assert link_checker.check_article(article=article, redirects={}, all_articles={}) == {}
+
     def test__valid_newspost_section_link(self, root):
         utils.create_files(
             root,
@@ -470,6 +495,28 @@ class TestMalformedLink:
 
 
 class TestSectionLinks:
+    def test__valid_section_link_within_article(self, root):
+        utils.create_files(
+            root,
+            (
+                'wiki/New_article/en.md',
+                textwrap.dedent('''
+                    # New article
+
+                    ## Some real heading
+
+                    Some real though from a real person.
+
+                    check out [this section](#some-real-heading)
+                ''').strip()
+            ),
+        )
+        article = article_parser.parse("wiki/New_article/en.md")
+        assert article.identifiers == {'some-real-heading': 3}
+        all_articles = {article.path: article}
+
+        assert link_checker.check_article(article=article, redirects={}, all_articles={}) == {}
+
     def test__valid_absolute_link(self, root):
         utils.create_files(
             root,
