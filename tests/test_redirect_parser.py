@@ -14,6 +14,9 @@ class TestRedirectParser:
 
             "ignore_list": "Client/Options/Ignore_list"
             "ignore":      "Client/Options/Ignore_list"
+            unquoted_key1:  unquoted/value1
+            "quoted_key": unquoted/value2
+            unquoted_key2:    "quoted/value"
         ''').strip())
 
         redirects = redirect_parser.load_redirects(str(path))
@@ -22,4 +25,7 @@ class TestRedirectParser:
             'asc/images': ('Article_Styling_Criteria#images', 4),
             'ignore_list': ('Client/Options/Ignore_list', 6),
             'ignore': ('Client/Options/Ignore_list', 7),
+            'unquoted_key1':  ('unquoted/value1', 8),
+            'quoted_key':  ('unquoted/value2', 9),
+            'unquoted_key2':  ('quoted/value', 10),
         }
