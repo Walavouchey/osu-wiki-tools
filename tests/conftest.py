@@ -13,13 +13,21 @@ import tests.utils as utils
 import tests.visual
 
 from wikitools import console
+from wikitools.file_utils import exists_case_insensitive
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
+def clear_function_cache():
+    # exists_case_insensitive does some internal caching, making it stateful
+    if hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
+        delattr(exists_case_insensitive, 'all_article_paths_lowercased')
+
+
 @pytest.fixture(scope='function')
 def root(tmpdir: py.path.local):
+    clear_function_cache()
     wiki = tmpdir.join('wiki')
     news = tmpdir.join('news')
     wiki.mkdir()
