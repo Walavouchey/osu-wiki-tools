@@ -4,7 +4,7 @@ import typing
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
 from wikitools import console
-from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive as exists
+from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
 
 
 def check_link(
@@ -22,8 +22,10 @@ def check_link(
     """
 
     if case_sensitive:
-        global exists
         exists = exists_case_sensitive
+    else:
+        exists = exists_case_insensitive
+
 
     # resolve the link, if possible
     reference = link.resolve(references)
