@@ -26,7 +26,7 @@ class TestArticleLinks:
             {"case_sensitive": True, "capitalisation_correct": True, "should_error": False},
         ]
     )
-    def test__valid_absolute_link(self, root, payload):
+    def test__valid_absolute_article_link(self, root, payload):
         utils.create_files(
             root,
             ('wiki/First_article/en.md', '# First article')
@@ -39,6 +39,73 @@ class TestArticleLinks:
 
         link = link_parser.find_link('Check the [first article](/wiki/{}).'
             .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'),
+            link=link, redirects={}, references={}, all_articles={},
+            case_sensitive=payload["case_sensitive"]
+        )
+        if payload["should_error"]:
+            assert isinstance(error, error_types.LinkNotFoundError)
+        else:
+            assert error is None
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"case_sensitive": False, "capitalisation_correct": False, "should_error": False},
+            {"case_sensitive": False, "capitalisation_correct": True, "should_error": False},
+            {"case_sensitive": True, "capitalisation_correct": False, "should_error": True},
+            {"case_sensitive": True, "capitalisation_correct": True, "should_error": False},
+        ]
+    )
+    def test__valid_absolute_image_link(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/First_article/img/cat.png', '')
+        )
+
+        # exists_case_insensitive does some internal caching, making it stateful
+        # in normal execution, the current directory (root) doesn't change, but here a multitude of tests with different cwds are run
+        if hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
+            delattr(exists_case_insensitive, 'all_article_paths_lowercased')
+
+        link = link_parser.find_link('Check the [first article](/wiki/{}/img/cat.png).'
+            .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'),
+            link=link, redirects={}, references={}, all_articles={},
+            case_sensitive=payload["case_sensitive"]
+        )
+        if payload["should_error"]:
+            assert isinstance(error, error_types.LinkNotFoundError)
+        else:
+            assert error is None
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"case_sensitive": False, "capitalisation_correct": False, "should_error": False},
+            {"case_sensitive": False, "capitalisation_correct": True, "should_error": False},
+            {"case_sensitive": True, "capitalisation_correct": False, "should_error": True},
+            {"case_sensitive": True, "capitalisation_correct": True, "should_error": False},
+        ]
+    )
+
+    def test__valid_absolute_news_link(self, root, payload):
+        utils.create_files(
+            root,
+            ('news/2023/2023-01-01-first-article.md', '# This is a news post')
+        )
+
+        # exists_case_insensitive does some internal caching, making it stateful
+        # in normal execution, the current directory (root) doesn't change, but here a multitude of tests with different cwds are run
+        if hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
+            delattr(exists_case_insensitive, 'all_article_paths_lowercased')
+
+        link = link_parser.find_link('Check the [first article](https://osu.ppy.sh/home/news/2023-01-01-{}).'
+            .format("first-article" if payload["capitalisation_correct"] else "First-Article"))
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'),
