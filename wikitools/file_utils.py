@@ -49,6 +49,7 @@ def exists_case_insensitive(path: pathlib.Path):
         return path.exists()
     else:
         # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems because os-provided existence checks can't be relied upon
+        # this cache would only become invalid when the current working directory changes, which only happens in tests and not during normal execution
         if not hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
             article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_article_dirs(), list_all_files(["wiki", "news"])))
             setattr(exists_case_insensitive, 'all_article_paths_lowercased', article_set)

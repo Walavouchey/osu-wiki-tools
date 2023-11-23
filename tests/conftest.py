@@ -20,7 +20,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def clear_function_cache():
-    # exists_case_insensitive does some internal caching, making it stateful
+    # exists_case_insensitive does some internal caching of the directory tree, making it stateful
+    # during normal execution, the current working directory never changes, but tests use a new temporary directory for each test case
     if hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
         delattr(exists_case_insensitive, 'all_article_paths_lowercased')
 
