@@ -1,8 +1,11 @@
 import pathlib
 import textwrap
 
+import pytest
+
 import tests.conftest
 import tests.utils as utils
+
 from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
 
 
@@ -13,31 +16,33 @@ def dummy_article(path):
 
 
 class TestArticleLinks:
-    def test__valid_absolute_link(self, root):
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"case_sensitive": False, "capitalisation_correct": False, "should_error": False},
+            {"case_sensitive": False, "capitalisation_correct": True, "should_error": False},
+            {"case_sensitive": True, "capitalisation_correct": False, "should_error": True},
+            {"case_sensitive": True, "capitalisation_correct": True, "should_error": False},
+        ]
+    )
+    def test__valid_absolute_link(self, root, payload):
         utils.create_files(
             root,
             ('wiki/First_article/en.md', '# First article')
         )
 
-        link = link_parser.find_link('Check the [first article](/wiki/First_article).')
+        link = link_parser.find_link('Check the [first article](/wiki/{}).'
+            .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
         assert link
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('does/not/matter'),
+            link=link, redirects={}, references={}, all_articles={},
+            case_sensitive=payload["case_sensitive"]
         )
-        assert error is None
-
-    def test__invalid_absolute_link__wrong_capitalisation(self, root):
-        utils.create_files(
-            root,
-            ('wiki/First_article/en.md', '# First article')
-        )
-
-        link = link_parser.find_link('Check the [first article](/wiki/First_Article).')
-        assert link
-        error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
-        )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        if payload["should_error"]:
+            assert isinstance(error, error_types.LinkNotFoundError)
+        else:
+            assert error is None
 
     def test__invalid_absolute_link(self, root):
         utils.create_files(

@@ -3,13 +3,15 @@ import pathlib
 import typing
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
-from wikitools import console, file_utils
+from wikitools import console
+from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive as exists
 
 
 def check_link(
     article: article_parser.Article, link: link_parser.Link,
     redirects: redirect_parser.Redirects, references: reference_parser.References,
-    all_articles: typing.Dict[str, article_parser.Article]
+    all_articles: typing.Dict[str, article_parser.Article],
+    case_sensitive: bool = False
 ) -> typing.Optional[errors.LinkError]:
     """
     Verify that the link is valid:
@@ -18,6 +20,10 @@ def check_link(
         - Direct internal links, as well as redirects, must point to existing article files
         - Relative links are parsed under the assumption that they are located inside the current article's directory
     """
+
+    if case_sensitive:
+        global exists
+        exists = exists_case_sensitive
 
     # resolve the link, if possible
     reference = link.resolve(references)
@@ -35,7 +41,7 @@ def check_link(
         repo_target = pathlib.Path(f"news/{year}/{target.name}")
         location = '/' + repo_target.as_posix()
 
-        if not file_utils.exists(repo_target):
+        if not exists(repo_target):
             # news posts don't have redirects
             return errors.LinkNotFoundError(link, reference, location)
         else:
@@ -67,7 +73,7 @@ def check_link(
 
     target = pathlib.Path(location[1:])  # strip leading slash
     # no article? could be a redirect
-    if not file_utils.exists(target):
+    if not exists(target):
         redirect_source = target.relative_to('wiki').as_posix()
         try:
             redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
@@ -75,7 +81,7 @@ def check_link(
             return errors.LinkNotFoundError(link, reference, location)
 
         target = pathlib.Path('wiki') / redirect_destination
-        if not file_utils.exists(target):
+        if not exists(target):
             return errors.BrokenRedirectError(link, redirect_source, redirect_line_no, redirect_destination)
 
     # link to an article in general, article exists -> good
@@ -117,7 +123,8 @@ def check_link(
 
 def check_article(
     article: article_parser.Article, redirects: redirect_parser.Redirects,
-    all_articles: typing.Dict[str, article_parser.Article]
+    all_articles: typing.Dict[str, article_parser.Article],
+    case_sensitive: bool = False
 ) -> typing.Dict[int, typing.List[errors.LinkError]]:
     """
     Try resolving links in the article to other articles or files.
@@ -127,7 +134,7 @@ def check_article(
     for lineno, line in article.lines.items():
         local_errors = [
             errors for errors in (
-                check_link(article, link, redirects, article.references, all_articles)
+                check_link(article, link, redirects, article.references, all_articles, case_sensitive)
                 for link in line.links
             )
             if errors

@@ -56,6 +56,8 @@ def parse_args(args):
     parser.add_argument("--to-sections-in-outdated-translations", action='store_true', help="check section links in translations that point to outdated translations of the same language")
     parser.add_argument("--to-sections-in-missing-translations", action='store_true', help="check section links in translations that point to articles with no available translations of the same language")
 
+    parser.add_argument("--case-sensitive", action='store_true', help="check file existence case-sensitively")
+
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
@@ -119,7 +121,7 @@ def main(*args):
         link_count += sum(len(_.links) for _ in a.lines.values())
         file_count += 1
 
-        errors = link_checker.check_article(a, redirects, articles)
+        errors = link_checker.check_article(a, redirects, articles, args.case_sensitive)
 
         if not args.to_sections_in_outdated_translations:
             errors = filter_errors(lambda e: not (isinstance(e, error_types.MissingIdentifierError) and e.translation_outdated), errors)

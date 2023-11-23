@@ -22,11 +22,9 @@ def normalised(path: str) -> str:
     return normalised
 
 
-def exists(path: pathlib.Path):
+def exists_case_sensitive(path: pathlib.Path):
     """
     Case-sensitive file existence check
-
-    File paths are case-insensitive on some operating systems like Windows, but we rely on file existence checks to take casing into account
     """
 
     if os.name == 'nt':
@@ -38,6 +36,21 @@ def exists(path: pathlib.Path):
             return False
     else:
         return path.exists()
+
+
+def exists_case_insensitive(path: pathlib.Path):
+    """
+    Case-insensitive file existence check
+    """
+
+    if os.name == 'nt':
+        return path.exists()
+    else:
+        if not hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
+            setattr(exists_case_insensitive, 'all_article_paths_lowercased', set(list_all_articles_and_newsposts()))
+        all_article_paths_lowercased = getattr(exists_case_insensitive, 'all_article_paths_lowercased')
+
+        return normalised(path.as_posix()) in all_article_paths_lowercased
 
 
 def is_newspost(path: str) -> bool:
