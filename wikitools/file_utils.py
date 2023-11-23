@@ -1,4 +1,5 @@
 import fnmatch
+import itertools
 import os
 import typing
 import pathlib
@@ -24,7 +25,7 @@ def normalised(path: str) -> str:
 
 def exists_case_sensitive(path: pathlib.Path):
     """
-    Case-sensitive file existence check
+    Case-sensitive file/directory existence check
     """
 
     if os.name == 'nt':
@@ -40,17 +41,19 @@ def exists_case_sensitive(path: pathlib.Path):
 
 def exists_case_insensitive(path: pathlib.Path):
     """
-    Case-insensitive file existence check
+    Case-insensitive file/diretory existence check
     """
 
     if os.name == 'nt':
         return path.exists()
     else:
+        # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems. some caching is needed
         if not hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
-            setattr(exists_case_insensitive, 'all_article_paths_lowercased', set(list_all_articles_and_newsposts()))
+            article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_articles_and_newsposts(), list_all_article_dirs()))
+            setattr(exists_case_insensitive, 'all_article_paths_lowercased', article_set)
         all_article_paths_lowercased = getattr(exists_case_insensitive, 'all_article_paths_lowercased')
 
-        return normalised(path.as_posix()) in all_article_paths_lowercased
+        return normalised(os.path.relpath(path.as_posix()).lower()) in all_article_paths_lowercased
 
 
 def is_newspost(path: str) -> bool:

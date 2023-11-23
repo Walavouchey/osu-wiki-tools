@@ -7,6 +7,7 @@ import tests.conftest
 import tests.utils as utils
 
 from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
+from wikitools.file_utils import exists_case_insensitive
 
 
 def dummy_article(path):
@@ -30,6 +31,11 @@ class TestArticleLinks:
             root,
             ('wiki/First_article/en.md', '# First article')
         )
+
+        # exists_case_insensitive does some internal caching, making it stateful
+        # in normal execution, the current directory (root) doesn't change, but here a multitude of tests with different cwds are run
+        if hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
+            delattr(exists_case_insensitive, 'all_article_paths_lowercased')
 
         link = link_parser.find_link('Check the [first article](/wiki/{}).'
             .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
