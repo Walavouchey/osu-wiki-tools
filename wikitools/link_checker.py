@@ -1,10 +1,22 @@
 import os
 import pathlib
 import typing
+import urllib
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
 from wikitools import console
 from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
+
+
+def is_fragment_only(parsed_location: urllib.parse.ParseResult):
+    return parsed_location.fragment and not any((parsed_location.scheme,
+        parsed_location.netloc, parsed_location.path,
+        parsed_location.params, parsed_location.query))
+
+
+def is_news_link(parsed_location: urllib.parse.ParseResult, location: str):
+    return ((parsed_location.scheme == "http" or parsed_location.scheme == "https") and
+        parsed_location.netloc == "osu.ppy.sh" and location.startswith("/home/news/"))
 
 
 def check_link(
@@ -36,12 +48,18 @@ def check_link(
     parsed_location = reference.parsed_location if reference else link.parsed_location
 
     # news post link
-    if ((parsed_location.scheme == "http" or parsed_location.scheme == "https") and
-        parsed_location.netloc == "osu.ppy.sh" and location.startswith("/home/news/")):
-        target = pathlib.Path(location[1:] + ".md").relative_to("home")
-        year = target.name.split("-")[0]
-        repo_target = pathlib.Path(f"news/{year}/{target.name}")
+    if is_news_link(parsed_location, location) or (article.path.startswith("news") and is_fragment_only(parsed_location)):
+        if location:
+            target = pathlib.Path(location[1:] + ".md").relative_to("home")
+            year = target.name.split("-")[0]
+            repo_target = pathlib.Path(f"news/{year}/{target.name}")
+        elif article.path.startswith("news"):
+            repo_target = pathlib.Path(article.path)
+        else:
+            raise Exception("logic error")
+
         location = '/' + repo_target.as_posix()
+
 
         if not exists(repo_target):
             # news posts don't have redirects
