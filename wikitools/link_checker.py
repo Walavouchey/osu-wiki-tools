@@ -6,6 +6,7 @@ import urllib
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
 from wikitools import console
 from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
+from wikitools.file_utils import get_canonical_path_casing
 from wikitools.file_utils import is_article
 
 
@@ -186,17 +187,20 @@ def check_link(
     if not parsed_location.fragment:
         return None
 
+    target_path = repo_path.path
+    if os.name != 'nt' and not case_sensitive:
+        target_path = get_canonical_path_casing(target_path)
+
     # link to a section
     match repo_path.path_type:
         case PathType.GITHUB:
             # github links can either be directories or files
             # but section links are only relevant for markdown files
             if repo_path.path.suffix == ".md":
-                target_file = repo_path.path
-                raw_path = repo_path.path.as_posix()
+                raw_path = target_path.as_posix()
                 if raw_path not in all_articles:
                     # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
-                    all_articles[raw_path] = article_parser.parse(target_file)
+                    all_articles[raw_path] = article_parser.parse(target_path)
 
                 target_article = all_articles[raw_path]
 
@@ -209,9 +213,9 @@ def check_link(
                     return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, False, translation_outdated)
         case PathType.NEWS:
             # always a file path
-            raw_path = repo_path.path.as_posix()
+            raw_path = target_path.as_posix()
             if raw_path not in all_articles:
-                all_articles[raw_path] = article_parser.parse(repo_path.path)
+                all_articles[raw_path] = article_parser.parse(target_path)
             target_article = all_articles[raw_path]
 
             if parsed_location.fragment not in target_article.identifiers:
@@ -219,12 +223,12 @@ def check_link(
         case PathType.WIKI:
             # directory -> need to find the target article; it could be a translation
             # XXX(TicClick): this part assumes there is always an English version of the article in a folder
-            target_file = repo_path.path / article.filename
+            target_file = target_path / article.filename
             translation = target_file # verified to be the case later
             no_translation_available = article.filename != 'en.md' and not target_file.is_file()
 
             if no_translation_available:
-                target_file = repo_path.path / 'en.md'
+                target_file = target_path / 'en.md'
 
             raw_path = target_file.as_posix()
             if raw_path not in all_articles:

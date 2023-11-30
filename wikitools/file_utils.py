@@ -23,6 +23,27 @@ def normalised(path: str) -> str:
     return normalised
 
 
+"""
+Returns a dictionary of file and directory paths, with a lowercased path for the key and the original casing for the value.
+Useful for looking up file paths case-insensitively on case-sensitive file systems.
+"""
+def file_tree():
+    # this cache would only become invalid when the current working directory changes, which only happens in tests and not during normal execution
+    if not hasattr(file_tree, "cache"):
+        tree = {normalised(article_path.lower()): normalised(article_path) for article_path in itertools.chain(list_all_dirs(["."]), list_all_files(["."]))}
+        setattr(file_tree, "cache", tree)
+    return getattr(file_tree, "cache")
+
+
+def get_canonical_path_casing(path: pathlib.Path) -> pathlib.Path:
+    """
+    Converts a file/directory path into a path with the correct casing.
+    The path must exist (throws KeyError otherwise)
+    """
+
+    return pathlib.Path(file_tree()[normalised(os.path.relpath(path.as_posix()).lower())])
+
+
 def exists_case_sensitive(path: pathlib.Path) -> bool:
     """
     Case-sensitive file/directory existence check
@@ -49,13 +70,8 @@ def exists_case_insensitive(path: pathlib.Path) -> bool:
         return path.exists()
     else:
         # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems because os-provided existence checks can't be relied upon
-        # this cache would only become invalid when the current working directory changes, which only happens in tests and not during normal execution
-        if not hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
-            article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_dirs(["."]), list_all_files(["."])))
-            setattr(exists_case_insensitive, 'all_article_paths_lowercased', article_set)
-        all_article_paths_lowercased = getattr(exists_case_insensitive, 'all_article_paths_lowercased')
 
-        return normalised(os.path.relpath(path.as_posix()).lower()) in all_article_paths_lowercased
+        return normalised(os.path.relpath(path.as_posix()).lower()) in file_tree()
 
 
 def is_newspost(path: str) -> bool:

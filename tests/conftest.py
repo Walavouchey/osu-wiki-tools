@@ -13,17 +13,17 @@ import tests.utils as utils
 import tests.visual
 
 from wikitools import console
-from wikitools.file_utils import exists_case_insensitive
+from wikitools.file_utils import file_tree
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def clear_function_cache():
-    # exists_case_insensitive does some internal caching of the directory tree, making it stateful
+    # exists_case_insensitive and get_canonical_path_casing cache all directory paths
     # during normal execution, the current working directory never changes, but tests use a new temporary directory for each test case
-    if hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
-        delattr(exists_case_insensitive, 'all_article_paths_lowercased')
+    if hasattr(file_tree, 'cache'):
+        delattr(file_tree, 'cache')
 
 
 @pytest.fixture(scope='function')
@@ -92,6 +92,7 @@ def get_visual_tests():
 
 
 def run_visual_test(tests, test_index, case_index):
+    clear_function_cache()
     test = tests[test_index]
     print(f"({test_index + 1}/{len(tests)})", console.red(test.name), "-", test.description)
     test_case = test.cases[case_index]
