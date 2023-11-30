@@ -14,7 +14,7 @@ test = VisualTest(
         ),
         VisualTestCase(
             name="not_found",
-            description="Not found (3 errors)",
+            description="Not found (4 errors)",
             function=lambda : check_links.main("--root", "tests/test_articles", "--target", "wiki/not_found/en.md")
         ),
         VisualTestCase(
@@ -29,7 +29,7 @@ test = VisualTest(
         ),
         VisualTestCase(
             name="missing_identifier",
-            description="Missing identifier (2 errors)",
+            description="Missing identifier (3 errors)",
             function=lambda : check_links.main("--root", "tests/test_articles",  "--target", "wiki/missing_identifier/en.md", "news/2023/news-post-bad-section-link.md")
         ),
     ]

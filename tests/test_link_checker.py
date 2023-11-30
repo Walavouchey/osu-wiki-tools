@@ -484,6 +484,69 @@ class TestExternalLinks:
             assert error is None
 
 
+class TestGitHubLinks:
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"string": "This link is [broken](https://github.com/ppy/osu-wiki/blob/master/wiki/Another_article/Some_nonsense/en.md).", "resolved_location": "wiki/Another_article/Some_nonsense/en.md"},
+            {"string": "This link is [broken](https://github.com/ppy/osu-wiki/tree/master/wiki/A_random_directory), too.", "resolved_location": "wiki/A_random_directory"},
+        ]
+    )
+    def test__github_link_invalid(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Another_article/en.md', '# Another article')
+        )
+
+        link = link_parser.find_link(payload["string"])
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.LinkNotFoundError)
+        assert error.resolved_location == payload["resolved_location"]
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"string": "This link is [ok](https://github.com/ppy/osu-wiki/blob/master/wiki/Another_article/en.md).", "resolved_location": "wiki/Another_article/en.md"},
+            {"string": "This link is [also ok](https://github.com/ppy/osu-wiki/tree/master/wiki/Another_article).", "resolved_location": "wiki/Another_article"},
+        ]
+    )
+
+    def test__github_link_valid(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Another_article/en.md', '# Another article')
+        )
+
+        link = link_parser.find_link(payload["string"])
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert error is None
+
+    def test__github_link_invalid__missing_heading(self, root):
+        utils.create_files(
+            root,
+            ('wiki/New_article/en.md', '# New article'),
+        )
+        new_article = dummy_article('wiki/New_article/en.md')
+        all_articles = {new_article.path: new_article}
+
+        link = link_parser.find_link('Please read the [article](https://github.com/ppy/osu-wiki/blob/master/wiki/New_article/en.md#some-nonexistent-heading).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('wiki/Other_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
+        )
+        assert isinstance(error, error_types.MissingIdentifierError)
+        assert error.identifier == 'some-nonexistent-heading'
+        assert error.path == 'wiki/New_article/en.md'
+        assert not error.no_translation_available
+        assert not error.translation_outdated
+
+
 class TestMalformedLink:
     def test__missing_scheme(self):
         link = link_parser.find_link('Forgot to add a [scheme](//example.com)',)

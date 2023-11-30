@@ -18,6 +18,7 @@ class PathType:
 
     WIKI = 0
     NEWS = 1
+    GITHUB = 2
 
 
 class RepositoryPath(typing.NamedTuple):
@@ -39,6 +40,14 @@ def is_fragment_only(parsed_location: urllib.parse.ParseResult):
 def is_news_link(parsed_location: urllib.parse.ParseResult):
     return ((parsed_location.scheme == "http" or parsed_location.scheme == "https") and
         parsed_location.netloc == "osu.ppy.sh" and parsed_location.path.startswith("/home/news/"))
+
+
+def is_github_link(parsed_location: urllib.parse.ParseResult):
+    return (
+        (parsed_location.scheme == "http" or parsed_location.scheme == "https")
+        and parsed_location.netloc == "github.com"
+        and (parsed_location.path.startswith("/ppy/osu-wiki/blob/master/") or parsed_location.path.startswith("/ppy/osu-wiki/tree/master/"))
+    )
 
 
 def get_repo_path(
@@ -66,6 +75,10 @@ def get_repo_path(
         year = file.split("-")[0]
         path = pathlib.Path(f"news/{year}/{file}")
         return RepositoryPath(path_type=PathType.NEWS, path=path, fragment=parsed_location.fragment)
+
+    if is_github_link(parsed_location):
+        path = pathlib.Path("/".join(parsed_location.path.split("/")[5:]))
+        return RepositoryPath(path_type=PathType.GITHUB, path=path, fragment=parsed_location.fragment)
 
     # some external link; don't care
     if parsed_location.scheme:
@@ -152,8 +165,8 @@ def check_link(
 
     if not exists(repo_path.path):
         # if the article doesn't exist, check if it has a redirect
-        if repo_path.path_type == PathType.NEWS:
-            # except news posts don't support redirects
+        if repo_path.path_type == PathType.NEWS or repo_path.path_type == PathType.GITHUB:
+            # except news and github links don't support redirects
             return errors.LinkNotFoundError(link, reference, repo_path.path.as_posix())
 
         redirected_path = resolve_redirect(repo_path, link, reference, redirects, exists)
@@ -167,7 +180,27 @@ def check_link(
 
     # link to a section
     match repo_path.path_type:
+        case PathType.GITHUB:
+            # github links can either be directories or files
+            # but section links are only relevant for markdown files
+            if repo_path.path.suffix == ".md":
+                target_file = repo_path.path
+                raw_path = repo_path.path.as_posix()
+                if raw_path not in all_articles:
+                    # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
+                    all_articles[raw_path] = article_parser.parse(target_file)
+
+                target_article = all_articles[raw_path]
+
+                if parsed_location.fragment not in target_article.identifiers:
+                    # collect some additional metadata before reporting
+                    translation_outdated = False
+                    if repo_path.path.name != "en.md":
+                        translation_outdated = target_article.front_matter.get('outdated_translation', False)
+
+                    return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, False, translation_outdated)
         case PathType.NEWS:
+            # always a file path
             raw_path = repo_path.path.as_posix()
             if raw_path not in all_articles:
                 all_articles[raw_path] = article_parser.parse(repo_path.path)
@@ -175,10 +208,8 @@ def check_link(
 
             if parsed_location.fragment not in target_article.identifiers:
                 return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, False, False)
-            else:
-                return None
         case PathType.WIKI:
-            # need to find the target article; it could be a translation
+            # directory -> need to find the target article; it could be a translation
             # XXX(TicClick): this part assumes there is always an English version of the article in a folder
             target_file = repo_path.path / article.filename
             translation = target_file # verified to be the case later
