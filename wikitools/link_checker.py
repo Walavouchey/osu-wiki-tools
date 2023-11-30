@@ -67,14 +67,14 @@ def get_repo_path(
         path = pathlib.Path(f"news/{year}/{file}")
         return RepositoryPath(path_type=PathType.NEWS, path=path, fragment=parsed_location.fragment)
 
+    # some external link; don't care
+    if parsed_location.scheme:
+        return None
+
     if parsed_location.path.startswith("/wiki/"):
         # absolute wiki link
         path = pathlib.Path(parsed_location.path[1:])
         return RepositoryPath(path_type=PathType.WIKI, path=path, fragment=parsed_location.fragment)
-
-    # some external link; don't care
-    if parsed_location.scheme:
-        return None
 
     # domain is non-empty, but the link is internal?
     if parsed_location.netloc:
