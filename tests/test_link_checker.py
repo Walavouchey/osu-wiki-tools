@@ -376,6 +376,34 @@ class TestNewspostLinks:
 
 
 class TestNewspostSectionLinks:
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"case_sensitive": False, "capitalisation_correct": False, "should_error": False},
+            {"case_sensitive": False, "capitalisation_correct": True, "should_error": False},
+            {"case_sensitive": True, "capitalisation_correct": False, "should_error": True},
+            {"case_sensitive": True, "capitalisation_correct": True, "should_error": False},
+        ]
+    )
+    def test__section_link_casing(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/First_article/en.md', '## First article')
+        )
+
+        link = link_parser.find_link('Check the [first article](/wiki/{}#first-article).'
+            .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'),
+            link=link, redirects={}, references={}, all_articles={},
+            case_sensitive=payload["case_sensitive"]
+        )
+        if payload["should_error"]:
+            assert isinstance(error, error_types.LinkNotFoundError)
+        else:
+            assert error is None
+
     def test__valid_newspost_section_link_within_post(self, root):
         utils.create_files(
             root,
