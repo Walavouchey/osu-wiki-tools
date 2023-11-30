@@ -502,6 +502,7 @@ class TestGitHubLinks:
         [
             {"string": "This link is [broken](https://github.com/ppy/osu-wiki/blob/master/wiki/Another_article/Some_nonsense/en.md).", "resolved_location": "wiki/Another_article/Some_nonsense/en.md"},
             {"string": "This link is [broken](https://github.com/ppy/osu-wiki/tree/master/wiki/A_random_directory), too.", "resolved_location": "wiki/A_random_directory"},
+            {"string": "[casing matters](https://github.com/ppy/osu-wiki/tree/master/wiki/Another_Article), too.", "resolved_location": "wiki/Another_Article"},
         ]
     )
     def test__github_link_invalid(self, root, payload):
@@ -513,7 +514,12 @@ class TestGitHubLinks:
         link = link_parser.find_link(payload["string"])
         assert link
         error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}, case_sensitive=False
+        )
+        assert isinstance(error, error_types.LinkNotFoundError)
+        assert error.resolved_location == payload["resolved_location"]
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}, case_sensitive=True
         )
         assert isinstance(error, error_types.LinkNotFoundError)
         assert error.resolved_location == payload["resolved_location"]

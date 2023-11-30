@@ -167,6 +167,10 @@ def check_link(
     elif repo_path is None:
         return None
 
+    # github gives a 404 when the casing is wrong
+    if repo_path.path_type == PathType.GITHUB:
+        exists = exists_case_sensitive
+
     if not exists(repo_path.path):
         # if the article doesn't exist, check if it has a redirect
         if repo_path.path_type == PathType.NEWS or repo_path.path_type == PathType.GITHUB:
