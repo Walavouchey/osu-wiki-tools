@@ -13,9 +13,14 @@ test = VisualTest(
             function=lambda : check_links.main("--root", "tests/test_articles", "--target", "wiki/malformed_link/en.md")
         ),
         VisualTestCase(
-            name="not_found",
-            description="Not found (4 errors)",
+            name="not_found_case_insensitive",
+            description="Not found, case-insensitive (4 errors)",
             function=lambda : check_links.main("--root", "tests/test_articles", "--target", "wiki/not_found/en.md")
+        ),
+        VisualTestCase(
+            name="not_found_case_sensitive",
+            description="Not found, case-sensitive (5 errors)",
+            function=lambda : check_links.main("--root", "tests/test_articles", "--target", "wiki/not_found/en.md", "--case-sensitive")
         ),
         VisualTestCase(
             name="broken_redirect",

@@ -7,10 +7,10 @@ import typing
 from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
 
-def print_error():
+def print_error(case_sensitive: bool):
     print(f"{console.red('Error:')} Some wiki or image links in the files you've changed have errors.\n")
     print("This can happen in one of the following ways:\n")
-    print("- The article or image that the link points to has since been moved or renamed (make sure to match capitalisation)")
+    print("- The article or image that the link points to has since been moved or renamed" + (" (make sure to match capitalisation)" if case_sensitive else ""))
     print("- The link simply contains typos or formatting errors")
     print("- The link works, but contains locale selection (e.g. /wiki/en/Article_styling_criteria instead of /wiki/Article_styling_criteria)")
     print("- The link works, but contains URL-escaped characters (https://en.wikipedia.org/wiki/Percent-encoding). This only applies for links to articles and images inside the wiki.")
@@ -134,7 +134,7 @@ def main(*args):
 
         error_file_count += 1
         if exit_code == 0:
-            print_error()
+            print_error(args.case_sensitive)
         exit_code = 1
 
         for lineno, errors_on_line in sorted(errors.items()):
