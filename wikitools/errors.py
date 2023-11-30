@@ -113,7 +113,7 @@ class MissingIdentifierError(
     translation_outdated: bool
 
     def __repr__(self):
-        return 'There is no heading or tag with identifier "{}" in "/{}"{}'.format(
+        return 'There is no heading or tag with identifier "{}" in "{}"{}'.format(
             self.identifier, self.path,
             ' (no translation available)' if self.no_translation_available
             else ' (outdated translation)' if self.translation_outdated

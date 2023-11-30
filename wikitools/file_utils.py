@@ -23,7 +23,7 @@ def normalised(path: str) -> str:
     return normalised
 
 
-def exists_case_sensitive(path: pathlib.Path):
+def exists_case_sensitive(path: pathlib.Path) -> bool:
     """
     Case-sensitive file/directory existence check
     """
@@ -40,12 +40,12 @@ def exists_case_sensitive(path: pathlib.Path):
         return path.exists()
 
 
-def exists_case_insensitive(path: pathlib.Path):
+def exists_case_insensitive(path: pathlib.Path) -> bool:
     """
     Case-insensitive file/diretory existence check
     """
 
-    if os.name == 'nt':
+    if False and os.name == 'nt':
         return path.exists()
     else:
         # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems because os-provided existence checks can't be relied upon

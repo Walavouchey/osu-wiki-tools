@@ -813,13 +813,13 @@ class TestArticleChecker:
         broken_link_error = flattened_errors[0][1]
         broken_link = flattened_errors[0][1].link
         assert isinstance(broken_link_error, error_types.LinkNotFoundError)
-        assert broken_link_error.resolved_location == '/wiki/Broken_link'
+        assert broken_link_error.resolved_location == 'wiki/Broken_link'
         assert (flattened_errors[0][0], broken_link.start) == (7, 0)
 
         broken_rel_link_error = flattened_errors[1][1]
         broken_rel_link = flattened_errors[1][1].link
         assert isinstance(broken_rel_link_error, error_types.LinkNotFoundError)
-        assert broken_rel_link_error.resolved_location == '/wiki/Article/Bad_relative_link'
+        assert broken_rel_link_error.resolved_location == 'wiki/Article/Bad_relative_link'
         assert (flattened_errors[1][0], broken_rel_link.start) == (9, 14)
 
         broken_redirect_error = flattened_errors[2][1]
@@ -837,7 +837,7 @@ class TestArticleChecker:
         broken_image_error = flattened_errors[4][1]
         broken_image = flattened_errors[4][1].link
         assert isinstance(broken_image_error, error_types.LinkNotFoundError)
-        assert broken_image_error.resolved_location == '/wiki/Article/img/you_tried.jpeg'
+        assert broken_image_error.resolved_location == 'wiki/Article/img/you_tried.jpeg'
         assert (flattened_errors[4][0], broken_image.start) == (12, 10)
 
         # all lines, even with references, were cached
