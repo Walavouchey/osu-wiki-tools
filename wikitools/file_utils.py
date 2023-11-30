@@ -51,7 +51,7 @@ def exists_case_insensitive(path: pathlib.Path) -> bool:
         # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems because os-provided existence checks can't be relied upon
         # this cache would only become invalid when the current working directory changes, which only happens in tests and not during normal execution
         if not hasattr(exists_case_insensitive, 'all_article_paths_lowercased'):
-            article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_article_dirs(), list_all_files(["wiki", "news"])))
+            article_set = set(normalised(article_path.lower()) for article_path in itertools.chain(list_all_dirs(), list_all_files(["."])))
             setattr(exists_case_insensitive, 'all_article_paths_lowercased', article_set)
         all_article_paths_lowercased = getattr(exists_case_insensitive, 'all_article_paths_lowercased')
 
@@ -96,6 +96,16 @@ def list_all_files(roots: typing.Iterable[str]=["wiki"]) -> typing.Generator[str
             for f in filenames:
                 filepath = os.path.join(root, f).replace("\\", "/")
                 yield filepath
+
+
+def list_all_dirs(roots: typing.Iterable[str]=["wiki"]) -> typing.Generator[str, None, None]:
+    """
+    List ALL directories
+    """
+
+    for item in roots:
+        for root, _, __ in os.walk(item):
+            yield root.replace("\\", "/")
 
 
 def list_all_article_dirs() -> typing.Generator[str, None, None]:
