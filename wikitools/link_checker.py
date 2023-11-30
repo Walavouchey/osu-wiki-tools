@@ -84,7 +84,7 @@ def get_repo_path(
     if parsed_location.scheme:
         return None
 
-    if parsed_location.path.startswith("/wiki/"):
+    if parsed_location.path.startswith("/"):
         # absolute wiki link
         path = pathlib.Path(parsed_location.path[1:])
         return RepositoryPath(path_type=PathType.WIKI, path=path, fragment=parsed_location.fragment)
