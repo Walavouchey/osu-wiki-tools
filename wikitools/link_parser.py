@@ -101,7 +101,7 @@ class Link(typing.NamedTuple):
     def colourise_location(self, fragment_only=False):
         if fragment_only:
             return "".join((
-                console.green(self.parsed_location.path),
+                console.green(self.raw_location.split("#")[0]),
                 console.red('#' + self.parsed_location.fragment)
             ))
         return console.red(self.raw_location)
