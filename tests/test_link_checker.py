@@ -510,6 +510,7 @@ class TestGitHubLinks:
         [
             {"string": "This link is [ok](https://github.com/ppy/osu-wiki/blob/master/wiki/Another_article/en.md).", "resolved_location": "wiki/Another_article/en.md"},
             {"string": "This link is [also ok](https://github.com/ppy/osu-wiki/tree/master/wiki/Another_article).", "resolved_location": "wiki/Another_article"},
+            {"string": "This link is [very ok](https://github.com/ppy/osu-wiki/tree/master/news).", "resolved_location": "news"},
             {"string": "This link is [another ok link](https://github.com/ppy/osu-wiki/tree/master/README.md).", "resolved_location": "README.md"},
         ]
     )
@@ -517,6 +518,7 @@ class TestGitHubLinks:
         utils.create_files(
             root,
             ('wiki/Another_article/en.md', '# Another article'),
+            ('news/2023/newspost.md', '# news post'),
             ('README.md', '# Please read me')
         )
 
