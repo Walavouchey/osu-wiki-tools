@@ -45,7 +45,7 @@ def exists_case_insensitive(path: pathlib.Path) -> bool:
     Case-insensitive file/diretory existence check
     """
 
-    if False and os.name == 'nt':
+    if os.name == 'nt':
         return path.exists()
     else:
         # case-insensitive directory/file existence checking isn't trivial in case-sensitive file systems because os-provided existence checks can't be relied upon
