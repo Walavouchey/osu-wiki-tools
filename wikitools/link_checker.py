@@ -6,6 +6,7 @@ import urllib
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
 from wikitools import console
 from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
+from wikitools.file_utils import is_article
 
 
 class PathType:
@@ -84,6 +85,9 @@ def get_repo_path(
     if parsed_location.scheme:
         return None
 
+    if is_article(parsed_location.path):
+        return errors.MalformedLinkError(link, "wiki links must not include the article file name")
+
     if parsed_location.path.startswith("/"):
         # absolute wiki link
         path = pathlib.Path(parsed_location.path[1:])
@@ -91,7 +95,7 @@ def get_repo_path(
 
     # domain is non-empty, but the link is internal?
     if parsed_location.netloc:
-        return errors.MalformedLinkError(link)
+        return errors.MalformedLinkError(link, "incorrect link structure (typo?)")
 
     # relative wiki link
     path = current_article / parsed_location.path

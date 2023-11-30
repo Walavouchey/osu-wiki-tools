@@ -117,6 +117,19 @@ class TestArticleLinks:
             )
             assert isinstance(error, error_types.LinkNotFoundError)
 
+    def test__invalid_link_with_filename(self, root):
+        utils.create_files(
+            root,
+            ('wiki/Another_article/en.md', '# Another article')
+        )
+
+        link = link_parser.find_link("This link [shouldn't include the filename](/wiki/Another_article/en.md).")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
     def test__valid_reference(self, root):
         utils.create_files(
             root,

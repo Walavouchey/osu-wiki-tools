@@ -6,6 +6,6 @@
 
 ![][flag_AA] No flag here
 
-[Error only when case-sensitive](/wiki/NOT_FOUND/en.md)
+[Error only when case-sensitive](/wiki/NOT_FOUND)
 
 [flag_AA]: /wiki/shared/flag/AA.gif

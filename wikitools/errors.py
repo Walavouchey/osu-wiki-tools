@@ -28,16 +28,17 @@ class LinkError:
 
 class MalformedLinkError(
     LinkError,
-    collections.namedtuple('MalformedLinkError', 'link')
+    collections.namedtuple('MalformedLinkError', 'link reason')
 ):
     """
-    An error indicating an erroneous link (for example, with several leading slashes).
+    An error indicating an erroneous link (for example, with several leading slashes, or including the wiki article file name).
     """
 
     link: link_parser.Link
+    reason: str
 
     def __repr__(self):
-        return f'Incorrect link structure (typo?): "{self.link.raw_location}"'
+        return f'"{self.link.raw_location}": {self.reason}'
 
 
 class LinkNotFoundError(
