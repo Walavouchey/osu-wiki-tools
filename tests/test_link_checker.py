@@ -456,6 +456,7 @@ class TestExternalLinks:
     def test__all_external_links__valid(self):
         for line in (
             'Check the [example](https://example.com "Example").',
+            'Check [this Wikipedia article](https://en.wikipedia.org/wiki/MediaWiki "MediaWiki on Wikipedia").',
             'Contact [accounts@example.com](mailto:accounts@example.com).',
             'Look, [the web chat](irc://cho.ppy.sh)!',
             'I am [not even trying](htttttttttttttttttps://example.com).',
