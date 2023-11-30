@@ -81,7 +81,6 @@ class TestArticleLinks:
             {"case_sensitive": True, "capitalisation_correct": True, "should_error": False},
         ]
     )
-
     def test__valid_absolute_news_link(self, root, payload):
         utils.create_files(
             root,
@@ -511,13 +510,14 @@ class TestGitHubLinks:
         [
             {"string": "This link is [ok](https://github.com/ppy/osu-wiki/blob/master/wiki/Another_article/en.md).", "resolved_location": "wiki/Another_article/en.md"},
             {"string": "This link is [also ok](https://github.com/ppy/osu-wiki/tree/master/wiki/Another_article).", "resolved_location": "wiki/Another_article"},
+            {"string": "This link is [another ok link](https://github.com/ppy/osu-wiki/tree/master/README.md).", "resolved_location": "README.md"},
         ]
     )
-
     def test__github_link_valid(self, root, payload):
         utils.create_files(
             root,
-            ('wiki/Another_article/en.md', '# Another article')
+            ('wiki/Another_article/en.md', '# Another article'),
+            ('README.md', '# Please read me')
         )
 
         link = link_parser.find_link(payload["string"])
@@ -527,22 +527,30 @@ class TestGitHubLinks:
         )
         assert error is None
 
-    def test__github_link_invalid__missing_heading(self, root):
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"string": "Please read the [article](https://github.com/ppy/osu-wiki/blob/master/wiki/New_article/en.md#some-nonexistent-heading).", "resolved_location": "wiki/New_article/en.md"},
+            {"string": "Please read the [readme](https://github.com/ppy/osu-wiki/blob/master/README.md#some-nonexistent-heading).", "resolved_location": "README.md"},
+        ]
+    )
+    def test__github_link_invalid__missing_heading(self, root, payload):
         utils.create_files(
             root,
             ('wiki/New_article/en.md', '# New article'),
+            ('README.md', '# Please read me')
         )
         new_article = dummy_article('wiki/New_article/en.md')
         all_articles = {new_article.path: new_article}
 
-        link = link_parser.find_link('Please read the [article](https://github.com/ppy/osu-wiki/blob/master/wiki/New_article/en.md#some-nonexistent-heading).')
+        link = link_parser.find_link(payload["string"])
         assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/Other_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert isinstance(error, error_types.MissingIdentifierError)
         assert error.identifier == 'some-nonexistent-heading'
-        assert error.path == 'wiki/New_article/en.md'
+        assert error.path == payload["resolved_location"]
         assert not error.no_translation_available
         assert not error.translation_outdated
 
