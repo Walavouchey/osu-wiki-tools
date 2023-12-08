@@ -106,7 +106,7 @@ def list_modified_originals(base_commit):
     return git_utils.git_diff('wiki/**/en.md', base_commit=base_commit)
 
 
-def outdate_translations(*translations, outdated_hash=""):
+def outdate_translations(*translations, outdated_hash):
     """
     Write outdated hash and marker to several translations at once.
     """
