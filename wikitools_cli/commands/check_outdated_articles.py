@@ -180,22 +180,27 @@ def main(*args):
             should_autocommit = getattr(args, AUTOCOMMIT_FLAG[2:], False)
             if should_autofix:
                 print(console.green('{} specified, outdating translations...'.format(AUTOFIX_FLAG)))
-                outdate_translations(*translations_to_outdate, outdated_hash=outdated_hash)
-                if not should_autocommit:
-                    print(console.green('Done! To commit the changes, run:'))
-                    print(console.green('\tgit add {}; git commit -m "outdate translations"'.format(
-                        " ".join(translations_to_outdate)
-                    )))
+
+                if outdated_hash:
+                    outdate_translations(*translations_to_outdate, outdated_hash=outdated_hash)
+                    if not should_autocommit:
+                        print(console.green('Done! To commit the changes, run:'))
+                        print(console.green('\tgit add {}; git commit -m "outdate translations"'.format(
+                            " ".join(translations_to_outdate)
+                        )))
+                    else:
+                        print(console.green('{} specified, committing changes...'.format(AUTOCOMMIT_FLAG)))
+                        git_utils.git("add", *translations_to_outdate)
+                        git_utils.git("commit", "-m", "outdate translations")
+                        print(console.green('Done! The changes have been committed for you.'))
+                        print()
+                        print(git_utils.git("show", "HEAD", "--no-patch"))
+                        print("Changed files:")
+                        for file_path in translations_to_outdate:
+                            print(console.green(f"* {file_path}"))
                 else:
-                    print(console.green('{} specified, committing changes...'.format(AUTOCOMMIT_FLAG)))
-                    git_utils.git("add", *translations_to_outdate)
-                    git_utils.git("commit", "-m", "outdate translations")
-                    print(console.green('Done! The changes have been committed for you.'))
-                    print()
-                    print(git_utils.git("show", "HEAD", "--no-patch"))
-                    print("Changed files:")
-                    for file_path in translations_to_outdate:
-                        print(console.green(f"* {file_path}"))
+                    print(f"{console.red('Error:')} --outdated-since was not specified and HEAD has not diverged from master.")
+                    exit_code = 1
             else:
                 print_translations_to_outdate(*translations_to_outdate, outdated_hash=outdated_hash, no_recommend_autofix=args.no_recommend_autofix)
                 exit_code = 1

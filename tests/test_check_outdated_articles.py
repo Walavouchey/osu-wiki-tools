@@ -501,3 +501,27 @@ class TestCheckOutdatedArticles:
         log = git_utils.git("--no-pager", "log", "--pretty=oneline").splitlines()
 
         assert len(log) == 4
+
+    def test__full_autofix_flow_with_invalid_outdated_since(self, root):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/Article/en.md',
+            'wiki/Article/fr.md',
+            'wiki/Article/pt-br.md',
+            'wiki/Article/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths))
+        utils.stage_all_and_commit("add articles")
+
+        utils.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            utils.take(article_paths, "en.md")
+        ))
+        utils.stage_all_and_commit("modify english articles")
+
+        exit_code = outdater.main("--base-commit", "HEAD^", f"{outdater.AUTOFIX_FLAG}")
+
+        assert exit_code == 1
+
+        assert utils.get_changed_files() == []
