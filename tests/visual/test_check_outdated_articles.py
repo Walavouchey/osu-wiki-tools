@@ -29,7 +29,7 @@ def check_outdated_articles_test():
         utils.stage_all_and_commit("modify english article")
         commit_hash = utils.get_last_commit_hash()
 
-        outdater.main("--base-commit", commit_hash)
+        outdater.main("--base-commit", "HEAD^", "--outdated-since", commit_hash)
 
 
 def check_outdated_articles_test_no_recommend_autofix():
@@ -52,7 +52,7 @@ def check_outdated_articles_test_no_recommend_autofix():
         utils.stage_all_and_commit("modify english article")
         commit_hash = utils.get_last_commit_hash()
 
-        outdater.main("--no-recommend-autofix", "--base-commit", commit_hash)
+        outdater.main("--no-recommend-autofix", "--base-commit", "HEAD^", "--outdated-since", commit_hash)
 
 
 test = VisualTest(
