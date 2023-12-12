@@ -1,3 +1,5 @@
+import pytest
+
 from wikitools import identifier_parser
 
 
@@ -74,6 +76,17 @@ class TestIdentifierParser:
             ('## A [wild](/wiki/B) l[ink](/wiki/Ink) appears ![abc](/img/abc.png)', 'a-wild-link-appears'),
         ):
             assert identifier_parser.extract_identifier(heading) == (identifier, 0)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"heading": "### ::{ flag=TH }:: woah", "identifier": "woah"},
+            {"heading": "### woah ::{ flag=TH }::", "identifier": "woah"},
+            {"heading": "### ::{ flag=TH }:: Thailand vs. ::{ flag=NZ }:: New Zealand", "identifier": "thailand-vs.--new-zealand"},
+        ]
+    )
+    def test__flag(self, payload):
+        assert identifier_parser.extract_identifier(payload["heading"]) == (payload["identifier"], 0)
 
     def test__custom(self):
         for line, identifier, pos in (

@@ -1,10 +1,14 @@
 import typing
+import re
 
 from wikitools import link_parser
 
 ID_PREFIXES = {'#', 'id='}
 
 ESCAPEABLE_CHARS = { '\\', '(' , ')', '[', ']', '{', '}', '<', '>', '#', '*', '~', '`', '_', '-', '+', '|', '\'', '"', '@', '$', ';', ':', ',', '.' }
+
+CONTAINER_REGEX = re.compile(r"::{.*?}::")
+
 
 # backslashes are sometimes used (perhaps unnecessarily) to avoid remark errors
 def unescape(s: str) -> str:
@@ -76,4 +80,10 @@ def extract_identifier(
             if k == len(links_on_line) - 1:
                 heading += s[start:]
 
-    return ("-".join(word.lower() for word in unescape(heading).strip().split()), 0)
+    identifier = "-".join(word.lower() for word in unescape(heading).strip().split())
+
+    # headings can contain custom containers, such as flags
+    # TODO: maybe do this in a smarter way
+    identifier = re.sub(CONTAINER_REGEX, "", identifier).strip("-")
+
+    return (identifier, 0)
