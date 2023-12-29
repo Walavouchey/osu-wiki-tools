@@ -71,8 +71,8 @@ def print_bad_hash_error(*filenames, outdated_hash=None):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter, usage="%(prog)s check-outdated-articles [options]")
-    parser.add_argument("-b", "--base-commit", help="commit since which to look for changes")
-    parser.add_argument("-o", "--outdated-since", default="", help=f"commit hash for the {OUTDATED_HASH_TAG} tag, uses the value of --base-commit if unspecified")
+    parser.add_argument("-b", "--base-commit", default="master", help="commit since which to look for changes")
+    parser.add_argument("-o", "--outdated-since", help=f"commit hash for the {OUTDATED_HASH_TAG} tag, uses the first commit where HEAD diverged from master if unspecified")
     parser.add_argument("-a", "--all", default=False, action="store_true", help="look for incorrect hashes in all outdated articles")
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
@@ -106,7 +106,7 @@ def list_modified_originals(base_commit):
     return git_utils.git_diff('wiki/**/en.md', base_commit=base_commit)
 
 
-def outdate_translations(*translations, outdated_hash=""):
+def outdate_translations(*translations, outdated_hash):
     """
     Write outdated hash and marker to several translations at once.
     """
@@ -151,62 +151,56 @@ def main(*args):
     if args.root:
         changed_cwd = file_utils.ChangeDirectory(args.root)
 
-    base_commit = args.base_commit or git_utils.get_first_branch_commit()
-
-    if not base_commit and not args.all:
-        print(f"{console.red('Error:')} neither --base-commit (unable to obtain automatically) nor --all were specified; nothing to do.")
-        exit_code = 1
-        if args.root:
-            del changed_cwd
-        return exit_code
-
     modified_translations = set()
     with_bad_hashes = list()
 
-    if not args.all and base_commit:
-        modified_translations = set(list_modified_translations(base_commit))
-        with_bad_hashes = list(check_commit_hashes(modified_translations))
-    elif args.all:
+    if args.all:
         all_translations = file_utils.list_all_translations(file_utils.list_all_article_dirs())
         with_bad_hashes = list(check_commit_hashes(all_translations))
+    else:
+        modified_translations = set(list_modified_translations(args.base_commit))
+        with_bad_hashes = list(check_commit_hashes(modified_translations))
+
+    outdated_hash = None
 
     if with_bad_hashes:
-        print_bad_hash_error(*with_bad_hashes, outdated_hash=args.outdated_since or base_commit)
+        outdated_hash = args.outdated_since or git_utils.get_first_branch_commit()
+        print_bad_hash_error(*with_bad_hashes, outdated_hash=outdated_hash)
         print()
         exit_code = 1
 
-    if not base_commit:
-        if args.root:
-            del changed_cwd
-        return exit_code
-
-    modified_originals = list_modified_originals(base_commit)
+    modified_originals = list_modified_originals(args.base_commit)
     if modified_originals:
         all_translations = file_utils.list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
         translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
         if translations_to_outdate:
-            outdated_hash = args.outdated_since or base_commit
+            outdated_hash = outdated_hash or args.outdated_since or git_utils.get_first_branch_commit()
 
             should_autofix = getattr(args, AUTOFIX_FLAG[2:], False)
             should_autocommit = getattr(args, AUTOCOMMIT_FLAG[2:], False)
             if should_autofix:
                 print(console.green('{} specified, outdating translations...'.format(AUTOFIX_FLAG)))
-                outdate_translations(*translations_to_outdate, outdated_hash=outdated_hash)
-                if not should_autocommit:
-                    print(console.green('Done! To commit the changes, run:'))
-                    print(console.green('\tgit add {}; git commit -m "outdate translations"'.format(
-                        " ".join(translations_to_outdate)
-                    )))
+
+                if outdated_hash:
+                    outdate_translations(*translations_to_outdate, outdated_hash=outdated_hash)
+                    if not should_autocommit:
+                        print(console.green('Done! To commit the changes, run:'))
+                        print(console.green('\tgit add {}; git commit -m "outdate translations"'.format(
+                            " ".join(translations_to_outdate)
+                        )))
+                    else:
+                        print(console.green('{} specified, committing changes...'.format(AUTOCOMMIT_FLAG)))
+                        git_utils.git("add", *translations_to_outdate)
+                        git_utils.git("commit", "-m", "outdate translations")
+                        print(console.green('Done! The changes have been committed for you.'))
+                        print()
+                        print(git_utils.git("show", "HEAD", "--no-patch"))
+                        print("Changed files:")
+                        for file_path in translations_to_outdate:
+                            print(console.green(f"* {file_path}"))
                 else:
-                    print(console.green('{} specified, committing changes...'.format(AUTOCOMMIT_FLAG)))
-                    git_utils.git("add", *translations_to_outdate)
-                    git_utils.git("commit", "-m", "outdate translations")
-                    print(console.green('Done! The changes have been committed for you.'))
-                    print()
-                    print(git_utils.git("show", "HEAD", "--no-patch"))
-                    print("Changed files:")
-                    for file_path in translations_to_outdate:
-                        print(console.green(f"* {file_path}"))
+                    print(f"{console.red('Error:')} --outdated-since was not specified and HEAD has not diverged from master.")
+                    exit_code = 1
             else:
                 print_translations_to_outdate(*translations_to_outdate, outdated_hash=outdated_hash, no_recommend_autofix=args.no_recommend_autofix)
                 exit_code = 1

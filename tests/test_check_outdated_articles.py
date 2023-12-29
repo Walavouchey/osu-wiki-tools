@@ -37,10 +37,8 @@ class TestCheckOutdatedArticles:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
         utils.stage_all_and_commit("add article title")
-        commit_hash = utils.get_last_commit_hash()
 
-        # note that at least two existing commits are necessary to get a diff using `revision^`
-        modified_translations = outdater.list_modified_translations(commit_hash)
+        modified_translations = outdater.list_modified_translations("HEAD^")
 
         assert multiset(modified_translations) == multiset(utils.remove(article_paths, "en.md", "TEMPLATE.md"))
 
@@ -49,9 +47,8 @@ class TestCheckOutdatedArticles:
             utils.take(article_paths, "fr.md"))
         )
         utils.stage_all_and_commit("add article content")
-        commit_hash = utils.get_last_commit_hash()
 
-        modified_translations = outdater.list_modified_translations(commit_hash)
+        modified_translations = outdater.list_modified_translations("HEAD^")
 
         assert multiset(modified_translations) == multiset(utils.take(article_paths, "fr.md"))
 
@@ -70,16 +67,14 @@ class TestCheckOutdatedArticles:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
         utils.stage_all_and_commit("add some articles")
-        commit_hash = utils.get_last_commit_hash()
 
         utils.create_files(root, *zip(article_paths[0:2], [
             '# Article\n\nThis is an article in English.',
             '# Article\n\nThis is another article in English.',
         ]))
         utils.stage_all_and_commit("add article content")
-        commit_hash = utils.get_last_commit_hash()
 
-        modified_originals = outdater.list_modified_originals(commit_hash)
+        modified_originals = outdater.list_modified_originals("HEAD^")
         assert multiset(modified_originals) == multiset(utils.take(article_paths, "en.md"))
 
     def test__list_outdated_translations(self, root):
@@ -223,7 +218,7 @@ class TestCheckOutdatedArticles:
         utils.stage_all_and_commit("modify english articles")
         commit_hash_2 = utils.get_last_commit_hash()
 
-        exit_code = outdater.main("--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}")
+        exit_code = outdater.main("--base-commit", "HEAD^", "--outdated-since", commit_hash_2, f"{outdater.AUTOFIX_FLAG}")
 
         assert exit_code == 0
 
@@ -300,17 +295,15 @@ class TestCheckOutdatedArticles:
         utils.stage_all_and_commit("modify english articles")
         commit_hash_2 = utils.get_last_commit_hash()
 
-        exit_code = outdater.main("--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}", f"{outdater.AUTOCOMMIT_FLAG}")
+        exit_code = outdater.main("--base-commit", "HEAD^", "--outdated-since", commit_hash_2, f"{outdater.AUTOFIX_FLAG}", f"{outdater.AUTOCOMMIT_FLAG}")
 
         assert exit_code == 0
 
-        commit_hash_3 = utils.get_last_commit_hash()
-
-        assert commit_hash_3 != commit_hash_2
+        assert commit_hash_2 != utils.get_last_commit_hash()
 
         assert utils.get_changed_files() == []
 
-        outdated_translations = outdater.list_modified_translations(commit_hash_3)
+        outdated_translations = outdater.list_modified_translations("HEAD^")
 
         non_chinese_translations = utils.remove(article_paths, "en.md", "zh-tw.md")
 
@@ -384,7 +377,7 @@ class TestCheckOutdatedArticles:
         commit_hash_2 = utils.get_last_commit_hash()
 
         cd = file_utils.ChangeDirectory("wiki")
-        exit_code = outdater.main("--root", "..", "--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}")
+        exit_code = outdater.main("--root", "..", "--base-commit", "HEAD^", "--outdated-since", commit_hash_2, f"{outdater.AUTOFIX_FLAG}")
         del cd
 
         assert exit_code == 0
@@ -463,18 +456,16 @@ class TestCheckOutdatedArticles:
         commit_hash_2 = utils.get_last_commit_hash()
 
         cd = file_utils.ChangeDirectory("wiki")
-        exit_code = outdater.main("--root", "..", "--base-commit", commit_hash_2, f"{outdater.AUTOFIX_FLAG}", f"{outdater.AUTOCOMMIT_FLAG}")
+        exit_code = outdater.main("--root", "..", "--base-commit", "HEAD^", "--outdated-since", commit_hash_2, f"{outdater.AUTOFIX_FLAG}", f"{outdater.AUTOCOMMIT_FLAG}")
         del cd
 
         assert exit_code == 0
 
-        commit_hash_3 = utils.get_last_commit_hash()
-
-        assert commit_hash_3 != commit_hash_2
+        assert commit_hash_2 != utils.get_last_commit_hash()
 
         assert utils.get_changed_files() == []
 
-        outdated_translations = outdater.list_modified_translations(commit_hash_3)
+        outdated_translations = outdater.list_modified_translations("HEAD^")
 
         non_chinese_translations = utils.remove(article_paths, "en.md", "zh-tw.md")
 
@@ -510,3 +501,27 @@ class TestCheckOutdatedArticles:
         log = git_utils.git("--no-pager", "log", "--pretty=oneline").splitlines()
 
         assert len(log) == 4
+
+    def test__full_autofix_flow_with_invalid_outdated_since(self, root):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/Article/en.md',
+            'wiki/Article/fr.md',
+            'wiki/Article/pt-br.md',
+            'wiki/Article/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths))
+        utils.stage_all_and_commit("add articles")
+
+        utils.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            utils.take(article_paths, "en.md")
+        ))
+        utils.stage_all_and_commit("modify english articles")
+
+        exit_code = outdater.main("--base-commit", "HEAD^", f"{outdater.AUTOFIX_FLAG}")
+
+        assert exit_code == 1
+
+        assert utils.get_changed_files() == []
