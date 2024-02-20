@@ -1,3 +1,4 @@
+google-api-python-client==2.104.0
 braceexpand==0.1.7
 mypy==1.19.1
 pynput==1.8.1
