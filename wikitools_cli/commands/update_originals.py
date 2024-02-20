@@ -10,6 +10,7 @@ import argparse
 import sys
 import typing
 import os
+import re
 from csv import DictReader
 from copy import copy
 import io
@@ -113,8 +114,13 @@ class Table():
     def _dict_row_to_list(row: typing.Dict[str, str], header: typing.List[str]) -> typing.List[str]:
         return [row[column] for column in header]
 
+    @staticmethod
+    def _remove_placeholder(column_header: str) -> str:
+        return "" if column_header.startswith("_") else column_header
+
     def print(self, **kwargs) -> None:
-        print("| " + " | ".join(self.header) + " |", **kwargs)
+        header = [self._remove_placeholder(s) for s in self.header]
+        print("| " + " | ".join(header) + " |", **kwargs)
         print("| " + " | ".join(
             self.alignments
             if self.alignments else [":--"] * len(self.header)) + " |",
@@ -124,8 +130,9 @@ class Table():
             print("| " + " | ".join(self._dict_row_to_list(row, self.header)) + " |", **kwargs)
 
     def print_pretty(self, **kwargs) -> None:
+        header = [self._remove_placeholder(s) for s in self.header]
         alignments = self.alignments if self.alignments else [":--"] * len(self.header)
-        header_and_rows = [copy(self.header)]
+        header_and_rows = [copy(header)]
         for row in self.rows:
             header_and_rows.append(self._dict_row_to_list(row, self.header))
 
@@ -141,7 +148,7 @@ class Table():
         ]
 
         print("| " + " | ".join([
-            self._justify(cell, length, alignment) for cell, length, alignment in zip(self.header, column_lengths, alignments)
+            self._justify(cell, length, alignment) for cell, length, alignment in zip(header, column_lengths, alignments)
         ]) + " |", **kwargs)
 
         print("| " + " | ".join([
@@ -246,6 +253,26 @@ def mode_icon(mode: str) -> str:
             return ""
 
 
+def link_icon(link: str) -> str:
+    if link.startswith("https://osu.ppy.sh/beatmaps/artists/"):
+        return f"[![FA](/wiki/shared/link/FA.png)]({link} \"Featured Artist listing\")"
+    elif link.startswith("https://soundcloud.com/"):
+        return f"[![SoundCloud](/wiki/shared/link/SoundCloud.png)]({link} \"SoundCloud\")"
+    elif link.startswith("https://www.youtube.com/"):
+        return f"[![YouTube](/wiki/shared/link/YouTube.png)]({link} \"YouTube\")"
+    elif link.startswith("https://open.spotify.com/"):
+        return f"[![Spotify](/wiki/shared/link/Spotify.png)]({link} \"Spotify\")"
+    elif "bandcamp.com" in link:
+        return f"[![Bandcamp](/wiki/shared/link/Bandcamp.png)]({link} \"Bandcamp\")"
+    elif link.startswith("https://assets.ppy.sh/"):
+        return f"[![Asset](/wiki/shared/link/Asset.png)]({link} \"Audio file\")"
+    else:
+        return ""
+
+
+def link_icons(row: typing.List[typing.Dict[str, str]]) -> str:
+    return " ".join([link_icon(link) for link in [row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['Asset'], row['FA listing']] if link])
+
 def first(l: typing.List[str]) -> str:
     trimmed = [l for l in l if l]
     if not trimmed:
@@ -261,8 +288,6 @@ def maybe_link(text: str, link: str, empty_when_no_link: bool=False) -> str:
 
 def footnote(fa_status: str) -> str:
     match fa_status:
-        case "FA_CATALOGUE":
-            return "[^fa-catalogue]"
         case "FA":
             return "[^fa]"
         case "FA_FEATURE":
@@ -281,12 +306,13 @@ def create_table_ost(data):
     return Table(
         [
             {
-                "Song": f"[{row['Track']}]({first([row['SoundCloud'], row['Beatmap']])}){footnote(row['FA status'])}",
+                "Links": link_icons(row),
+                "Song": row['Track'] + footnote(row['FA status']),
                 "Notes": row['Note']
             } for row in data
         ],
-        ["Song", "Notes"],
-        [":-:", ":--"]
+        ["Links", "Song", "Notes"],
+        ["--:", ":--", ":--"]
     )
 
 
@@ -298,11 +324,12 @@ def create_table_fa_release(data):
     return Table(
         [
             {
-                "Song": f"[{row['Track']}]({first([row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['FA listing']])})"
+                "Links": link_icons(row),
+                "Song": row['Track'],
             } for row in data
         ],
-        ["Song"],
-        [":-:"]
+        ["Links", "Song"],
+        ["--:", ":--"]
     )
 
 
@@ -314,13 +341,14 @@ def create_table_tournament(data):
     return Table(
         [
             {
-                "Song": f"{maybe_link(row['Track'], first([row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['FA listing']]))}{footnote(row['FA status'])}",
+                "Links": link_icons(row),
+                "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
                 "Notes": first([row['Mappool slot'], row['Note']])
             } for row in data
         ],
-        ["Song", "Beatmap", "Notes"],
-        [":-:", ":-:", ":--"]
+        ["Links", "Song", "Beatmap", "Notes"],
+        ["--:", ":--", ":-:", ":--"]
     )
 
 
@@ -332,12 +360,13 @@ def create_table_contest_official(data):
     return Table(
         [
             {
-                "Song": f"{maybe_link(row['Track'], first([row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['FA listing'], row['Asset']]))}{footnote(row['FA status'])}",
+                "Links": link_icons(row),
+                "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Song", "Beatmap"],
-        [":-:", ":-:"]
+        ["Links", "Song", "Beatmap"],
+        ["--:", ":--", ":-:"]
     )
 
 
@@ -349,11 +378,12 @@ def create_table_contest_community(data):
     return Table(
         [
             {
-                "Song": f"{maybe_link(row['Track'], first([row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['FA listing']]))}{footnote(row['FA status'])}",
+                "Links": link_icons(row),
+                "Song": row['Track'] + footnote(row['FA status']),
             } for row in data
         ],
-        ["Song"],
-        [":-:"]
+        ["Links", "Song"],
+        ["--:", ":--"]
     )
 
 
@@ -365,17 +395,18 @@ def create_table_standalone_beatmap(data):
     return Table(
         [
             {
-                "Song": f"{maybe_link(row['Track'], first([row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['FA listing']]))}{footnote(row['FA status'])}",
+                "Links": link_icons(row),
+                "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Song", "Beatmap"],
-        [":-:", ":-:"]
+        ["Links", "Song", "Beatmap"],
+        ["--:", ":--", ":-:"]
     )
 
 
 def sanitise(string):
-    return (
+    string = (
         string
         .replace("\\", "\\\\")
         .replace("_", "\\_")
@@ -384,6 +415,8 @@ def sanitise(string):
         .replace("<", "\\<")
         .replace(">", "\\>")
     )
+    string = re.sub(r"!$", r"\!", string)
+    return string
 
 
 def populate_section(csv, event_type, track_type, create_table_func):
