@@ -7,7 +7,7 @@ Tools useful for osu! wiki contributors
 import argparse
 import sys
 
-from wikitools_cli.commands import check_outdated_articles, check_links, check_yaml
+from wikitools_cli.commands import check_outdated_articles, check_links, check_yaml, update_originals
 
 from wikitools_cli.VERSION import VERSION
 
@@ -26,6 +26,11 @@ commands = [
         "name": "check-yaml",
         "help": "validate front matter and standalone YAML files",
         "entry": check_yaml.main,
+    },
+    {
+        "name": "update-originals",
+        "help": "update the \"wiki/osu! originals\" article",
+        "entry": update_originals.main,
     },
 ]
 
