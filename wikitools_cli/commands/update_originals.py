@@ -271,7 +271,7 @@ def link_icon(link: str) -> str:
 
 
 def link_icons(row: typing.List[typing.Dict[str, str]]) -> str:
-    return " ".join([link_icon(link) for link in [row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['Asset'], row['FA listing']] if link])
+    return " ".join([link_icon(link) for link in [row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['Asset']] if link])
 
 def first(l: typing.List[str]) -> str:
     trimmed = [l for l in l if l]
@@ -307,12 +307,13 @@ def create_table_ost(data):
         [
             {
                 "Links": link_icons(row),
+                "FA": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Notes": row['Note']
             } for row in data
         ],
-        ["Links", "Song", "Notes"],
-        ["--:", ":--", ":--"]
+        ["Links", "FA", "Song", "Notes"],
+        ["--:", ":-:", ":--", ":--"]
     )
 
 
@@ -325,11 +326,12 @@ def create_table_fa_release(data):
         [
             {
                 "Links": link_icons(row),
+                "FA": link_icon(row['FA listing']),
                 "Song": row['Track'],
             } for row in data
         ],
-        ["Links", "Song"],
-        ["--:", ":--"]
+        ["Links", "FA", "Song"],
+        ["--:", ":-:", ":--"]
     )
 
 
@@ -342,13 +344,14 @@ def create_table_tournament(data):
         [
             {
                 "Links": link_icons(row),
+                "FA": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
                 "Notes": first([row['Mappool slot'], row['Note']])
             } for row in data
         ],
-        ["Links", "Song", "Beatmap", "Notes"],
-        ["--:", ":--", ":-:", ":--"]
+        ["Links", "FA", "Song", "Beatmap", "Notes"],
+        ["--:", ":-:", ":--", ":-:", ":--"]
     )
 
 
@@ -361,12 +364,13 @@ def create_table_contest_official(data):
         [
             {
                 "Links": link_icons(row),
+                "FA": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Links", "Song", "Beatmap"],
-        ["--:", ":--", ":-:"]
+        ["Links", "FA", "Song", "Beatmap"],
+        ["--:", ":-:", ":--", ":-:"]
     )
 
 
@@ -379,11 +383,12 @@ def create_table_contest_community(data):
         [
             {
                 "Links": link_icons(row),
+                "FA": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
             } for row in data
         ],
-        ["Links", "Song"],
-        ["--:", ":--"]
+        ["Links", "FA", "Song"],
+        ["--:", ":-:", ":--"]
     )
 
 
@@ -396,12 +401,13 @@ def create_table_standalone_beatmap(data):
         [
             {
                 "Links": link_icons(row),
+                "FA": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Links", "Song", "Beatmap"],
-        ["--:", ":--", ":-:"]
+        ["Links", "FA", "Song", "Beatmap"],
+        ["--:", ":-:", ":--", ":-:"]
     )
 
 
