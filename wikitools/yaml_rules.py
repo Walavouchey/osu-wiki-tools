@@ -23,6 +23,7 @@ ALLOWED_FRONT_MATTER_TAGS = frozenset({
     "date",
     "layout",
     "title",
+    "series",
     "tumblr_url",
 })
 
