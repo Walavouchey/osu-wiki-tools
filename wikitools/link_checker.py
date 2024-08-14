@@ -125,12 +125,18 @@ def resolve_redirect(
     split = redirect_destination.split('#')
     path = pathlib.Path('wiki') / split[0]
     fragment = split[1] if len(split) > 1 else None
+
+    if not fragment:
+        # the original link's section needs to be preserved if the redirect doesn't specify one.
+        # conversely, if a redirect specifies a section, it always takes priority
+        fragment = repo_path.fragment
+
     target_path = RepositoryPath(path_type=repo_path.path_type, path=path, fragment=fragment)
 
     if not exists(target_path.path):
         return errors.BrokenRedirectError(link, redirect_source, redirect_line_no, redirect_destination)
 
-    return RepositoryPath(path_type=repo_path.path_type, path=path, fragment=fragment)
+    return target_path
 
 
 def check_link(
@@ -156,13 +162,12 @@ def check_link(
     if reference is None and link.is_reference:
         return errors.MissingReferenceError(link)
 
-    parsed_location = reference.parsed_location if reference else link.parsed_location
-
     current_article_path = pathlib.Path(article.path)
     if current_article_path.as_posix().startswith("wiki"):
         current_article_path = pathlib.Path(os.path.dirname(current_article_path))
 
-    repo_path = get_repo_path(current_article_path, link, parsed_location)
+    repo_path = get_repo_path(current_article_path, link, reference.parsed_location if reference else link.parsed_location)
+
     if isinstance(repo_path, errors.LinkError):
         return repo_path
     elif repo_path is None:
@@ -184,7 +189,7 @@ def check_link(
         repo_path = redirected_path
 
     # link to an article in general, article exists -> good
-    if not parsed_location.fragment:
+    if not repo_path.fragment:
         return None
 
     target_path = repo_path.path
@@ -204,13 +209,13 @@ def check_link(
 
                 target_article = all_articles[raw_path]
 
-                if parsed_location.fragment not in target_article.identifiers:
+                if repo_path.fragment not in target_article.identifiers:
                     # collect some additional metadata before reporting
                     translation_outdated = False
                     if repo_path.path.name != "en.md":
                         translation_outdated = target_article.front_matter.get('outdated_translation', False)
 
-                    return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, False, translation_outdated)
+                    return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, False, translation_outdated)
         case PathType.NEWS:
             # always a file path
             raw_path = target_path.as_posix()
@@ -218,8 +223,8 @@ def check_link(
                 all_articles[raw_path] = article_parser.parse(target_path)
             target_article = all_articles[raw_path]
 
-            if parsed_location.fragment not in target_article.identifiers:
-                return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, False, False)
+            if repo_path.fragment not in target_article.identifiers:
+                return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, False, False)
         case PathType.WIKI:
             # directory -> need to find the target article; it could be a translation
             # XXX(TicClick): this part assumes there is always an English version of the article in a folder
@@ -237,7 +242,7 @@ def check_link(
 
             target_article = all_articles[raw_path]
 
-            if parsed_location.fragment not in target_article.identifiers:
+            if repo_path.fragment not in target_article.identifiers:
                 # collect some additional metadata before reporting
                 translation_outdated = False
                 if not no_translation_available:
@@ -247,7 +252,7 @@ def check_link(
                         all_articles[raw_path_translation] = article_parser.parse(translation)
                     translation_outdated = all_articles[raw_path_translation].front_matter.get('outdated_translation', False)
 
-                return errors.MissingIdentifierError(link, raw_path, parsed_location.fragment, no_translation_available, translation_outdated)
+                return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, no_translation_available, translation_outdated)
 
     return None
 
