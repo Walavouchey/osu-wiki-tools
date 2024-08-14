@@ -793,10 +793,18 @@ class TestSectionLinks:
         assert error.identifier == 'wrong-subheading'
         assert error.path == 'wiki/New_article/Included_article/en.md'
 
-    def test__valid_redirect(self, root):
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "/wiki/Old_location#subheading", "redirect": '"old_location": "Target_article"'},
+            {"link": "/wiki/Old_location", "redirect": '"old_location": "Target_article#subheading"'},
+            {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#subheading"'}, # redirected section takes priority
+        ]
+    )
+    def test__valid_redirect(self, root, payload):
         utils.create_files(
             root,
-            ('wiki/redirect.yaml', '"old_location": "Target_article"'),
+            ('wiki/redirect.yaml', payload['redirect']),
             ('wiki/New_article/en.md', '# New article'),
             (
                 'wiki/Target_article/en.md',
@@ -815,17 +823,25 @@ class TestSectionLinks:
         }
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
 
-        link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#subheading).")
+        link = link_parser.find_link(f"Please follow the [target article]({payload['link']}).")
         assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )
         assert error is None
 
-    def test__invalid_redirect(self, root):
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "/wiki/Old_location#totally-wrong-heading", "redirect": '"old_location": "Target_article"'},
+            {"link": "/wiki/Old_location", "redirect": '"old_location": "Target_article#totally-wrong-heading"'},
+            {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#totally-wrong-heading"'}, # redirected section takes priority
+        ]
+    )
+    def test__invalid_redirect(self, root, payload):
         utils.create_files(
             root,
-            ('wiki/redirect.yaml', '"old_location": "Target_article"'),
+            ('wiki/redirect.yaml', payload['redirect']),
             ('wiki/New_article/en.md', '# New article'),
             (
                 'wiki/Target_article/en.md',
@@ -844,7 +860,7 @@ class TestSectionLinks:
         }
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
 
-        link = link_parser.find_link("Please follow the [target article](/wiki/Old_location#totally-wrong-heading).")
+        link = link_parser.find_link(f"Please follow the [target article]({payload['link']}).")
         assert link
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
