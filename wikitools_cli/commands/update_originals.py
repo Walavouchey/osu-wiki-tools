@@ -16,56 +16,11 @@ from copy import copy
 import io
 from collections import Counter
 
-from wikitools import console, errors as error_types, file_utils
+from wikitools import console, errors as error_types, file_utils, online_data, plotting
 
-try:
-    from googleapiclient.discovery import build # type: ignore
-    from googleapiclient.errors import HttpError # type: ignore
-    GOOGLE_CLIENT_IMPORTED = True
-except ImportError as error:
-    GOOGLE_CLIENT_IMPORTED = False
-    GOOGLE_CLIENT_IMPORT_ERROR = error
-
-
-API_KEY_ENV = "GOOGLE_SHEETS_API_KEY"
-try:
-    API_KEY = os.environ[API_KEY_ENV]
-except KeyError:
-    API_KEY = ""
 
 TOTAL_ROWS = 0
 TRACKS_SEEN: Counter = Counter()
-
-
-def list_table_to_dict_table(table: typing.List[typing.List[str]]) -> typing.List[typing.Dict[str, str]]:
-    header = table[0]
-    new_table = []
-    for row in table[1:]:
-        new_table.append({ header: value for header, value in zip(header, row) })
-    return new_table
-
-
-def get_spreadsheet_range(spreadsheet_id, range_name):
-    """
-    Retrieves a range of cell values from a Google Sheet.
-
-    Raises HttpError when either authentication or retrieval fails.
-    """
-
-    service = build("sheets", "v4", developerKey=API_KEY)
-
-    result = (
-        service.spreadsheets()
-        .values()
-        .get(spreadsheetId=spreadsheet_id, range=range_name)
-        .execute()
-    )
-
-    rows = result.get("values", [])
-    column_count = len(rows[0])
-
-    rows = [row + [""] * (column_count - len(row)) for row in rows]
-    return list_table_to_dict_table(rows)
 
 
 class Table():
@@ -270,7 +225,7 @@ def link_icon(link: str) -> str:
         return ""
 
 
-def link_icons(row: typing.List[typing.Dict[str, str]]) -> str:
+def link_icons(row: typing.Dict[str, str]) -> str:
     return " ".join([link_icon(link) for link in [row['SoundCloud'], row['YouTube'], row['Spotify'], row['Bandcamp'], row['Asset']] if link])
 
 def first(l: typing.List[str]) -> str:
@@ -451,25 +406,7 @@ def main(*args):
         csv_unsanitised = list(reader)
         print(f"{len(csv_unsanitised)} rows retrieved from local file")
     else:
-        if not API_KEY:
-            print(f"{console.red('Error:')} Spreadsheet retrieval requires an api key set to the {API_KEY_ENV} environment variable.\n")
-            print("See https://support.google.com/googleapi/answer/6158862?hl=en")
-            print("and https://console.cloud.google.com/apis/api/sheets.googleapis.com/overview\n")
-        if not GOOGLE_CLIENT_IMPORTED:
-            print(f"{console.red('Error:')} {GOOGLE_CLIENT_IMPORT_ERROR}. Spreadsheet retrieval requires an optional dependency:\n")
-            print("pip install google-api-python-client\n")
-        if not API_KEY or not GOOGLE_CLIENT_IMPORTED:
-            print("Alternatively, use the --csv-file option (see --help).")
-            return 1
-        try:
-            csv_unsanitised = get_spreadsheet_range("1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrzh-E", "raw!A:U")
-            print(f"{len(csv_unsanitised)} rows retrieved from online spreadsheet")
-        except HttpError as error:
-            print(f"{console.red('Error:')} Spreadsheet retrieval failed: {error.status_code}. Make sure the {API_KEY_ENV} environment variable is correct.")
-            return 1
-        except Exception as error:
-            print(f"{console.red('Error:')} Spreadsheet retrieval failed: {error}")
-            return 1
+        csv_unsanitised = online_data.get_spreadsheet_range("1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrzh-E", "raw!A:U")
 
     csv = []
     for row in csv_unsanitised:
@@ -507,23 +444,27 @@ def main(*args):
 
     tree = MarkdownSection(contents)
 
-    tree[0][0][0].nodes[1] = table_ost.strip()
+    tree[0][1][0].nodes[1] = table_ost.strip()
 
-    tree[0][0][1][0].nodes[2] = table_fa_cysmix.strip()
-    tree[0][0][1][1].nodes[2] = table_fa_happy30.strip()
-    tree[0][0][1][2].nodes[3] = table_fa_james_landino.strip()
-    tree[0][0][1][3].nodes[2] = table_fa_kiraku.strip()
-    tree[0][0][1][4].nodes[2] = table_fa_kitazawa_kyouhei.strip()
-    tree[0][0][1][5].nodes[2] = table_fa_rabbit_house.strip()
-    tree[0][0][1][6].nodes[2] = table_fa_yuki.strip()
-    tree[0][0][1][7].nodes[2] = table_fa_zxnx.strip()
+    tree[0][1][1][0].nodes[2] = table_fa_cysmix.strip()
+    tree[0][1][1][1].nodes[2] = table_fa_happy30.strip()
+    tree[0][1][1][2].nodes[3] = table_fa_james_landino.strip()
+    tree[0][1][1][3].nodes[2] = table_fa_kiraku.strip()
+    tree[0][1][1][4].nodes[2] = table_fa_kitazawa_kyouhei.strip()
+    tree[0][1][1][5].nodes[2] = table_fa_rabbit_house.strip()
+    tree[0][1][1][6].nodes[2] = table_fa_yuki.strip()
+    tree[0][1][1][7].nodes[2] = table_fa_zxnx.strip()
 
-    tree[0][0][2] = tree[0][0][2].nodes[0] + "\n\n" + section_tournament_official.strip()
-    tree[0][0][3] = tree[0][0][3].nodes[0] + "\n\n" + section_tournament_community.strip()
-    tree[0][0][4] = tree[0][0][4].nodes[0] + "\n\n" + section_contest_official.strip()
-    tree[0][0][5] = tree[0][0][5].nodes[0] + "\n\n" + section_contest_community.strip()
+    tree[0][1][2] = tree[0][1][2].nodes[0] + "\n\n" + section_tournament_official.strip()
+    tree[0][1][3] = tree[0][1][3].nodes[0] + "\n\n" + section_tournament_community.strip()
+    tree[0][1][4] = tree[0][1][4].nodes[0] + "\n\n" + section_contest_official.strip()
+    tree[0][1][5] = tree[0][1][5].nodes[0] + "\n\n" + section_contest_community.strip()
 
-    tree[0][0][6].nodes[2] = table_standalone.strip()
+    tree[0][1][6].nodes[2] = table_standalone.strip()
+
+    tree[0][0].nodes[1] = "![](wiki/originals-over-time.png?20240811)"
+
+    plotting.plot_originals_over_time()
 
     with open('wiki/osu!_originals/en.md', "w", encoding="utf-8", newline="\n") as file:
         file.write(str(tree))
