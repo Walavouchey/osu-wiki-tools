@@ -124,10 +124,10 @@ def main(*args):
         errors = link_checker.check_article(a, redirects, articles, args.case_sensitive)
 
         if not args.to_sections_in_outdated_translations:
-            errors = filter_errors(lambda e: not (isinstance(e, error_types.MissingIdentifierError) and e.translation_outdated), errors)
+            errors = filter_errors(lambda e: not ((isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError)) and e.translation_outdated), errors)
 
         if not args.to_sections_in_missing_translations:
-            errors = filter_errors(lambda e: not (isinstance(e, error_types.MissingIdentifierError) and e.no_translation_available), errors)
+            errors = filter_errors(lambda e: not ((isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError)) and e.no_translation_available), errors)
 
         if not errors:
             continue
