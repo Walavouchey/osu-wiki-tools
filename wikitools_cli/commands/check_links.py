@@ -143,7 +143,7 @@ def main(*args):
                 print(e.pretty_location(a.path, lineno))
             for e in errors_on_line:
                 print(e.pretty())
-                if isinstance(e, error_types.MissingIdentifierError):
+                if isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError):
                     suggestions = identifier_suggestions(e, articles)
                     if suggestions:
                         print('{}\n\t{}'.format(console.blue('Suggestions:'), suggestions))

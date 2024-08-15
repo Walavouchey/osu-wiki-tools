@@ -1,1 +1,4 @@
-"redirected_article": "asdf"
+redirected_article: asdf
+
+hi_this_is_a_redirect: redirected_sections#redirected-heading-that-exists
+hi_this_is_a_bad_redirect: redirected_sections#redirected-heading-that-does-not-exist

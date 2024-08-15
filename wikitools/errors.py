@@ -9,7 +9,7 @@ class LinkError:
     link: link_parser.Link
 
     def pretty(self):
-        return f'{console.blue("Note:")} {repr(self)}'
+        return f'{console.blue("Note:")} ' + repr(self).replace("\n", "\n      ")
 
     def pretty_location(self, article_path, lineno):
         return "{}: {}".format(
@@ -74,9 +74,13 @@ class BrokenRedirectError(
     redirect_lineno: int
     redirect_destination: str
 
+    _colourise_fragment_only_in_redirect: bool = False
+
     def __repr__(self):
         return 'Broken redirect (redirect.yaml:{}: {} --> {})'.format(
-            self.redirect_lineno, self.resolved_location.lower(), self.redirect_destination
+            self.redirect_lineno,
+            self.resolved_location.lower(),
+            link_parser.Link.colourise_location_static(*self.redirect_destination.split("#"), fragment_only=self._colourise_fragment_only_in_redirect)
         )
 
 
@@ -124,3 +128,30 @@ class MissingIdentifierError(
     @property
     def pos(self):
         return self.link.fragment_start + 1
+
+
+class BrokenRedirectIdentifierError(
+    LinkError,
+    # TODO: would be cool to just inherit from these two
+    # BrokenRedirectError, MissingIdentifierError,
+    collections.namedtuple('BrokenRedirectIdentifier', 'link resolved_location redirect_lineno redirect_destination path identifier no_translation_available translation_outdated')
+):
+    """
+    An error indicating that a redirect points to a non-existent heading or identifier tag
+    that would produce such #identifier
+    """
+
+    link: link_parser.Link
+    resolved_location: str
+    redirect_lineno: int
+    redirect_destination: str
+    path: str
+    identifier: str
+    # for news posts, these two should be False
+    no_translation_available: bool # also implies a link to and from a translation
+    translation_outdated: bool
+
+    _colourise_fragment_only_in_redirect: bool = True
+
+    def __repr__(self):
+        return BrokenRedirectError.__repr__(self) + "\n" + MissingIdentifierError.__repr__(self)

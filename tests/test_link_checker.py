@@ -833,12 +833,49 @@ class TestSectionLinks:
     @pytest.mark.parametrize(
         "payload",
         [
-            {"link": "/wiki/Old_location#totally-wrong-heading", "redirect": '"old_location": "Target_article"'},
             {"link": "/wiki/Old_location", "redirect": '"old_location": "Target_article#totally-wrong-heading"'},
             {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#totally-wrong-heading"'}, # redirected section takes priority
         ]
     )
     def test__invalid_redirect(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/redirect.yaml', payload['redirect']),
+            ('wiki/New_article/en.md', '# New article'),
+            (
+                'wiki/Target_article/en.md',
+                textwrap.dedent('''
+                    # Included article
+
+                    ## Subheading
+
+                    This line exists.
+                ''').strip()
+            )
+        )
+        all_articles = {
+            path: article_parser.parse(path)
+            for path in ('wiki/New_article/en.md', 'wiki/Target_article/en.md')
+        }
+        redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
+
+        link = link_parser.find_link(f"Please follow the [target article]({payload['link']}).")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
+        )
+        assert isinstance(error, error_types.BrokenRedirectIdentifierError)
+        assert error.identifier == 'totally-wrong-heading'
+        assert error.link.parsed_location.fragment == (payload["link"].split("#")[1] if "#" in payload["link"] else "")
+        assert error.path == 'wiki/Target_article/en.md'
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "/wiki/Old_location#totally-wrong-heading", "redirect": '"old_location": "Target_article"'},
+        ]
+    )
+    def test__invalid_section_link_with_redirect(self, root, payload):
         utils.create_files(
             root,
             ('wiki/redirect.yaml', payload['redirect']),

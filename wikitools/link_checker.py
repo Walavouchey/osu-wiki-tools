@@ -61,7 +61,7 @@ def get_repo_path(
     Converts a wild link of into a osu-wiki repository path with an optional fragment, if possible
 
     Acceptable links can be in the following formats:
-    
+
     - Relative wiki link: path/to/article#optional-fragment
     - Absolute wiki link: /wiki/path/to/article#optional-fragment
     - News post link: https://osu.ppy.sh/home/news/2023-01-01-news#optional-fragment
@@ -109,7 +109,7 @@ def resolve_redirect(
     reference: typing.Optional[reference_parser.Reference],
     redirects: redirect_parser.Redirects,
     exists: typing.Callable[[pathlib.Path], bool]
-) -> typing.Union[RepositoryPath, errors.LinkError]:
+) -> typing.Union[typing.Tuple[RepositoryPath, str, int, str], errors.LinkError]:
     """
     Resolves a wiki article path according to redirects.
 
@@ -136,7 +136,7 @@ def resolve_redirect(
     if not exists(target_path.path):
         return errors.BrokenRedirectError(link, redirect_source, redirect_line_no, redirect_destination)
 
-    return target_path
+    return target_path, redirect_source, redirect_line_no, redirect_destination
 
 
 def check_link(
@@ -177,16 +177,18 @@ def check_link(
     if repo_path.path_type == PathType.GITHUB:
         exists = exists_case_sensitive
 
+    redirected = False
     if not exists(repo_path.path):
         # if the article doesn't exist, check if it has a redirect
         if repo_path.path_type == PathType.NEWS or repo_path.path_type == PathType.GITHUB:
             # except news and github links don't support redirects
             return errors.LinkNotFoundError(link, reference, repo_path.path.as_posix())
 
-        redirected_path = resolve_redirect(repo_path, link, reference, redirects, exists)
-        if isinstance(redirected_path, errors.LinkError):
-            return redirected_path
-        repo_path = redirected_path
+        redirect_result = resolve_redirect(repo_path, link, reference, redirects, exists)
+        if isinstance(redirect_result, errors.LinkError):
+            return redirect_result
+        repo_path, redirect_source, redirect_line_no, redirect_destination = redirect_result
+        redirected = True
 
     # link to an article in general, article exists -> good
     if not repo_path.fragment:
@@ -212,8 +214,7 @@ def check_link(
                 if repo_path.fragment not in target_article.identifiers:
                     # collect some additional metadata before reporting
                     translation_outdated = False
-                    if repo_path.path.name != "en.md":
-                        translation_outdated = target_article.front_matter.get('outdated_translation', False)
+                    if repo_path.path.name != "en.md": translation_outdated = target_article.front_matter.get('outdated_translation', False)
 
                     return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, False, translation_outdated)
         case PathType.NEWS:
@@ -251,6 +252,20 @@ def check_link(
                         # this is safe to do since the caller iterates over a copy of all_articles -> we can modify it as we wish
                         all_articles[raw_path_translation] = article_parser.parse(translation)
                     translation_outdated = all_articles[raw_path_translation].front_matter.get('outdated_translation', False)
+
+                # even an empty fragment in a redirect will take priority over the original link,
+                # so it's enough to just check for "#"
+                if redirected and "#" in redirect_destination:
+                    return errors.BrokenRedirectIdentifierError(
+                        link=link,
+                        resolved_location=redirect_source,
+                        redirect_lineno=redirect_line_no,
+                        redirect_destination=redirect_destination,
+                        path=raw_path,
+                        identifier=repo_path.fragment,
+                        no_translation_available=no_translation_available,
+                        translation_outdated=translation_outdated
+                    )
 
                 return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, no_translation_available, translation_outdated)
 

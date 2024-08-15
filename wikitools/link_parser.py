@@ -99,12 +99,17 @@ class Link(typing.NamedTuple):
         )
 
     def colourise_location(self, fragment_only=False):
+        return self.colourise_location_static(self.raw_location.split("#")[0], self.parsed_location.fragment, fragment_only=fragment_only)
+
+    # provided for convenience, used in `BrokenRedirectError`
+    @staticmethod
+    def colourise_location_static(location: str, fragment: typing.Optional[str] = None, fragment_only: bool=False):
         if fragment_only:
-            return "".join((
-                console.green(self.raw_location.split("#")[0]),
-                console.red('#' + self.parsed_location.fragment)
-            ))
-        return console.red(self.raw_location)
+            colourised_location = console.green(location)
+            if fragment:
+                colourised_location += console.red('#' + fragment)
+            return colourised_location
+        return console.red(location + ('#' + fragment if fragment else ""))
 
     def resolve(
         self, references: reference_parser.References
