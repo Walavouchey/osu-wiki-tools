@@ -7,6 +7,7 @@ https://docs.google.com/spreadsheets/d/1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrz
 """
 
 import argparse
+import datetime
 import sys
 import typing
 import os
@@ -462,7 +463,8 @@ def main(*args):
 
     tree[0][1][6].nodes[2] = table_standalone.strip()
 
-    tree[0][0].nodes[1] = "![](wiki/originals-over-time.png?20240811)"
+    time_string = datetime.datetime.now().strftime("%Y%m%d")
+    tree[0][0].nodes[1] = f"![](img/originals-over-time.png?{time_string})"
 
     plotting.plot_originals_over_time()
 

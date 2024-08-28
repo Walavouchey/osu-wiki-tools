@@ -1,3 +1,4 @@
+from wikitools import console
 import os
 import typing
 import sys
