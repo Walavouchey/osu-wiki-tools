@@ -45,7 +45,7 @@ def plot_originals_over_time():
 # data
     data = online_data.get_spreadsheet_range("1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrzh-E", "statistics!AK:AT")
     data_dates = [datetime.date.fromisoformat(row['Date']) for row in data]
-    data_tournament_community = [int(row['Other community tournaments']) for row in data]
+    data_tournament_community = [int(row['Community tournaments']) for row in data]
 #data_gts = [int(row['Global Taiko Showdown']) for row in data]
     data_tournament_official = [int(row['Official tournaments']) for row in data]
     data_contest_community = [int(row['Community contests']) for row in data]
