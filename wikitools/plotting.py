@@ -36,7 +36,7 @@ def set_up_theme():
     COLOURS = module.COLORS
 
     plt.rcParams["axes.prop_cycle"] = plt.cycler("color", OSU_CMAP.colors)
-    plt.style.use('meta/osu-matplotlib-theme/osu-news.mplstyle')
+    plt.style.use('meta/osu-matplotlib-theme/osu-wiki.mplstyle')
 
 
 def plot_originals_over_time():
