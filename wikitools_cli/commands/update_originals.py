@@ -464,7 +464,8 @@ def main(*args):
     tree[0][1][6].nodes[2] = table_standalone.strip()
 
     time_string = datetime.datetime.now().strftime("%Y%m%d")
-    tree[0][0].nodes[1] = f"![](img/originals-over-time.png?{time_string})"
+    tree[0][0].nodes[1] = f"There is currently a total of **{len(csv)}** documented osu! originals."
+    tree[0][0].nodes[2] = f"![](img/originals-over-time.png?{time_string})"
 
     plotting.plot_originals_over_time()
 
