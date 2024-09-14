@@ -381,13 +381,13 @@ def sanitise(string):
     return string
 
 
-def populate_section(csv, event_type, track_type, create_table_func):
+def populate_section(csv, track_type, create_table_func):
     section = ""
     for mode in ["osu", "taiko", "catch", "mania", ""]:
         data = [row for row in csv if row['Type'] == track_type and row['Mode'].split(", ")[0] == mode]
-        for event in sorted(list(set(row[event_type] for row in data))):
-            data = [row for row in csv if row[event_type] == event]
-            section += f"#### {mode_icon(data[0]['Mode'])} {maybe_link(event, data[0][f'{event_type} link'])}"
+        for event in sorted(list(set(row['Event'] for row in data if row['Type'].startswith(track_type)))):
+            data = [row for row in csv if row['Event'] == event]
+            section += f"#### {mode_icon(data[0]['Mode'])} {maybe_link(event, data[0]['Event link'])}"
             section += "\n\n"
             section += str(create_table_func(data)) + "\n"
     return section
@@ -413,6 +413,7 @@ def main(*args):
     for row in csv_unsanitised:
         row['Track'] = sanitise(row['Track'])
         csv.append(row)
+
     csv = sorted(csv, key=lambda row: row['Track'].lower())
 
     table_ost = str(create_table_ost([row for row in csv if row['Type'] == "OST"]))
@@ -426,15 +427,15 @@ def main(*args):
     table_fa_yuki = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`yuki.`:4" in row['Artists']]))
     table_fa_zxnx = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`ZxNX`:288" in row['Artists']]))
 
-    section_tournament_official = populate_section(csv, "Tournament", "TOURNAMENT_OFFICIAL", create_table_tournament)
-    section_tournament_community = populate_section(csv, "Tournament", "TOURNAMENT_COMMUNITY", create_table_tournament)
+    section_tournament_official = populate_section(csv, "TOURNAMENT_OFFICIAL", create_table_tournament)
+    section_tournament_community = populate_section(csv, "TOURNAMENT_COMMUNITY", create_table_tournament)
     section_contest_official = ""
-    section_contest_community = populate_section(csv, "Contest", "CONTEST_COMMUNITY", create_table_contest_community)
+    section_contest_community = populate_section(csv, "CONTEST_COMMUNITY", create_table_contest_community)
 
     data_contest_official = [row for row in csv if row['Type'] == "CONTEST_OFFICIAL"]
-    for contest in sorted(list(set(row['Contest'] for row in data_contest_official))):
-        data = [row for row in csv if row['Contest'] == contest]
-        section_contest_official += f"#### {maybe_link(contest, data[0]['Contest link'])}"
+    for contest in sorted(list(set(row['Event'] for row in data_contest_official))):
+        data = [row for row in csv if row['Event'] == contest]
+        section_contest_official += f"#### {maybe_link(contest, data[0]['Event link'])}"
         section_contest_official += "\n\n"
         section_contest_official += str(create_table_contest_official(data)) + "\n"
 
