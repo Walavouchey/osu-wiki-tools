@@ -311,7 +311,7 @@ def create_table_tournament(data):
     )
 
 
-def create_table_contest_official(data):
+def create_table_contest(data):
     global TOTAL_ROWS
     TOTAL_ROWS += len(data)
     for row in data:
@@ -327,24 +327,6 @@ def create_table_contest_official(data):
         ],
         ["Links", "FA", "Song", "Beatmap"],
         ["--:", ":-:", ":--", ":-:"]
-    )
-
-
-def create_table_contest_community(data):
-    global TOTAL_ROWS
-    TOTAL_ROWS += len(data)
-    for row in data:
-        TRACKS_SEEN[row['Track']] += 1
-    return Table(
-        [
-            {
-                "Links": link_icons(row),
-                "FA": link_icon(row['FA listing']),
-                "Song": row['Track'] + footnote(row['FA status']),
-            } for row in data
-        ],
-        ["Links", "FA", "Song"],
-        ["--:", ":-:", ":--"]
     )
 
 
@@ -430,14 +412,14 @@ def main(*args):
     section_tournament_official = populate_section(csv, "TOURNAMENT_OFFICIAL", create_table_tournament)
     section_tournament_community = populate_section(csv, "TOURNAMENT_COMMUNITY", create_table_tournament)
     section_contest_official = ""
-    section_contest_community = populate_section(csv, "CONTEST_COMMUNITY", create_table_contest_community)
+    section_contest_community = populate_section(csv, "CONTEST_COMMUNITY", create_table_contest)
 
     data_contest_official = [row for row in csv if row['Type'] == "CONTEST_OFFICIAL"]
     for contest in sorted(list(set(row['Event'] for row in data_contest_official))):
         data = [row for row in csv if row['Event'] == contest]
         section_contest_official += f"#### {maybe_link(contest, data[0]['Event link'])}"
         section_contest_official += "\n\n"
-        section_contest_official += str(create_table_contest_official(data)) + "\n"
+        section_contest_official += str(create_table_contest(data)) + "\n"
 
     table_standalone = str(create_table_standalone_beatmap([row for row in csv if row['Type'] == "BEATMAP"]))
 
