@@ -406,6 +406,7 @@ def main(*args):
     table_fa_kiraku = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`kiraku`:101" in row['Artists']]))
     table_fa_kitazawa_kyouhei = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Kitazawa Kyouhei`:165" in row['Artists']]))
     table_fa_rabbit_house = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Rabbit House`:242" in row['Artists']]))
+    table_fa_tomspicy = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`tomspicy`:437" in row['Artists']]))
     table_fa_yuki = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`yuki.`:4" in row['Artists']]))
     table_fa_zxnx = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`ZxNX`:288" in row['Artists']]))
 
@@ -436,8 +437,9 @@ def main(*args):
     tree[0][1][1][3].nodes[2] = table_fa_kiraku.strip()
     tree[0][1][1][4].nodes[2] = table_fa_kitazawa_kyouhei.strip()
     tree[0][1][1][5].nodes[2] = table_fa_rabbit_house.strip()
-    tree[0][1][1][6].nodes[2] = table_fa_yuki.strip()
-    tree[0][1][1][7].nodes[2] = table_fa_zxnx.strip()
+    tree[0][1][1][6].nodes[3] = table_fa_tomspicy.strip()
+    tree[0][1][1][7].nodes[2] = table_fa_yuki.strip()
+    tree[0][1][1][8].nodes[2] = table_fa_zxnx.strip()
 
     tree[0][1][2] = tree[0][1][2].nodes[0] + "\n\n" + section_tournament_official.strip()
     tree[0][1][3] = tree[0][1][3].nodes[0] + "\n\n" + section_tournament_community.strip()
