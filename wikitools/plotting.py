@@ -53,6 +53,7 @@ def plot_originals_over_time():
     data_fa = [int(row['Featured Artist releases']) for row in data]
     data_beatmap = [int(row['Standalone beatmaps']) for row in data]
     data_ost = [int(row['Original soundtrack']) for row in data]
+    data_other = [int(row['Other']) for row in data]
 
     data_list = [
         data_tournament_community,
@@ -63,6 +64,7 @@ def plot_originals_over_time():
         data_fa,
         data_beatmap,
         data_ost,
+        data_other,
     ]
 
 #data_tournament_community = [row['Community tournaments'] for row in data]
@@ -76,12 +78,13 @@ def plot_originals_over_time():
         "Featured Artist releases",
         "Standalone beatmaps",
         "osu! original soundtrack",
+        "Other osu!-related releases",
     ]
 
     years = list(range(2007, 2025))
 
     def hex_to_tuple(hex):
-        return tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
+        return tuple(int(hex[i:i + 2], 16) for i in (0, 2, 4))
 
     osu_colours_list = [
         hex_to_tuple("FFAA66"), # orange
@@ -92,6 +95,7 @@ def plot_originals_over_time():
         hex_to_tuple("66FFCC"), # turquoise
         hex_to_tuple("DD55FF"), # purple
         hex_to_tuple("FF66AA"), # osu!pink
+        hex_to_tuple("FFFFFF"), # white
         #[140, 102, 255], # purple
         #[255, 217, 102], # orange (actually yellow)
         #[255, 102, 171], # osu!pink

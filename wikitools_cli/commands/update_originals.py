@@ -405,6 +405,7 @@ def main(*args):
     table_fa_james_landino = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`James Landino`:39" in row['Artists']]))
     table_fa_kiraku = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`kiraku`:101" in row['Artists']]))
     table_fa_kitazawa_kyouhei = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Kitazawa Kyouhei`:165" in row['Artists']]))
+    table_fa_midian = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Midian`:443" in row['Artists']]))
     table_fa_rabbit_house = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Rabbit House`:242" in row['Artists']]))
     table_fa_tomspicy = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`tomspicy`:437" in row['Artists']]))
     table_fa_yuki = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`yuki.`:4" in row['Artists']]))
@@ -414,6 +415,7 @@ def main(*args):
     section_tournament_community = populate_section(csv, "TOURNAMENT_COMMUNITY", create_table_tournament)
     section_contest_official = ""
     section_contest_community = populate_section(csv, "CONTEST_COMMUNITY", create_table_contest)
+    section_other = ""
 
     data_contest_official = [row for row in csv if row['Type'] == "CONTEST_OFFICIAL"]
     for contest in sorted(list(set(row['Event'] for row in data_contest_official))):
@@ -423,6 +425,13 @@ def main(*args):
         section_contest_official += str(create_table_contest(data)) + "\n"
 
     table_standalone = str(create_table_standalone_beatmap([row for row in csv if row['Type'] == "BEATMAP"]))
+
+    data_other = [row for row in csv if row['Type'] == "OTHER"]
+    for event in sorted(list(set(row['Event'] for row in data_other))):
+        data = [row for row in csv if row['Event'] == event]
+        section_other += f"#### {maybe_link(event, data[0]['Event link'])}"
+        section_other += "\n\n"
+        section_other += str(create_table_fa_release(data)) + "\n"
 
     with open('wiki/osu!_originals/en.md', "r", encoding="utf-8", newline="\n") as file:
         contents = file.read()
@@ -436,10 +445,11 @@ def main(*args):
     tree[0][1][1][2].nodes[3] = table_fa_james_landino.strip()
     tree[0][1][1][3].nodes[2] = table_fa_kiraku.strip()
     tree[0][1][1][4].nodes[2] = table_fa_kitazawa_kyouhei.strip()
-    tree[0][1][1][5].nodes[2] = table_fa_rabbit_house.strip()
-    tree[0][1][1][6].nodes[3] = table_fa_tomspicy.strip()
-    tree[0][1][1][7].nodes[2] = table_fa_yuki.strip()
-    tree[0][1][1][8].nodes[2] = table_fa_zxnx.strip()
+    tree[0][1][1][5].nodes[2] = table_fa_midian.strip()
+    tree[0][1][1][6].nodes[2] = table_fa_rabbit_house.strip()
+    tree[0][1][1][7].nodes[3] = table_fa_tomspicy.strip()
+    tree[0][1][1][8].nodes[2] = table_fa_yuki.strip()
+    tree[0][1][1][9].nodes[2] = table_fa_zxnx.strip()
 
     tree[0][1][2] = tree[0][1][2].nodes[0] + "\n\n" + section_tournament_official.strip()
     tree[0][1][3] = tree[0][1][3].nodes[0] + "\n\n" + section_tournament_community.strip()
@@ -447,6 +457,8 @@ def main(*args):
     tree[0][1][5] = tree[0][1][5].nodes[0] + "\n\n" + section_contest_community.strip()
 
     tree[0][1][6].nodes[2] = table_standalone.strip()
+
+    tree[0][1][7] = tree[0][1][7].nodes[0] + "\n\n" + section_other.strip()
 
     time_string = datetime.datetime.now().strftime("%Y%m%d")
     tree[0][0].nodes[1] = f"There is currently a total of **{len(csv)}** documented osu! originals."
