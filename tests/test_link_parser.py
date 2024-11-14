@@ -19,6 +19,30 @@ class TestInlinePlainLinks:
             is_reference=False,
         )
 
+    def test__nested_link(self):
+        example = "A [nested ![link](/wiki/shared/image.png)](/wiki/Example)."
+        links = link_parser.find_links(example)
+        assert links == [
+            link_parser.Link(
+                start=2,
+                end=56,
+                alt_text="nested ![link](/wiki/shared/image.png)",
+                raw_location="/wiki/Example",
+                parsed_location=parse.urlparse("/wiki/Example"),
+                title="",
+                is_reference=False,
+            ),
+            link_parser.Link(
+                start=11,
+                end=40,
+                alt_text="link",
+                raw_location="/wiki/shared/image.png",
+                parsed_location=parse.urlparse("/wiki/shared/image.png"),
+                title="",
+                is_reference=False,
+            ),
+        ]
+
     def test__regular_link__title(self):
         example = 'An [example](/wiki/Example "Title").'
         link = link_parser.find_link(example)
