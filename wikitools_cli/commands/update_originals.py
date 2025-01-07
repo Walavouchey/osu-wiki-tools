@@ -211,7 +211,7 @@ def mode_icon(mode: str) -> str:
 
 def link_icon(link: str) -> str:
     if link.startswith("https://osu.ppy.sh/beatmaps/artists/"):
-        return f"[![FA](/wiki/shared/link/FA.png)]({link} \"Featured Artist listing\")"
+        return f"[![osu! original](/wiki/shared/link/original.png)]({link} \"osu! original\")"
     elif link.startswith("https://soundcloud.com/"):
         return f"[![SoundCloud](/wiki/shared/link/SoundCloud.png)]({link} \"SoundCloud\")"
     elif link.startswith("https://www.youtube.com/"):
@@ -263,12 +263,12 @@ def create_table_ost(data):
         [
             {
                 "Links": link_icons(row),
-                "FA": link_icon(row['FA listing']),
+                "": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Notes": row['Note']
             } for row in data
         ],
-        ["Links", "FA", "Song", "Notes"],
+        ["Links", "", "Song", "Notes"],
         ["--:", ":-:", ":--", ":--"]
     )
 
@@ -282,11 +282,11 @@ def create_table_fa_release(data):
         [
             {
                 "Links": link_icons(row),
-                "FA": link_icon(row['FA listing']),
+                "": link_icon(row['FA listing']),
                 "Song": row['Track'],
             } for row in data
         ],
-        ["Links", "FA", "Song"],
+        ["Links", "", "Song"],
         ["--:", ":-:", ":--"]
     )
 
@@ -300,13 +300,13 @@ def create_table_tournament(data):
         [
             {
                 "Links": link_icons(row),
-                "FA": link_icon(row['FA listing']),
+                "": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
                 "Notes": first([row['Mappool slot'], row['Note']])
             } for row in data
         ],
-        ["Links", "FA", "Song", "Beatmap", "Notes"],
+        ["Links", "", "Song", "Beatmap", "Notes"],
         ["--:", ":-:", ":--", ":-:", ":--"]
     )
 
@@ -320,12 +320,12 @@ def create_table_contest(data):
         [
             {
                 "Links": link_icons(row),
-                "FA": link_icon(row['FA listing']),
+                "": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Links", "FA", "Song", "Beatmap"],
+        ["Links", "", "Song", "Beatmap"],
         ["--:", ":-:", ":--", ":-:"]
     )
 
@@ -339,12 +339,12 @@ def create_table_standalone_beatmap(data):
         [
             {
                 "Links": link_icons(row),
-                "FA": link_icon(row['FA listing']),
+                "": link_icon(row['FA listing']),
                 "Song": row['Track'] + footnote(row['FA status']),
                 "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Links", "FA", "Song", "Beatmap"],
+        ["Links", "", "Song", "Beatmap"],
         ["--:", ":-:", ":--", ":-:"]
     )
 
