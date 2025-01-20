@@ -121,7 +121,7 @@ def plot_originals_over_time():
 #plt.plot(years, community_counts, linewidth=2, color=colours[0], zorder=5)
 #plt.rcParams["axes.prop_cycle"] = plt.cycler("color", reversed(colours))
 
-    plt.title("osu! originals over time")
+    plt.title("bespoke music over time")
     plt.xlabel('Year')
     plt.ylabel('Count')
     plt.legend(loc='upper left')
@@ -134,4 +134,4 @@ def plot_originals_over_time():
 #ax.set_yticks(list(range(0, 176, 25)))
 
 
-    plt.savefig("wiki/osu!_originals/img/originals-over-time.png", transparent=True)
+    plt.savefig("wiki/Community/Bespoke_music/img/bespoke-music-over-time.png", transparent=True)

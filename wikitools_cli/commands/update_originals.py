@@ -433,7 +433,7 @@ def main(*args):
         section_other += "\n\n"
         section_other += str(create_table_fa_release(data)) + "\n"
 
-    with open('wiki/osu!_originals/en.md', "r", encoding="utf-8", newline="\n") as file:
+    with open('wiki/Community/Bespoke_music/en.md', "r", encoding="utf-8", newline="\n") as file:
         contents = file.read()
 
     tree = MarkdownSection(contents)
@@ -461,12 +461,12 @@ def main(*args):
     tree[0][1][7] = tree[0][1][7].nodes[0] + "\n\n" + section_other.strip()
 
     time_string = datetime.datetime.now().strftime("%Y%m%d")
-    tree[0][0].nodes[1] = f"There is currently a total of **{len(csv)}** documented osu! originals."
-    tree[0][0].nodes[2] = f"![Graph of osu! originals over time](img/originals-over-time.png?{time_string})"
+    tree[0][0].nodes[1] = f"There is currently a total of **{len(csv)}** documented songs made within osu!."
+    tree[0][0].nodes[2] = f"![Graph of bespoke music over time](img/bespoke-music-over-time.png?{time_string})"
 
     plotting.plot_originals_over_time()
 
-    with open('wiki/osu!_originals/en.md', "w", encoding="utf-8", newline="\n") as file:
+    with open('wiki/Community/Bespoke_music/en.md', "w", encoding="utf-8", newline="\n") as file:
         file.write(str(tree))
 
     unique_tracks  = set(row['Track'] for row in csv)
