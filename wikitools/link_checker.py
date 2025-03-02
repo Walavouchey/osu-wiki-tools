@@ -4,7 +4,6 @@ import typing
 import urllib
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
-from wikitools import console
 from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
 from wikitools.file_utils import get_canonical_path_casing
 from wikitools.file_utils import is_article
@@ -214,7 +213,8 @@ def check_link(
                 if repo_path.fragment not in target_article.identifiers:
                     # collect some additional metadata before reporting
                     translation_outdated = False
-                    if repo_path.path.name != "en.md": translation_outdated = target_article.front_matter.get('outdated_translation', False)
+                    if repo_path.path.name != "en.md":
+                        translation_outdated = target_article.front_matter.get('outdated_translation', False)
 
                     return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, False, translation_outdated)
         case PathType.NEWS:
