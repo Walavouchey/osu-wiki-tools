@@ -16,6 +16,7 @@ from wikitools.errors import (
     BrokenRedirectError,
     BrokenRedirectIdentifierError,
     MalformedLinkError,
+    Missing2xVariantError,
     MissingIdentifierError,
     MissingReferenceError,
 )
@@ -439,6 +440,45 @@ class TestNewspostLinks:
         )
         assert error
         assert isinstance(error, BrokenLinkError)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"has_2x": True, "should_error": False},
+            {"has_2x": False, "should_error": True},
+        ]
+    )
+    def test__missing_2x_image(self, root, payload):
+        utils.create_files(
+            root,
+            (
+                'news/2007/2007-01-01-newspost.md', textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2007-01-01 12:00:00 +0000
+                    ---
+
+                    ![](/wiki/shared/news/2007-01-01-news/image.png)
+
+                    Today we have big news!!!!
+                ''').strip(),
+            ),
+            ('wiki/shared/news/2007-01-01-news/image.png', '')
+        )
+        if payload["has_2x"]:
+            utils.create_files(root, ('wiki/shared/news/2007-01-01-news/image@2x.png', ''))
+        article = article_parser.parse("news/2007/2007-01-01-newspost.md")
+        assert article
+        link = next(line.links[0] for lineno, line in sorted(article.lines.items(), key=lambda x: x[0]) if line.links)
+        assert link
+        error = link_checker.check_link(
+            article=article, link=link, redirects={}, references={}, all_articles={}
+        )
+        if payload["should_error"]:
+            assert isinstance(error, Missing2xVariantError)
+        else:
+            assert error is None
 
 
 class TestNewspostSectionLinks:

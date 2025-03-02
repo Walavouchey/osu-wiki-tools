@@ -230,6 +230,11 @@ def check_link(
     if link.is_image and not repo_path.path.suffix and not repo_path.path.suffix.lower() in ("png", "jpg", "jpeg", "gif"):
         return errors.MalformedLinkError(link, "image link doesn't point to an image (must be a .png, .jpg, .jpeg or .gif)")
 
+    if link.is_image and article.path.startswith("news") and link is article.first_block_image:
+        p = repo_path.path
+        if not exists(p.parent / (p.stem + "@2x" + p.suffix)):
+            return errors.Missing2xVariantError(link, reference, p.as_posix())
+
     # link to an article in general, article exists -> good
     if not repo_path.fragment:
         return None

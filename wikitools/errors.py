@@ -70,6 +70,32 @@ class BrokenLinkError(
         )
 
 
+class Missing2xVariantError(
+    LinkError,
+    collections.namedtuple('LinkNotFound', 'link reference resolved_location')
+):
+    """
+    An error indicating a missing `@2x` double-resolution variant of an image
+    """
+
+    id = "missing-2x-variant"
+    link: link_parser.Link
+    reference: reference_parser.Reference | None
+    resolved_location: str
+
+    def _2x_name(self):
+        p = Path(self.resolved_location)
+        return p.stem + "@2x" + p.suffix
+
+    def __repr__(self):
+        return '"{}" needs a double-resolution variant named {}{}'.format(
+            self.resolved_location,
+            self._2x_name(),
+            f" (reference at line {self.reference.lineno})"
+            if self.reference else ''
+        )
+
+
 class BrokenRedirectError(
     LinkError,
     collections.namedtuple('BrokenRedirect', 'link resolved_location redirect_lineno redirect_destination')

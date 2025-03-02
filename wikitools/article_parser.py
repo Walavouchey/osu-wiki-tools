@@ -126,6 +126,19 @@ class Article:
         self.identifiers = identifiers
         self.front_matter = front_matter
 
+
+    @property
+    def first_block_image(self) -> link_parser.Link | None:
+        """
+        The first block image, i.e. the first sole image link on a line. Only relevant in news posts.
+        """
+        try:
+            return next(line.links[0] for lineno, line in sorted(self.lines.items(), key=lambda x: x[0])
+                if len(line.links) == 1 and line.links[0].start == 0 and line.links[0].is_image)
+        except StopIteration:
+            return None
+
+
     @property
     def path(self) -> str:
         return f'{self.directory}/{self.filename}'
