@@ -1,5 +1,6 @@
 import collections
 import typing
+from pathlib import Path
 
 from wikitools import console, link_parser, reference_parser
 
@@ -7,6 +8,9 @@ from wikitools import console, link_parser, reference_parser
 class LinkError:
     _colourise_fragment_only: bool = False
     link: link_parser.Link
+    """
+    Base class for errors specific to links
+    """
 
     def pretty(self):
         return f'{console.blue("Note:")} ' + repr(self).replace("\n", "\n      ")
@@ -155,3 +159,34 @@ class BrokenRedirectIdentifierError(
 
     def __repr__(self):
         return BrokenRedirectError.__repr__(self) + "\n" + MissingIdentifierError.__repr__(self)
+
+
+class FileError():
+    """
+    Base class for errors specific to files and folder structure
+    """
+
+    def pretty(self):
+        return f'{console.blue("Note:")} ' + repr(self).replace("\n", "\n      ")
+
+    def pretty_location(self):
+        raise NotImplementedError()
+
+
+class MissingEnglishVersionError(
+    FileError,
+    collections.namedtuple('MissingEnglishVersionError', 'file')
+):
+    """
+    An error indicating that the `en.md` file is missing in a wiki folder with other markdown files
+    """
+
+    # for now this spits errors per file, with the idea of using github annotations
+    # (which can't be folder-specific afaik)
+    file: Path
+
+    def __repr__(self):
+        return f"{self.file} is missing a corresponding en.md file in the same folder"
+
+    def pretty_location(self):
+        return console.yellow(self.file)

@@ -42,10 +42,6 @@ def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
     return highlighted_line
 
 
-def pretty_location(path, lineno, pos, location):
-    return f"{console.yellow(path)}:{lineno}:{pos}: {console.red(location)}"
-
-
 def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s check-links [options]")
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
