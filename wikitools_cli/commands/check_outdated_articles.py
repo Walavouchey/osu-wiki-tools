@@ -12,7 +12,9 @@ Alternatively, it can be run with --autofix (and --autocommit, or just -fc) to o
 """
 
 import argparse
+import fnmatch
 import os
+import os.path
 import sys
 
 from wikitools import article_parser, console, git_utils, file_utils
@@ -78,6 +80,7 @@ def parse_args(args):
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help="automatically commit changes")
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
+    parser.add_argument("-e", "--exclude", default=[], nargs='*', help="list of paths to exclude from checking (accepts file paths, directories, and shell patterns)")
     parser.add_argument("--no-recommend-autofix", action='store_true', help=f"don't recommend rerunning the script with {AUTOFIX_FLAG}")
     return parser.parse_args(args)
 
@@ -173,7 +176,29 @@ def main(*args):
     modified_originals = list_modified_originals(args.base_commit)
     if modified_originals:
         all_translations = file_utils.list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
-        translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
+        temp_translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
+
+        translations_to_outdate = []
+        if args.exclude:
+            excluded_count = 0
+            for translation in temp_translations_to_outdate:
+                any_matched = False
+                for path_or_mask in args.exclude:
+                    if (
+                        translation == path_or_mask
+                        or os.path.commonpath((translation, path_or_mask)) == path_or_mask
+                        or fnmatch.fnmatch(translation, path_or_mask)
+                    ):
+                        any_matched = True
+                        excluded_count += 1
+                        break
+
+                if not any_matched:
+                    translations_to_outdate.append(translation)
+            print(f"{excluded_count} of {len(temp_translations_to_outdate)} translation(s) skipped due to --exclude")
+        else:
+            translations_to_outdate = temp_translations_to_outdate
+
         if translations_to_outdate:
             outdated_hash = outdated_hash or args.outdated_since or git_utils.get_first_branch_commit()
 
