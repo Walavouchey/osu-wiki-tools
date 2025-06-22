@@ -12,6 +12,14 @@ pip install osu-wiki-tools
 
 ### Setup
 
+Install Python C API headers (required for building the `pynput` dependency):
+
+```sh
+apt install python3-dev
+```
+
+Create the virtual enviroment:
+
 ```sh
 python3 -m venv ./venv
 source ./venv/bin/activate
