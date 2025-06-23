@@ -74,7 +74,8 @@ def parse_args(args: list):
         "--target", nargs="+", default=(".",),
         help="files or directories to lint (by default, assumes current working directory)"
     )
-    parser.add_argument("--format", choices=("parsable", "standard", "colored", "github", "auto"),
+    parser.add_argument(
+        "--format", choices=("parsable", "standard", "colored", "github", "auto"),
         default="colored", help="output format (see yamllint docs for details)"
     )
     return parser.parse_args(args)

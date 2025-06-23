@@ -14,6 +14,7 @@ from wikitools import article_parser
 from wikitools import yaml_rules
 from wikitools_cli.commands import check_yaml
 
+
 @pytest.fixture
 def linter_config():
     cfg = yamllint.config.YamlLintConfig(check_yaml.DEFAULT_CONFIG_CONTENT)

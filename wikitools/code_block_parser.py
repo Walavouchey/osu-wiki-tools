@@ -67,7 +67,6 @@ class CodeBlockParser:
                 self.__in_multiline = True
                 return [CodeBlock(start=-1, end=-1)]
 
-
         if self.__in_multiline:
             return [CodeBlock(start=-1, end=-1)]
 

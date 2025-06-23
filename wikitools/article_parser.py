@@ -148,10 +148,10 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
                 continue
 
             links_on_line = list(filter(
-                lambda l: not(
-                    l.content == '/wiki/Sitemap' or
-                    comment_parser.is_in_comment(l.start, comments) or
-                    code_block_parser.is_in_code_block(l.start, code_blocks)
+                lambda link: not (
+                    link.content == '/wiki/Sitemap' or
+                    comment_parser.is_in_comment(link.start, comments) or
+                    code_block_parser.is_in_code_block(link.start, code_blocks)
                 ),
                 link_parser.find_links(line)
             ))
@@ -163,11 +163,11 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
             # if a comment contains identifiers, this assumes such a comment at least
             # doesn't appear before an actual identifier. this is a rare occurrence anyway
             if identifier is not None and not comment_parser.is_in_comment(pos, comments):
-                    cnt[identifier] += 1
-                    # duplicate identifiers get a suffix
-                    if identifier in identifiers:
-                        identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
-                    identifiers[identifier] = lineno
+                cnt[identifier] += 1
+                # duplicate identifiers get a suffix
+                if identifier in identifiers:
+                    identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
+                identifiers[identifier] = lineno
 
             if line.startswith('['):
                 reference = reference_parser.extract(line.strip(), lineno=lineno)

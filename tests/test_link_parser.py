@@ -187,14 +187,14 @@ class TestReferenceLinks:
 
 class TestIgnoredFootnotes:
     def test__ignored_footnotes(self):
-            examples = [
-                "The sky is blue.[^reference-1]",
-                "The sky is blue.[^reference-1][^reference-2]",
-                "The sky is blue.[^reference-1][^reference-2][^reference-3]",
-            ]
-            for example in examples:
-                assert link_parser.find_link(example) == None
-                assert link_parser.find_links(example) == []
+        examples = [
+            "The sky is blue.[^reference-1]",
+            "The sky is blue.[^reference-1][^reference-2]",
+            "The sky is blue.[^reference-1][^reference-2][^reference-3]",
+        ]
+        for example in examples:
+            assert link_parser.find_link(example) is None
+            assert link_parser.find_links(example) == []
 
     def test__footnote_after_link(self):
         example = "[test](https://www.example.com/)[^some-footnote]"

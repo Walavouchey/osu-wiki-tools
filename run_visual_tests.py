@@ -10,28 +10,24 @@ Press Esc to quit.
 """
 
 import argparse
-import importlib
-import pkgutil
-from pynput.keyboard import Key, Listener # type: ignore
+from pynput.keyboard import Key, Listener  # type: ignore
 import sys
 from traceback import format_exc
 
 
-import tests.visual
-import tests.conftest
 from tests.conftest import get_visual_tests
 from wikitools import console
 
 
-def run_all_tests(tests):
-    for test_index, test in enumerate(tests):
+def run_all_tests(test_list):
+    for test_index, test in enumerate(test_list):
         for case_index, test_case in enumerate(test.cases):
-            run_test(tests, test_index, case_index)
+            run_test(test_list, test_index, case_index)
 
 
-def run_test(tests, test_index, case_index):
-    test = tests[test_index]
-    print(f"({test_index + 1}/{len(tests)})", console.red(test.name), "-", test.description)
+def run_test(test_list, test_index, case_index):
+    test = test_list[test_index]
+    print(f"({test_index + 1}/{len(test_list)})", console.red(test.name), "-", test.description)
     test_case = test.cases[case_index]
     print()
     print(f"- ({case_index + 1}/{len(test.cases)})", console.blue(test_case.description))
@@ -50,7 +46,7 @@ test_index = 0
 case_index = 0
 
 
-def key_handler(key, tests):
+def key_handler(key, test_list):
     global test_index
     global case_index
 
@@ -64,12 +60,12 @@ def key_handler(key, tests):
         case_index += 1
 
     if test_index < 0:
-        test_index = len(tests) - 1
-    elif test_index >= len(tests):
+        test_index = len(test_list) - 1
+    elif test_index >= len(test_list):
         test_index = 0
     if case_index < 0:
-        case_index = len(tests[test_index].cases) - 1
-    elif case_index >= len(tests[test_index].cases):
+        case_index = len(test_list[test_index].cases) - 1
+    elif case_index >= len(test_list[test_index].cases):
         case_index = 0
 
     elif key == Key.esc:
@@ -77,17 +73,17 @@ def key_handler(key, tests):
         return False
 
     print("\033c", end="")
-    run_test(tests, test_index, case_index)
+    run_test(test_list, test_index, case_index)
     print()
     print("Navigate with arrow keys. Press Esc to quit.")
 
 
-def run_interactively(tests):
+def run_interactively(test_list):
     print("\033c", end="")
-    run_test(tests, 0, 0)
+    run_test(test_list, 0, 0)
     print()
     print("Navigate with arrow keys. Press Esc to quit.")
-    with Listener(on_press=lambda key: key_handler(key, tests)) as listener: # type: ignore
+    with Listener(on_press=lambda key: key_handler(key, test_list)) as listener:  # type: ignore
         listener.join()
 
 
@@ -100,15 +96,15 @@ def parse_args(args):
 def main():
     args = parse_args(sys.argv[1:])
 
-    tests = get_visual_tests()
-    if not tests:
+    test_list = get_visual_tests()
+    if not test_list:
         print(console.red("Error:"), "no tests found")
         sys.exit(1)
 
     if args.all:
-        run_all_tests(tests)
+        run_all_tests(test_list)
     else:
-        run_interactively(tests)
+        run_interactively(test_list)
 
 
 if __name__ == "__main__":

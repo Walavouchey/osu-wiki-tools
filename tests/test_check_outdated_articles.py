@@ -1,7 +1,6 @@
 from collections import Counter as multiset
 import textwrap
 
-import tests.conftest
 import tests.utils as utils
 
 from wikitools import article_parser, git_utils, file_utils
@@ -42,9 +41,12 @@ class TestCheckOutdatedArticles:
 
         assert multiset(modified_translations) == multiset(utils.remove(article_paths, "en.md", "TEMPLATE.md"))
 
-        utils.create_files(root,
-            *((path, '# Article\n\nCeci est un article en français.') for path in
-            utils.take(article_paths, "fr.md"))
+        utils.create_files(
+            root,
+            *(
+                (path, '# Article\n\nCeci est un article en français.')
+                for path in utils.take(article_paths, "fr.md")
+            )
         )
         utils.stage_all_and_commit("add article content")
 

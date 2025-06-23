@@ -1,4 +1,3 @@
-import collections
 import os
 
 import py
@@ -10,7 +9,7 @@ def create_files(root: py.path.local, *articles):
     for path, contents in articles:
         article_folder = root.join(os.path.dirname(path))
         article_folder.ensure(dir=1)
-        if type(contents) == bytes:
+        if isinstance(contents, bytes):
             article_folder.join(os.path.basename(path)).write_binary(contents)
         else:
             article_folder.join(os.path.basename(path)).write_text(contents, encoding='utf-8')
@@ -38,8 +37,8 @@ def get_last_commit_hash():
 
 
 def take(the_list, *may_contain):
-    return list(filter(lambda item : any(thing in item for thing in may_contain), the_list))
+    return list(filter(lambda item: any(thing in item for thing in may_contain), the_list))
 
 
 def remove(the_list, *may_not_contain):
-    return list(filter(lambda item : all(thing not in item for thing in may_not_contain), the_list))
+    return list(filter(lambda item: all(thing not in item for thing in may_not_contain), the_list))
