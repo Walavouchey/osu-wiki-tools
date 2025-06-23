@@ -157,8 +157,8 @@ def path_match(file_path: str, patterns: list[str]) -> bool:
 
     Patterns may look like this, with the wiki/ prefix optionally omitted:
 
-      - Individual articles: wiki/Path/To/Article/en.md
-      - Article directories: wiki/Article
+      - Individual translation (one file): wiki/Path/To/Article/es.md
+      - Individual article (all translations, not including nested articles): wiki/Article
       - Fnmatch masks: wiki/*/es.md
       - Paths with shell-style brace expansion:
         - wiki/{Article,Other_article}/es.md
@@ -169,7 +169,7 @@ def path_match(file_path: str, patterns: list[str]) -> bool:
         for path_or_mask in patterns:
             if (
                 article_path == path_or_mask
-                or os.path.commonpath((article_path, path_or_mask)).replace("\\", "/") == path_or_mask
+                or os.path.dirname(article_path) == path_or_mask.strip("/")
                 or fnmatch.fnmatch(article_path, path_or_mask)
             ):
                 return True

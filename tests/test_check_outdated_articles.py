@@ -649,3 +649,56 @@ class TestCheckOutdatedArticles:
 
         assert exit_code == 0
         assert utils.get_changed_files() == expected_changed_files
+
+    @pytest.mark.parametrize(
+        "exclude_args",
+        [
+            pytest.param(["--exclude", "wiki/Beatmap/"], id="With trailing slash"),
+            pytest.param(["--exclude", "wiki/Beatmap"], id="Without trailing slash")
+        ]
+    )
+    def test__exclude_top_level_directory_from_check(self, root, exclude_args):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/Beatmap/en.md',
+            'wiki/Beatmap/fr.md',
+            'wiki/Beatmap/pt-br.md',
+            'wiki/Beatmap/zh-tw.md',
+
+            'wiki/Beatmap/Difficulty/fr.md',
+            'wiki/Beatmap/Difficulty/en.md',
+            'wiki/Beatmap/Difficulty/pt-br.md',
+            'wiki/Beatmap/Difficulty/zh-tw.md',
+
+            'wiki/Beatmap/Difficulty/Tiny_speck/fr.md',
+            'wiki/Beatmap/Difficulty/Tiny_speck/en.md',
+            'wiki/Beatmap/Difficulty/Tiny_speck/pt-br.md',
+            'wiki/Beatmap/Difficulty/Tiny_speck/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths))
+        utils.stage_all_and_commit("add articles")
+
+        utils.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            utils.take(article_paths, "en.md")
+        ))
+        utils.stage_all_and_commit("modify english articles")
+
+        exit_code = outdater.main(
+            "--autofix",
+            "--base-commit", "HEAD^",
+            "--outdated-since", "HEAD^",
+            *exclude_args
+        )
+
+        assert exit_code == 0
+        assert set(utils.get_changed_files()) == set((
+            'wiki/Beatmap/Difficulty/fr.md',
+            'wiki/Beatmap/Difficulty/pt-br.md',
+            'wiki/Beatmap/Difficulty/zh-tw.md',
+
+            'wiki/Beatmap/Difficulty/Tiny_speck/fr.md',
+            'wiki/Beatmap/Difficulty/Tiny_speck/pt-br.md',
+            'wiki/Beatmap/Difficulty/Tiny_speck/zh-tw.md',
+        ))
