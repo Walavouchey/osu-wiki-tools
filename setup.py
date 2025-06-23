@@ -3,8 +3,12 @@ import setuptools
 
 from wikitools_cli.VERSION import VERSION
 
+
 with open("README.md", "r", encoding="utf-8") as fd:
     long_description = fd.read()
+
+with open("requirements.txt", "r", encoding="utf-8") as fd:
+    requirements = fd.read().splitlines()
 
 setuptools.setup(
     name="osu-wiki-tools",
@@ -31,10 +35,5 @@ setuptools.setup(
         ],
     },
     python_requires=">=3.11",
-    install_requires=[
-        "PyYAML==6.0.1",
-        "types-PyYAML==6.0.12.12",
-        "yamllint==1.33.0",
-        "braceexpand==0.1.7",
-    ],
+    install_requires=requirements,
 )

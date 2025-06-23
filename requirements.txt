@@ -1,9 +1,4 @@
 braceexpand==0.1.7
-mypy==0.991
-pynput==1.7.6
-pytest-mock==3.10.0
-pytest-mypy==0.9.1
-pytest==7.1.1
 PyYAML==6.0.1
 types-PyYAML==6.0.12.12
 yamllint==1.33.0
