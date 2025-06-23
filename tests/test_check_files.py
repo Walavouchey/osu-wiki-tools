@@ -3,8 +3,8 @@ import tests.utils as utils
 from wikitools_cli.commands import check_files as file_checker
 
 
-class TestCheckLinks:
-    def test__check_links_all_valid(self, root):
+class TestCheckFiles:
+    def test__check_files_all_valid(self, root):
         article_paths = [
             'wiki/redirect.yaml',
             'wiki/Article/en.md',
