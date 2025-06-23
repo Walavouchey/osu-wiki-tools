@@ -22,16 +22,23 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.11
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-line-length=200 --statistics
+
     - name: Test with pytest
       run: |
         pytest --mypy
+
+    - name: Test package build
+      run: |
+        pip install build && python -m build
