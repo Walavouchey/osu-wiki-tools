@@ -210,12 +210,14 @@ def main(*args):
         if args.exclude:
             excluded_count = 0
             masks = list(itertools.chain(*map(
-                lambda single_argument: list(braceexpand.braceexpand(single_argument)),
+                lambda single_argument: list(
+                    braceexpand.braceexpand(single_argument.lower())
+                ),
                 args.exclude
             )))
 
             for translation in temp_translations_to_outdate:
-                if path_match(translation, masks):
+                if path_match(translation.lower(), masks):
                     excluded_count += 1
                 else:
                     translations_to_outdate.append(translation)

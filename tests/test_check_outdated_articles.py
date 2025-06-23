@@ -623,6 +623,22 @@ class TestCheckOutdatedArticles:
                 [],
                 id="Ignore the whole wiki"
             ),
+            pytest.param(
+                # Given
+                [
+                    "--exclude", "wiki/First_ARTICLE/fr.md",
+                    "--exclude", "wiki/First_article/PT-BR.md",
+                ],
+                # Expect
+                [
+                    "wiki/First_article/zh-tw.md",
+
+                    'wiki/Second_article/fr.md',
+                    'wiki/Second_article/pt-br.md',
+                    'wiki/Second_article/zh-tw.md',
+                ],
+                id="Case-insensitive matching"
+            ),
         ]
     )
     def test__exclude_articles_from_check(self, root, exclude_args, expected_changed_files):
