@@ -10,7 +10,7 @@ test = VisualTest(
         VisualTestCase(
             name="missing_english_version",
             description="Missing English version (1 error)",
-            function=lambda : check_files.main("--root", "tests/test_articles", "--all")
+            function=lambda: check_files.main("--root", "tests/test_articles", "--all")
         ),
     ]
 )

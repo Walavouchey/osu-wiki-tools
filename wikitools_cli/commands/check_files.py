@@ -35,8 +35,6 @@ def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s check-files [options]")
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
-
-
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
@@ -48,7 +46,7 @@ def main(*args):
         sys.exit(0)
 
     if args.root:
-        changed_cwd = file_utils.ChangeDirectory(args.root)
+        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change  # noqa: F841
 
     filenames = []
     if args.all:

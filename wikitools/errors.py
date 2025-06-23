@@ -118,7 +118,7 @@ class MissingIdentifierError(
     path: str
     identifier: str
     # for news posts, these two should be False
-    no_translation_available: bool # also implies a link to and from a translation
+    no_translation_available: bool  # also implies a link to and from a translation
     translation_outdated: bool
 
     def __repr__(self):
@@ -152,7 +152,7 @@ class BrokenRedirectIdentifierError(
     path: str
     identifier: str
     # for news posts, these two should be False
-    no_translation_available: bool # also implies a link to and from a translation
+    no_translation_available: bool  # also implies a link to and from a translation
     translation_outdated: bool
 
     _colourise_fragment_only_in_redirect: bool = True

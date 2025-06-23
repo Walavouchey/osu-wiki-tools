@@ -3,7 +3,6 @@ import textwrap
 
 import pytest
 
-import tests.conftest
 import tests.utils as utils
 
 from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
@@ -31,8 +30,10 @@ class TestArticleLinks:
             ('wiki/First_article/en.md', '# First article')
         )
 
-        link = link_parser.find_link('Check the [first article](/wiki/{}).'
-            .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
+        link = link_parser.find_link(
+            'Check the [first article](/wiki/{}).'
+            .format("First_article" if payload["capitalisation_correct"] else "First_Article")
+        )
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'),
@@ -59,8 +60,10 @@ class TestArticleLinks:
             ('wiki/First_article/img/cat.png', '')
         )
 
-        link = link_parser.find_link('Check the [first article](/wiki/{}/img/cat.png).'
-            .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
+        link = link_parser.find_link(
+            'Check the [first article](/wiki/{}/img/cat.png).'
+            .format("First_article" if payload["capitalisation_correct"] else "First_Article")
+        )
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'),
@@ -87,8 +90,10 @@ class TestArticleLinks:
             ('news/2023/2023-01-01-first-article.md', '# This is a news post')
         )
 
-        link = link_parser.find_link('Check the [first article](https://osu.ppy.sh/home/news/2023-01-01-{}).'
-            .format("first-article" if payload["capitalisation_correct"] else "First-Article"))
+        link = link_parser.find_link(
+            'Check the [first article](https://osu.ppy.sh/home/news/2023-01-01-{}).'
+            .format("first-article" if payload["capitalisation_correct"] else "First-Article")
+        )
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'),
@@ -392,7 +397,7 @@ class TestNewspostSectionLinks:
         )
 
         link = link_parser.find_link('Check the [first article](/wiki/{}#first-article).'
-            .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
+                                     .format("First_article" if payload["capitalisation_correct"] else "First_Article"))
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'),
@@ -427,7 +432,7 @@ class TestNewspostSectionLinks:
         assert article.identifiers == {'the-news': 11}
         all_articles = {article.path: article}
 
-        assert link_checker.check_article(article=article, redirects={}, all_articles={}) == {}
+        assert link_checker.check_article(article=article, redirects={}, all_articles=all_articles) == {}
 
     def test__valid_newspost_section_link(self, root):
         utils.create_files(
@@ -636,7 +641,7 @@ class TestSectionLinks:
         assert article.identifiers == {'some-real-heading': 3}
         all_articles = {article.path: article}
 
-        assert link_checker.check_article(article=article, redirects={}, all_articles={}) == {}
+        assert link_checker.check_article(article=article, redirects={}, all_articles=all_articles) == {}
 
     def test__valid_absolute_link(self, root):
         utils.create_files(
@@ -798,7 +803,7 @@ class TestSectionLinks:
         [
             {"link": "/wiki/Old_location#subheading", "redirect": '"old_location": "Target_article"'},
             {"link": "/wiki/Old_location", "redirect": '"old_location": "Target_article#subheading"'},
-            {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#subheading"'}, # redirected section takes priority
+            {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#subheading"'},  # redirected section takes priority
         ]
     )
     def test__valid_redirect(self, root, payload):
@@ -834,7 +839,7 @@ class TestSectionLinks:
         "payload",
         [
             {"link": "/wiki/Old_location", "redirect": '"old_location": "Target_article#totally-wrong-heading"'},
-            {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#totally-wrong-heading"'}, # redirected section takes priority
+            {"link": "/wiki/Old_location#some-old-heading", "redirect": '"old_location": "Target_article#totally-wrong-heading"'},  # redirected section takes priority
         ]
     )
     def test__invalid_redirect(self, root, payload):

@@ -1,10 +1,10 @@
 from collections import Counter as multiset
 import os
 
-import tests.conftest
 import tests.utils as utils
 
 from wikitools import file_utils
+
 
 class TestFileUtils:
     def test__list_all_article_files(self, root):

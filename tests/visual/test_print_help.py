@@ -10,27 +10,27 @@ test = VisualTest(
         VisualTestCase(
             name="osu_wiki_tools",
             description="osu_wiki_tools.main run with --help",
-            function=lambda : osu_wiki_tools.main("--help")
+            function=lambda: osu_wiki_tools.main("--help")
         ),
         VisualTestCase(
             name="check_links",
             description="check_links.main run with --help",
-            function=lambda : check_links.main("--help")
+            function=lambda: check_links.main("--help")
         ),
         VisualTestCase(
             name="check_outdated_articles",
             description="check_outdated_articles.main run with --help",
-            function=lambda : check_outdated_articles.main("--help")
+            function=lambda: check_outdated_articles.main("--help")
         ),
         VisualTestCase(
             name="check_yaml",
             description="check_yaml.main run with --help",
-            function=lambda : check_yaml.main("--help")
+            function=lambda: check_yaml.main("--help")
         ),
         VisualTestCase(
             name="check_files",
             description="check_files.main run with --help",
-            function=lambda : check_files.main("--help")
+            function=lambda: check_files.main("--help")
         ),
     ]
 )

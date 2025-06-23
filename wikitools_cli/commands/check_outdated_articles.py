@@ -46,7 +46,8 @@ def print_translations_to_outdate(*filenames, outdated_hash=None, no_recommend_a
         )
     else:
         print(
-            f"Otherwise, add the following to each article's front matter (https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#front-matter):"
+            "Otherwise, add the following to each article's front matter "
+            "(https://osu.ppy.sh/wiki/en/Article_styling_criteria/Formatting#front-matter):"
         )
     print()
     outdated_block = "" if outdated_hash is None else f"\n{OUTDATED_HASH_TAG}: {outdated_hash}"
@@ -62,7 +63,7 @@ def print_bad_hash_error(*filenames, outdated_hash=None):
             console.red("Error:"),
             console.red(OUTDATED_HASH_TAG),
             "" if outdated_hash is None else " Did you mean to use {} instead?".format(
-                console.green(f"{OUTDATED_HASH_TAG}: {outdated_hash}")
+                console.green("{}: {}".format(OUTDATED_HASH_TAG, outdated_hash))
             )
         )
     )
@@ -75,7 +76,7 @@ def parse_args(args):
     parser.add_argument("-o", "--outdated-since", help=f"commit hash for the {OUTDATED_HASH_TAG} tag, uses the first commit where HEAD diverged from master if unspecified")
     parser.add_argument("-a", "--all", default=False, action="store_true", help="look for incorrect hashes in all outdated articles")
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
-    parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help=f"automatically commit changes")
+    parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help="automatically commit changes")
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     parser.add_argument("--no-recommend-autofix", action='store_true', help=f"don't recommend rerunning the script with {AUTOFIX_FLAG}")
     return parser.parse_args(args)
@@ -149,7 +150,7 @@ def main(*args):
     exit_code = 0
 
     if args.root:
-        changed_cwd = file_utils.ChangeDirectory(args.root)
+        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change  # noqa: F841
 
     modified_translations = set()
     with_bad_hashes = list()

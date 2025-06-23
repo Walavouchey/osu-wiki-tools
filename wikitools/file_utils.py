@@ -27,6 +27,8 @@ def normalised(path: str) -> str:
 Returns a dictionary of file and directory paths, with a lowercased path for the key and the original casing for the value.
 Useful for looking up file paths case-insensitively on case-sensitive file systems.
 """
+
+
 def file_tree():
     # this cache would only become invalid when the current working directory changes, which only happens in tests and not during normal execution
     if not hasattr(file_tree, "cache"):
@@ -106,7 +108,7 @@ def is_original(path: str) -> bool:
     return os.path.basename(path) == "en.md"
 
 
-def list_all_files(roots: typing.Iterable[str]=["wiki"]) -> typing.Generator[str, None, None]:
+def list_all_files(roots: typing.Iterable[str] = ["wiki"]) -> typing.Generator[str, None, None]:
     for item in roots:
         for root, _, filenames in os.walk(item):
             for f in filenames:
@@ -114,7 +116,7 @@ def list_all_files(roots: typing.Iterable[str]=["wiki"]) -> typing.Generator[str
                 yield filepath
 
 
-def list_all_dirs(roots: typing.Iterable[str]=["wiki"]) -> typing.Generator[str, None, None]:
+def list_all_dirs(roots: typing.Iterable[str] = ["wiki"]) -> typing.Generator[str, None, None]:
     """
     List ALL directories
     """
@@ -156,7 +158,7 @@ def list_all_newsposts() -> typing.Generator[str, None, None]:
 
 def list_all_articles_and_newsposts() -> typing.Generator[str, None, None]:
     """
-    List ALL article and newspost files 
+    List ALL article and newspost files
     """
 
     for filepath in list_all_files(["wiki", "news"]):

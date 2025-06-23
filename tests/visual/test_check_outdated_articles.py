@@ -1,10 +1,6 @@
-import textwrap
-
 from tests.conftest import VisualTest, VisualTestCase
 from tests.conftest import DummyRepository
 import tests.utils as utils
-
-from wikitools import article_parser, git_utils, file_utils
 
 from wikitools_cli.commands import check_outdated_articles as outdater
 

@@ -1,4 +1,3 @@
-import tests.conftest
 import tests.utils as utils
 
 from wikitools_cli.commands import check_files as file_checker
@@ -32,4 +31,3 @@ class TestCheckLinks:
 
         exit_code = file_checker.main("--all")
         assert exit_code == 1
-

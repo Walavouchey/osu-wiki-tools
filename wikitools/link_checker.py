@@ -4,7 +4,6 @@ import typing
 import urllib
 
 from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
-from wikitools import console
 from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
 from wikitools.file_utils import get_canonical_path_casing
 from wikitools.file_utils import is_article
@@ -34,21 +33,29 @@ class RepositoryPath(typing.NamedTuple):
 
 
 def is_fragment_only(parsed_location: urllib.parse.ParseResult):
-    return parsed_location.fragment and not any((parsed_location.scheme,
+    return parsed_location.fragment and not any((
+        parsed_location.scheme,
         parsed_location.netloc, parsed_location.path,
-        parsed_location.params, parsed_location.query))
+        parsed_location.params, parsed_location.query
+    ))
 
 
 def is_news_link(parsed_location: urllib.parse.ParseResult):
-    return ((parsed_location.scheme == "http" or parsed_location.scheme == "https") and
-        parsed_location.netloc == "osu.ppy.sh" and parsed_location.path.startswith("/home/news/"))
+    return (
+        (parsed_location.scheme == "http" or parsed_location.scheme == "https") and
+        parsed_location.netloc == "osu.ppy.sh" and
+        parsed_location.path.startswith("/home/news/")
+    )
 
 
 def is_github_link(parsed_location: urllib.parse.ParseResult):
     return (
         (parsed_location.scheme == "http" or parsed_location.scheme == "https")
         and parsed_location.netloc == "github.com"
-        and (parsed_location.path.startswith("/ppy/osu-wiki/blob/master/") or parsed_location.path.startswith("/ppy/osu-wiki/tree/master/"))
+        and (
+            parsed_location.path.startswith("/ppy/osu-wiki/blob/master/") or
+            parsed_location.path.startswith("/ppy/osu-wiki/tree/master/")
+        )
     )
 
 
@@ -214,7 +221,8 @@ def check_link(
                 if repo_path.fragment not in target_article.identifiers:
                     # collect some additional metadata before reporting
                     translation_outdated = False
-                    if repo_path.path.name != "en.md": translation_outdated = target_article.front_matter.get('outdated_translation', False)
+                    if repo_path.path.name != "en.md":
+                        translation_outdated = target_article.front_matter.get('outdated_translation', False)
 
                     return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, False, translation_outdated)
         case PathType.NEWS:
@@ -230,7 +238,7 @@ def check_link(
             # directory -> need to find the target article; it could be a translation
             # XXX(TicClick): this part assumes there is always an English version of the article in a folder
             target_file = target_path / article.filename
-            translation = target_file # verified to be the case later
+            translation = target_file  # verified to be the case later
             no_translation_available = article.filename != 'en.md' and not target_file.is_file()
 
             if no_translation_available:

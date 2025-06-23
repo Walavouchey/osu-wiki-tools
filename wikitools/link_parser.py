@@ -103,7 +103,7 @@ class Link(typing.NamedTuple):
 
     # provided for convenience, used in `BrokenRedirectError`
     @staticmethod
-    def colourise_location_static(location: str, fragment: typing.Optional[str] = None, fragment_only: bool=False):
+    def colourise_location_static(location: str, fragment: typing.Optional[str] = None, fragment_only: bool = False):
         if fragment_only:
             colourised_location = console.green(location)
             if fragment:
