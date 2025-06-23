@@ -12,10 +12,15 @@ Alternatively, it can be run with --autofix (and --autocommit, or just -fc) to o
 """
 
 import argparse
+import fnmatch
+import itertools
 import os
+import os.path
 import sys
 
 from wikitools import article_parser, console, git_utils, file_utils
+
+import braceexpand
 
 # A pull request string which disables the check (has no effect here, listed for informational purposes only)
 PULL_REQUEST_TAG = "SKIP_OUTDATED_CHECK"
@@ -78,6 +83,7 @@ def parse_args(args):
     parser.add_argument(f"{AUTOFIX_FLAG_SHORT}", f"{AUTOFIX_FLAG}", default=False, action="store_true", help=f"automatically add `{OUTDATED_HASH_TAG}: {{hash}}` to outdated articles")
     parser.add_argument(f"{AUTOCOMMIT_FLAG_SHORT}", f"{AUTOCOMMIT_FLAG}", default=False, action="store_true", help="automatically commit changes")
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
+    parser.add_argument("-e", "--exclude", action='append', help="list of paths to exclude from checking (accepts file paths, directories, and shell patterns)")
     parser.add_argument("--no-recommend-autofix", action='store_true', help=f"don't recommend rerunning the script with {AUTOFIX_FLAG}")
     return parser.parse_args(args)
 
@@ -145,6 +151,31 @@ def check_commit_hashes(modified_translations):
             yield article_file
 
 
+def path_match(file_path: str, patterns: list[str]) -> bool:
+    """
+    Check if a file path matches one or more patterns that exclude it from the outdated check.
+
+    Patterns may look like this, with the wiki/ prefix optionally omitted:
+
+      - Individual articles: wiki/Path/To/Article/en.md
+      - Article directories: wiki/Article
+      - Fnmatch masks: wiki/*/es.md
+      - Paths with shell-style brace expansion:
+        - wiki/{Article,Other_article}/es.md
+        - wiki/{Article,Other_article}/{es,jp}.md
+    """
+
+    for article_path in [file_path, file_path.removeprefix("wiki/")]:
+        for path_or_mask in patterns:
+            if (
+                article_path == path_or_mask
+                or os.path.commonpath((article_path, path_or_mask)).replace("\\", "/") == path_or_mask
+                or fnmatch.fnmatch(article_path, path_or_mask)
+            ):
+                return True
+    return False
+
+
 def main(*args):
     args = parse_args(args)
     exit_code = 0
@@ -173,7 +204,25 @@ def main(*args):
     modified_originals = list_modified_originals(args.base_commit)
     if modified_originals:
         all_translations = file_utils.list_all_translations(sorted(os.path.dirname(tl) for tl in modified_originals))
-        translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
+        temp_translations_to_outdate = list(list_outdated_translations(all_translations, modified_translations))
+
+        translations_to_outdate = []
+        if args.exclude:
+            excluded_count = 0
+            masks = list(itertools.chain(*map(
+                lambda single_argument: list(braceexpand.braceexpand(single_argument)),
+                args.exclude
+            )))
+
+            for translation in temp_translations_to_outdate:
+                if path_match(translation, masks):
+                    excluded_count += 1
+                else:
+                    translations_to_outdate.append(translation)
+            print(f"{excluded_count} of {len(temp_translations_to_outdate)} translation(s) skipped due to --exclude")
+        else:
+            translations_to_outdate = temp_translations_to_outdate
+
         if translations_to_outdate:
             outdated_hash = outdated_hash or args.outdated_since or git_utils.get_first_branch_commit()
 

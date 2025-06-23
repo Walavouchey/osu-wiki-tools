@@ -35,5 +35,6 @@ setuptools.setup(
         "PyYAML==6.0.1",
         "types-PyYAML==6.0.12.12",
         "yamllint==1.33.0",
+        "braceexpand==0.1.7",
     ],
 )

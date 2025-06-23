@@ -1,6 +1,7 @@
 from collections import Counter as multiset
 import textwrap
 
+import pytest
 import tests.utils as utils
 
 from wikitools import article_parser, git_utils, file_utils
@@ -527,3 +528,124 @@ class TestCheckOutdatedArticles:
         assert exit_code == 1
 
         assert utils.get_changed_files() == []
+
+    @pytest.mark.parametrize(
+        "exclude_args,expected_changed_files",
+        [
+            pytest.param(
+                # Given
+                [
+                    "--exclude", "wiki/First_article/fr.md",
+                    "--exclude", "wiki/First_article/pt-br.md",
+                ],
+                # Expect
+                [
+                    "wiki/First_article/zh-tw.md",
+
+                    'wiki/Second_article/fr.md',
+                    'wiki/Second_article/pt-br.md',
+                    'wiki/Second_article/zh-tw.md',
+                ],
+                id="Single file paths",
+            ),
+
+            pytest.param(
+                # Given
+                [
+                    "--exclude", "wiki/First_article",
+                ],
+                # Expect
+                [
+                    'wiki/Second_article/fr.md',
+                    'wiki/Second_article/pt-br.md',
+                    'wiki/Second_article/zh-tw.md',
+                ],
+                id="Directory paths",
+            ),
+
+            pytest.param(
+                # Given
+                [
+                    "--exclude", "wiki/*/fr.md",
+                ],
+                # Expect
+                [
+                    'wiki/First_article/pt-br.md',
+                    'wiki/First_article/zh-tw.md',
+
+                    'wiki/Second_article/pt-br.md',
+                    'wiki/Second_article/zh-tw.md',
+                ],
+                id="Fnmatch masks (only star patterns)"
+            ),
+
+            pytest.param(
+                # Given
+                [
+                    "--exclude", "wiki/{First_article,Second_article}/pt-br.md",
+                    "--exclude", "wiki/First_article/{fr,zh-tw}.md",
+                ],
+                # Expect
+                [
+                    'wiki/Second_article/fr.md',
+                    'wiki/Second_article/zh-tw.md',
+                ],
+                id="Shell brace expansion"
+            ),
+
+            pytest.param(
+                # Given
+                [
+                    "--exclude", "no/match",
+                    "--exclude", "wiki/fr.md",
+                    "--exclude", "wiki/First_art",
+                    "--exclude", "wiki/Second_article/es.md",
+                    "--exclude", "wiki/Second_article/en.md",
+                    "--exclude", "wiki/{First_article,Second_article}/jp.md",
+                ],
+                # Expect
+                [
+                    'wiki/First_article/fr.md',
+                    'wiki/First_article/pt-br.md',
+                    'wiki/First_article/zh-tw.md',
+
+                    'wiki/Second_article/fr.md',
+                    'wiki/Second_article/pt-br.md',
+                    'wiki/Second_article/zh-tw.md',
+                ],
+                id="No valid matches"
+            ),
+        ]
+    )
+    def test__exclude_articles_from_check(self, root, exclude_args, expected_changed_files):
+        utils.set_up_dummy_repo()
+        article_paths = [
+            'wiki/First_article/en.md',
+            'wiki/First_article/fr.md',
+            'wiki/First_article/pt-br.md',
+            'wiki/First_article/zh-tw.md',
+
+            'wiki/Second_article/en.md',
+            'wiki/Second_article/fr.md',
+            'wiki/Second_article/pt-br.md',
+            'wiki/Second_article/zh-tw.md',
+        ]
+
+        utils.create_files(root, *((path, '# Article') for path in article_paths))
+        utils.stage_all_and_commit("add articles")
+
+        utils.create_files(root, *(
+            (article_path, '# Article\n\nThis is an article in English.') for article_path in
+            utils.take(article_paths, "en.md")
+        ))
+        utils.stage_all_and_commit("modify english articles")
+
+        exit_code = outdater.main(
+            "--autofix",
+            "--base-commit", "HEAD^",
+            "--outdated-since", "HEAD^",
+            *exclude_args
+        )
+
+        assert exit_code == 0
+        assert utils.get_changed_files() == expected_changed_files
