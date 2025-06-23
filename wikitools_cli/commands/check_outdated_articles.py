@@ -169,7 +169,7 @@ def path_match(file_path: str, patterns: list[str]) -> bool:
         for path_or_mask in patterns:
             if (
                 article_path == path_or_mask
-                or os.path.commonpath((article_path, path_or_mask)) == path_or_mask
+                or os.path.commonpath((article_path, path_or_mask)).replace("\\", "/") == path_or_mask
                 or fnmatch.fnmatch(article_path, path_or_mask)
             ):
                 return True
