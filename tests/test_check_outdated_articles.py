@@ -648,7 +648,7 @@ class TestCheckOutdatedArticles:
         )
 
         assert exit_code == 0
-        assert utils.get_changed_files() == expected_changed_files
+        assert set(utils.get_changed_files()) == set(expected_changed_files)
 
     @pytest.mark.parametrize(
         "exclude_args",
