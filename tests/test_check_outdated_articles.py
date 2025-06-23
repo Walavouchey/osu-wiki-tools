@@ -529,7 +529,6 @@ class TestCheckOutdatedArticles:
 
         assert utils.get_changed_files() == []
 
-
     @pytest.mark.parametrize(
         "exclude_args,expected_changed_files",
         [
@@ -542,7 +541,7 @@ class TestCheckOutdatedArticles:
                 # Expect
                 [
                     "wiki/First_article/zh-tw.md",
-                    
+
                     'wiki/Second_article/fr.md',
                     'wiki/Second_article/pt-br.md',
                     'wiki/Second_article/zh-tw.md',
@@ -640,7 +639,6 @@ class TestCheckOutdatedArticles:
             utils.take(article_paths, "en.md")
         ))
         utils.stage_all_and_commit("modify english articles")
-
 
         exit_code = outdater.main(
             "--autofix",
