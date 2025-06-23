@@ -615,6 +615,14 @@ class TestCheckOutdatedArticles:
                 ],
                 id="No valid matches"
             ),
+
+            pytest.param(
+                # Given
+                ["--exclude", "*"],
+                # Expect
+                [],
+                id="Ignore the whole wiki"
+            ),
         ]
     )
     def test__exclude_articles_from_check(self, root, exclude_args, expected_changed_files):
