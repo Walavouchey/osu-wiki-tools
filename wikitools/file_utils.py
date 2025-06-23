@@ -53,11 +53,9 @@ def exists_case_sensitive(path: pathlib.Path) -> bool:
 
     if os.name == 'nt':
         try:
-            path_string = path.as_posix()
             # windows disallows two files that differ only in casing, so there are no special considerations for that
-            # os.path.realpath with strict=True does the existence check
-            return normalised(path_string) == normalised(os.path.relpath(os.path.realpath(path_string, strict=True)))
-        except OSError:
+            return path.as_posix() == get_canonical_path_casing(path).as_posix()
+        except KeyError:
             return False
     else:
         return path.exists()
