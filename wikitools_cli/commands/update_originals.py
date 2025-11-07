@@ -375,6 +375,40 @@ def populate_section(csv, track_type, create_table_func):
     return section
 
 
+def print_new_tracks(csv):
+    new_tracks = []
+    new_track_start = False
+    for row in csv:
+        if not "Last update" in row:
+            break
+        if not new_track_start and len(row["Last update"].strip()) > 0:
+            new_track_start = True
+            continue
+        if new_track_start:
+            new_tracks.append(row)
+
+    events = list(set(row["Event"] for row in new_tracks))
+    events.append("original map")
+    events.append("featured artist map")
+    for event in events:
+        match event:
+            case "original map":
+                event_tracks = [row for row in new_tracks if row["Type"] == "BEATMAP"]
+            case "featured artist map":
+                event_tracks = [row for row in new_tracks if row["Type"] == "FA_RELEASE"]
+            case _:
+                event_tracks = [row for row in new_tracks if row["Event"] == event]
+
+        if not event_tracks or event.strip() == "":
+            continue
+
+        print(f"\n{event}")
+        for row in event_tracks:
+            print(f"- {row['Track']}")
+
+    print(f"\n{len(csv)} tracks (+{len(new_tracks)})")
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s update-originals [options]")
     parser.add_argument("-f", "--csv-file", type=argparse.FileType("r", encoding="utf-8"), help="use a local csv file instead of online retrieval")
@@ -391,12 +425,12 @@ def main(*args):
     else:
         csv_unsanitised = online_data.get_spreadsheet_range("1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrzh-E", "raw!A:U")
 
-    csv = []
+    csv_unsorted = []
     for row in csv_unsanitised:
         row['Track'] = sanitise(row['Track'])
-        csv.append(row)
+        csv_unsorted.append(row)
 
-    csv = sorted(csv, key=lambda row: row['Track'].lower())
+    csv = sorted(csv_unsorted, key=lambda row: row['Track'].lower())
 
     table_ost = str(create_table_ost([row for row in csv if row['Type'] == "OST"]))
 
@@ -479,6 +513,8 @@ def main(*args):
         print(f"Tracks written: {TOTAL_ROWS}")
         print(f"Duplicates written ({len(duplicates)}):" + ("".join([f"\n- {track} ({count} times)" for track, count in duplicates]) or " none"))
         print(f"Missing ({len(missing)}):" + ("".join([f"\n- {track}" for track in list(missing)]) or " none"))
+
+    print_new_tracks(csv_unsorted)
 
     return 0
 
