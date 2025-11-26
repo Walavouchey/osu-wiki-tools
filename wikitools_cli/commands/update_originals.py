@@ -406,7 +406,7 @@ def print_new_tracks(csv):
         for row in event_tracks:
             print(f"- {row['Track']}")
 
-    print(f"\n{len(csv)} tracks (+{len(new_tracks)})")
+    print(f"\n{len(csv):,} tracks (+{len(new_tracks)})")
 
 
 def parse_args(args):
@@ -495,7 +495,7 @@ def main(*args):
     tree[0][1][7] = tree[0][1][7].nodes[0] + "\n\n" + section_other.strip()
 
     time_string = datetime.datetime.now().strftime("%Y%m%d")
-    tree[0][0].nodes[1] = f"There is currently a total of **{len(csv)}** documented songs made within osu!."
+    tree[0][0].nodes[1] = f"There is currently a total of **{len(csv):,}** documented songs made within osu!."
     tree[0][0].nodes[2] = f"![Graph of bespoke music over time](img/bespoke-music-over-time.png?{time_string})"
 
     plotting.plot_originals_over_time()
