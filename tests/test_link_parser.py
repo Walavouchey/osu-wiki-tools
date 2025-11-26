@@ -191,6 +191,7 @@ class TestIgnoredFootnotes:
             "The sky is blue.[^reference-1]",
             "The sky is blue.[^reference-1][^reference-2]",
             "The sky is blue.[^reference-1][^reference-2][^reference-3]",
+            "The sky is blue. [some text in brackets][^reference-1]",
         ]
         for example in examples:
             assert link_parser.find_link(example) is None

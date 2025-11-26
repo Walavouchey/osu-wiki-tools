@@ -176,6 +176,11 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                     state = State.INLINE
                     location = i + 2
                 elif s[i + 1] == '[':
+                    if s[i + 2] == '^':
+                        # found a footnote after bracket pair -> ignore
+                        state = State.IDLE
+                        continue
+
                     state = State.REFERENCE
                     location = i + 2
                 else:
