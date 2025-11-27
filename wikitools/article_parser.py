@@ -1,6 +1,7 @@
 import collections
 import io
 import pathlib
+import re
 import shutil
 import typing
 
@@ -10,13 +11,49 @@ from wikitools import code_block_parser, link_parser, comment_parser, identifier
 
 FRONT_MATTER_DELIMITER = '---'
 TITLE_INDICATOR = '# '
+REQUIRES_QUOTES = re.compile(r".*((: )|(#))")
 
 
-# Workaround to make yaml.Dumper write lists with leading indentation
-# (taken from https://github.com/yaml/pyyaml/issues/234#issuecomment-765894586)
 class Dumper(yaml.Dumper):
+    # workaround to make yaml.Dumper write lists with leading indentation
+    # (taken from https://github.com/yaml/pyyaml/issues/234#issuecomment-765894586)
     def increase_indent(self, flow=False, *args, **kwargs):
         return super().increase_indent(flow=flow, indentless=False)
+
+    # very complicated way to tell pyYAML to use double quotes and not single quotes
+    # (taken from https://github.com/yaml/pyyaml/blob/main/lib/yaml/representer.py)
+    def represent_mapping(self, tag, mapping, flow_style=None):
+        value = []
+        node = yaml.MappingNode(tag, value, flow_style=flow_style)
+        if self.alias_key is not None:
+            self.represented_objects[self.alias_key] = node
+        best_style = True
+        if hasattr(mapping, 'items'):
+            mapping = list(mapping.items())
+            if self.sort_keys:
+                try:
+                    mapping = sorted(mapping)
+                except TypeError:
+                    pass
+        for item_key, item_value in mapping:
+            node_key = self.represent_data(item_key)
+            node_value = self.represent_data(item_value)
+
+            # double quotes instead of single quotes (when required)
+            if isinstance(item_value, str) and REQUIRES_QUOTES.match(item_value) is not None:
+                node_value.style = '"'
+
+            if not (isinstance(node_key, yaml.ScalarNode) and not node_key.style):
+                best_style = False
+            if not (isinstance(node_value, yaml.ScalarNode) and not node_value.style):
+                best_style = False
+            value.append((node_key, node_value))
+        if flow_style is None:
+            if self.default_flow_style is not None:
+                node.flow_style = self.default_flow_style
+            else:
+                node.flow_style = best_style
+        return node
 
 
 class ArticleLine(typing.NamedTuple):
@@ -96,16 +133,14 @@ class FrontMatterDetector():
 
 
 def save_front_matter(filepath: str, fm: dict):
-    if not fm:
-        return
-
     new_path = filepath + '.new'
     with open(new_path, 'w', encoding='utf-8') as new_file:
-        new_file.write(FRONT_MATTER_DELIMITER + '\n')
-        new_file.write(yaml.dump(
-            fm, Dumper=Dumper, default_flow_style=False, indent=2, sort_keys=False, allow_unicode=True,
-        ))
-        new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
+        if fm:
+            new_file.write(FRONT_MATTER_DELIMITER + '\n')
+            new_file.write(yaml.dump(
+                fm, Dumper=Dumper, default_flow_style=False, indent=2, sort_keys=False, allow_unicode=True,
+            ))
+            new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
 
         with open(filepath, "r", encoding='utf-8') as old_file:
             front_matter_detector = FrontMatterDetector()

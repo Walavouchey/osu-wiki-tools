@@ -1,4 +1,6 @@
 import os
+from io import StringIO
+import sys
 
 import py
 
@@ -42,3 +44,15 @@ def take(the_list, *may_contain):
 
 def remove(the_list, *may_not_contain):
     return list(filter(lambda item: all(thing not in item for thing in may_not_contain), the_list))
+
+
+class OutputCapture():
+    def __enter__(self):
+        self._originals = sys.stdout, sys.stderr
+        self.stdout, self.stderr = StringIO(), StringIO()
+        sys.stdout, sys.stderr = self.stdout, self.stderr
+        return self
+
+    def __exit__(self, exctype, excinst, exctb):
+        sys.stdout, sys.stderr = self._originals
+        self.stdout, self.stderr = self.stdout.getvalue(), self.stderr.getvalue()

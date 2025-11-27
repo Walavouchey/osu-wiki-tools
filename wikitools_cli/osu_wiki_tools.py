@@ -7,7 +7,7 @@ Tools useful for osu! wiki contributors
 import argparse
 import sys
 
-from wikitools_cli.commands import check_outdated_articles, check_links, check_yaml, check_files
+from wikitools_cli.commands import check_outdated_articles, check_links, check_yaml, check_files, front_matter
 
 from wikitools_cli.VERSION import VERSION
 
@@ -31,6 +31,11 @@ commands = [
         "name": "check-files",
         "help": "check for issues with file and folder structure",
         "entry": check_files.main,
+    },
+    {
+        "name": "front-matter",
+        "help": "edit markdown front matter",
+        "entry": front_matter.main,
     },
 ]
 
