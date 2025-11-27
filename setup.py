@@ -23,7 +23,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     license="MIT",
-    test_suite="tests",
     packages=setuptools.find_packages(exclude=["tests", "tests.visual"]),
     entry_points={
         "console_scripts": [
