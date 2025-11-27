@@ -20,9 +20,9 @@ setuptools.setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    license="MIT",
     test_suite="tests",
     packages=setuptools.find_packages(exclude=["tests", "tests.visual"]),
     entry_points={
