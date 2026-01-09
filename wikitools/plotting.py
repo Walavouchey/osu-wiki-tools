@@ -14,9 +14,6 @@ import sys
 
 from wikitools import online_data
 
-API_KEY_ENV = "GOOGLE_SHEETS_API_KEY"
-API_KEY = os.environ[API_KEY_ENV]
-
 OSU_CMAP = None
 COLOURS = None
 

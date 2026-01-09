@@ -35,5 +35,7 @@ setuptools.setup(
         "types-PyYAML==6.0.12.20250915",
         "yamllint==1.38.0",
         "braceexpand==0.1.7",
+        "matplotlib==3.10.8",
+        "google-api-python-client==2.*"
     ],
 )
