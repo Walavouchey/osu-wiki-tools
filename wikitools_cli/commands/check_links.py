@@ -4,12 +4,11 @@ import argparse
 import sys
 import typing
 import json
-from itertools import chain, islice
 
 from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
 
-def print_error(case_sensitive: bool):
+def print_header(case_sensitive: bool):
     print(f"{console.red('Error:')} Some wiki or image links in the files you've changed have errors.\n")
     print("This can happen in one of the following ways:\n")
     print(
@@ -50,7 +49,7 @@ def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
     return highlighted_line
 
 
-def print_errors(errors: typing.Dict[int, typing.List[error_types.LinkError]], article: article_parser.Article, separate: bool):
+def print_errors(article: article_parser.Article, errors: typing.Dict[int, typing.List[error_types.LinkError]], separate: bool):
     for lineno, errors_on_line in sorted(errors.items()):
         for e in errors_on_line:
             print(e.pretty_location(article.path, lineno))
@@ -69,61 +68,63 @@ def print_errors(errors: typing.Dict[int, typing.List[error_types.LinkError]], a
             print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
 
 
-def identifier_suggestions_json(e: error_types.LinkError, article: article_parser.Article):
-    if isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError):
-        return [
-            {
-                "lineno": lineno,
-                "identifier": identifier
-            }
-            for identifier, lineno in sorted(article.identifiers.items(), key=lambda tuple_: tuple_[1])
-        ]
+ErrorList = typing.List[typing.Tuple[article_parser.Article, typing.Dict[int, typing.List[error_types.LinkError]]]]
+FlatErrorList = typing.List[typing.Tuple[article_parser.Article, int, int, error_types.LinkError]]
 
 
-def error_json(errors: typing.Dict[int, typing.List[error_types.LinkError]], article: article_parser.Article, separate: bool):
-    if separate:
-        error_list = []
+def errors_flattened(error_list: ErrorList) -> FlatErrorList:
+    flat_error_list = []
+    for article, errors in error_list:
         for lineno, errors_on_line in sorted(errors.items()):
             for error in errors_on_line:
-                error_list.append((lineno, [error]))
-    else:
-        error_list = sorted(errors.items())
+                flat_error_list.append((article, lineno, error.pos, error))
+    return flat_error_list
 
-    if separate:
-        return [
+
+def errors_json(error_list: ErrorList, flatten: bool) -> str:
+    if flatten:
+        flat_error_list = errors_flattened(error_list)
+
+    if flatten:
+        result = [
             {
                 "path": article.path,
-                "lineno": lineno,
-                "column": e[0].pos,
-                "link": e[0].link.colourise_location(fragment_only=e[0]._colourise_fragment_only),
-                "type": type(e[0]).__name__,
-                "text": repr(e[0]),
-                "identifier_suggestions": identifier_suggestions_json(e[0], article),
-                "highlighted_line": highlight_links(article.lines[lineno].raw_line, errors_on_line),
+                "line": lineno,
+                "column": error.pos,
+                "link": error.link.raw_location,
+                "type": type(error).__name__,
+                "text": repr(error),
+                "identifier_suggestions": identifier_suggestions_json(error, article),
+                "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
             }
-            for lineno, e in error_list
+            for article, lineno, column, error in flat_error_list
         ]
     else:
-        return {
-            "path": article.path,
-            "lines_with_errors": [
-                {
-                    "lineno": lineno,
-                    "errors": [
-                        {
-                            "column": e.pos,
-                            "link": e.link.colourise_location(fragment_only=e._colourise_fragment_only),
-                            "type": type(e).__name__,
-                            "text": repr(e),
-                            "identifier_suggestions": identifier_suggestions_json(e, article),
-                            "highlighted_line": highlight_links(article.lines[lineno].raw_line, [e]),
-                        }
-                        for e in errors_on_line
-                    ],
-                }
-                for lineno, errors_on_line in error_list
-            ],
-        }
+        result = [
+            {
+                "path": article.path,
+                "lines_with_errors": [
+                    {
+                        "line": lineno,
+                        "errors": [
+                            {
+                                "column": error.pos,
+                                "link": error.link.raw_location,
+                                "type": type(error).__name__,
+                                "text": repr(error),
+                                "identifier_suggestions": identifier_suggestions_json(error, article),
+                                "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
+                            }
+                            for error in errors_on_line
+                        ],
+                    }
+                    for lineno, errors_on_line in sorted(errors.items())
+                ],
+            }
+            for article, errors in error_list
+        ]
+
+    return json.dumps(result)
 
 
 def parse_args(args):
@@ -164,6 +165,17 @@ def identifier_suggestions(e, articles):
     ))
 
 
+def identifier_suggestions_json(error: error_types.LinkError, article: article_parser.Article):
+    if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
+        return [
+            {
+                "lineno": lineno,
+                "identifier": identifier
+            }
+            for identifier, lineno in sorted(article.identifiers.items(), key=lambda tuple_: tuple_[1])
+        ]
+
+
 def filter_errors(
     filter_function: typing.Callable[[error_types.LinkError], typing.Dict[int, typing.List[error_types.LinkError]]],
     errors: typing.Dict[int, typing.List[error_types.LinkError]]
@@ -195,19 +207,18 @@ def main(*args):
         filenames = list(filter(lambda x: file_utils.is_article(x) or file_utils.is_newspost(x), args.target))
 
     redirects = redirect_parser.load_redirects("wiki/redirect.yaml")
-    exit_code = 0
 
     articles = {}
     for filename in filenames:
         a = article_parser.parse(filename)
         articles[a.path] = a
 
+    exit_code = 0
     all_errors = []
     error_count = 0
     link_count = 0
     error_file_count = 0
     file_count = 0
-    separate = args.separate if args.format != "github" else True
 
     for _, article in sorted(articles.items()):
         if not args.in_outdated_articles and (article.front_matter.get("outdated", False) or article.front_matter.get("outdated_translation", False)):
@@ -235,41 +246,38 @@ def main(*args):
 
         error_file_count += 1
         error_count += sum(len(e) for e in errors.values())
-
-        if exit_code == 0 and args.format != "json":
-            print_error(args.case_sensitive)
         exit_code = 1
 
-        if args.format != "json":
-            print_errors(errors, article, args.separate)
-            print()
-
-        all_errors.append(error_json(errors, article, separate))
+        all_errors.append((article, errors))
 
     if exit_code == 0:
         print_clean()
-        print()
+        return exit_code
 
-    if args.format == "json":
-        if args.separate:
-            print(json.dumps(list(chain(*all_errors))))
-        else:
-            print(json.dumps(all_errors))
+    match args.format:
+        case "regular":
+            print_header(args.case_sensitive)
 
-    if args.format == "github":
-        print("::group::Annotations")
-        for error in islice(chain(*all_errors), 10):
-            print("::error file={},line={},col={},title={}::{}".format(
-                error["path"],
-                error["lineno"],
-                error["column"],
-                error["type"],
-                error["text"]
-            ))
-        print("::endgroup::")
+            for article, errors in all_errors:
+                print_errors(article, errors, args.separate)
 
-    if args.format != "json":
-        print_count(error_count, link_count, error_file_count, file_count)
+            print_count(error_count, link_count, error_file_count, file_count)
+
+        case "json":
+            print(errors_json(all_errors, args.separate))
+
+        case "github":
+            print("::group::Annotations")
+            for article, lineno, column, error in errors_flattened(all_errors)[:10]:
+                print(f"::error file={article.path},line={lineno},col={column},title={type(error).__name__}::{repr(error)}")
+            print("::endgroup::\n")
+
+            print_header(args.case_sensitive)
+
+            for article, errors in all_errors:
+                print_errors(article, errors, args.separate)
+
+            print_count(error_count, link_count, error_file_count, file_count)
 
     if args.root:
         del changed_cwd
