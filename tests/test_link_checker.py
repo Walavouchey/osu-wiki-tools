@@ -379,6 +379,30 @@ class TestNewspostLinks:
         assert error
         assert isinstance(error, error_types.LinkNotFoundError)
 
+    def test__invalid_relative_newspost_link(self, root):
+        path = 'news/2007/2007-01-01-newspost.md'
+        utils.create_files(
+            root,
+            (
+                path, textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2007-01-01 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+                ''').strip()
+            ),
+        )
+        link = link_parser.find_link('Please read the [forum post](PLACEHOLDER).')
+        assert link
+        error = link_checker.check_link(
+            article=article_parser.parse(path), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert error
+        assert isinstance(error, error_types.MalformedLinkError)
+
 
 class TestNewspostSectionLinks:
     @pytest.mark.parametrize(
