@@ -105,6 +105,10 @@ def get_repo_path(
     if parsed_location.netloc:
         return errors.MalformedLinkError(link, "incorrect link structure (typo?)")
 
+    # relative link within a news post
+    if current_article.as_posix().startswith("news"):
+        return errors.MalformedLinkError(link, "news posts must not include relative links")
+
     # relative wiki link
     path = current_article / parsed_location.path
     return RepositoryPath(path_type=PathType.WIKI, path=path, fragment=parsed_location.fragment)
@@ -123,7 +127,11 @@ def resolve_redirect(
     Returns an error if the redirect or article does not exist
     """
 
-    redirect_source = repo_path.path.relative_to("wiki").as_posix()
+    if repo_path.path.as_posix().startswith("wiki"):
+        redirect_source = repo_path.path.relative_to("wiki").as_posix()
+    else:
+        redirect_source = repo_path.path.as_posix()
+
     try:
         redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
     except KeyError:
