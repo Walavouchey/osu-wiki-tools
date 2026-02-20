@@ -3,6 +3,8 @@
 import argparse
 import sys
 import typing
+import json
+import itertools
 
 from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
@@ -48,11 +50,88 @@ def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
     return highlighted_line
 
 
+def print_errors(errors: typing.Dict[int, typing.List[error_types.LinkError]], article: article_parser.Article, separate: bool):
+    for lineno, errors_on_line in sorted(errors.items()):
+        for e in errors_on_line:
+            print(e.pretty_location(article.path, lineno))
+        for e in errors_on_line:
+            print(e.pretty())
+            if isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError):
+                suggestions = identifier_suggestions(e, article)
+                if suggestions:
+                    print('{}\n\t{}'.format(console.blue('Suggestions:'), suggestions))
+
+        print()
+        if separate:
+            for e in errors_on_line:
+                print(highlight_links(article.lines[lineno].raw_line, [e]), end="\n\n")
+        else:
+            print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
+
+
+def identifier_suggestions_json(e: error_types.LinkError, article: article_parser.Article):
+    if isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError):
+        return [
+            {
+                "lineno": lineno,
+                "identifier": identifier
+            }
+            for identifier, lineno in sorted(article.identifiers.items(), key=lambda tuple_: tuple_[1])
+        ]
+
+
+def error_json(errors: typing.Dict[int, typing.List[error_types.LinkError]], article: article_parser.Article, separate: bool):
+    if separate:
+        error_list = []
+        for lineno, errors_on_line in sorted(errors.items()):
+            for error in errors_on_line:
+                error_list.append((lineno, [error]))
+    else:
+        error_list = sorted(errors.items())
+
+    if separate:
+        return [
+            {
+                "path": article.path,
+                "lineno": lineno,
+                "column": e[0].pos,
+                "link": e[0].link.colourise_location(fragment_only=e[0]._colourise_fragment_only),
+                "type": type(e[0]).__name__,
+                "text": repr(e[0]),
+                "identifier_suggestions": identifier_suggestions_json(e[0], article),
+                "highlighted_line": highlight_links(article.lines[lineno].raw_line, errors_on_line),
+            }
+            for lineno, e in error_list
+        ]
+    else:
+        return {
+            "path": article.path,
+            "lines_with_errors": [
+                {
+                    "lineno": lineno,
+                    "errors": [
+                        {
+                            "column": e.pos,
+                            "link": e.link.colourise_location(fragment_only=e._colourise_fragment_only),
+                            "type": type(e).__name__,
+                            "text": repr(e),
+                            "identifier_suggestions": identifier_suggestions_json(e, article),
+                            "highlighted_line": highlight_links(article.lines[lineno].raw_line, [e]),
+                        }
+                        for e in errors_on_line
+                    ],
+                }
+                for lineno, errors_on_line in error_list
+            ],
+        }
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s check-links [options]")
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
+    parser.add_argument("-f", "--format", choices=["regular", "json"], default="regular", help="specify output format")
 
     parser.add_argument(
         "--in-outdated-articles",
@@ -123,19 +202,20 @@ def main(*args):
         a = article_parser.parse(filename)
         articles[a.path] = a
 
+    all_errors = []
     error_count = 0
     link_count = 0
     error_file_count = 0
     file_count = 0
 
-    for _, a in sorted(articles.items()):
-        if not args.in_outdated_articles and (a.front_matter.get("outdated", False) or a.front_matter.get("outdated_translation", False)):
+    for _, article in sorted(articles.items()):
+        if not args.in_outdated_articles and (article.front_matter.get("outdated", False) or article.front_matter.get("outdated_translation", False)):
             continue
 
-        link_count += sum(len(_.links) for _ in a.lines.values())
+        link_count += sum(len(_.links) for _ in article.lines.values())
         file_count += 1
 
-        errors = link_checker.check_article(a, redirects, articles, args.case_sensitive)
+        errors = link_checker.check_article(article, redirects, articles, args.case_sensitive)
 
         if not args.to_sections_in_outdated_translations:
             errors = filter_errors(
@@ -153,33 +233,30 @@ def main(*args):
             continue
 
         error_file_count += 1
-        if exit_code == 0:
+        error_count += sum(len(e) for e in errors.values())
+
+        if exit_code == 0 and args.format == "regular":
             print_error(args.case_sensitive)
         exit_code = 1
 
-        for lineno, errors_on_line in sorted(errors.items()):
-            error_count += len(errors_on_line)
-            for e in errors_on_line:
-                print(e.pretty_location(a.path, lineno))
-            for e in errors_on_line:
-                print(e.pretty())
-                if isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError):
-                    suggestions = identifier_suggestions(e, articles)
-                    if suggestions:
-                        print('{}\n\t{}'.format(console.blue('Suggestions:'), suggestions))
-
-            print()
-            if args.separate:
-                for e in errors_on_line:
-                    print(highlight_links(a.lines[lineno].raw_line, [e]), end="\n\n")
-            else:
-                print(highlight_links(a.lines[lineno].raw_line, errors_on_line), end="\n\n")
+        match args.format:
+            case "regular":
+                print_errors(errors, article, args.separate)
+            case "json":
+                all_errors.append(error_json(errors, article, args.separate))
 
     if exit_code == 0:
         print_clean()
         print()
 
-    print_count(error_count, link_count, error_file_count, file_count)
+    if args.format == "json":
+        if args.separate:
+            print(json.dumps(list(itertools.chain(*all_errors))))
+        else:
+            print(json.dumps(all_errors))
+    else:
+        print_count(error_count, link_count, error_file_count, file_count)
+
     if args.root:
         del changed_cwd
     return exit_code
