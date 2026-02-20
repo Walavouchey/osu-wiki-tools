@@ -1,5 +1,7 @@
 from urllib import parse
 
+import pytest
+
 from wikitools import link_parser, reference_parser
 
 
@@ -27,6 +29,32 @@ class TestInlinePlainLinks:
             raw_location="/wiki/Example",
             parsed_location=parse.urlparse("/wiki/Example"),
             title=' "Title"',
+            is_reference=False,
+        )
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"raw_location": " /wiki/Example", "title": " \"Title\""},
+            {"raw_location": "  /wiki/Example", "title": " \"Title\""},
+            {"raw_location": " /wiki/Example", "title": " \"Title\" "},
+            {"raw_location": "/wiki/Example", "title": " \"Title\" "},
+            {"raw_location": "\t/wiki/Example", "title": " \"Title\""},
+            {"raw_location": "\t\t/wiki/Example", "title": " \"Title\"\t"},
+            {"raw_location": "\t/wiki/Example", "title": " \"Title\"\t"},
+            {"raw_location": "/wiki/Example", "title": " \"Title\"\t"},
+        ]
+    )
+    def test__regular_link__with_surrounding_whitespace(self, payload):
+        example = f"An [example]({payload["raw_location"]}{payload["title"]})."
+        link = link_parser.find_link(example)
+        assert link == link_parser.Link(
+            start=3,
+            end=13 + len(payload["raw_location"]) + len(payload["title"]),
+            alt_text="example",
+            raw_location=payload["raw_location"],
+            parsed_location=parse.urlparse(payload["raw_location"]),
+            title=payload["title"],
             is_reference=False,
         )
 
