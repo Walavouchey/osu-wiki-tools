@@ -75,6 +75,12 @@ def get_repo_path(
     - Section link within current article or news post: #fragment
     """
 
+    if link.content.strip() == "":
+        return errors.MalformedLinkError(link, "empty link")
+
+    if link.content.strip() != link.content:
+        return errors.MalformedLinkError(link, "remove surrounding whitespace")
+
     if is_fragment_only(parsed_location):
         path_type = PathType.NEWS if current_article.as_posix().startswith("news") else PathType.WIKI
         return RepositoryPath(path_type=path_type, path=current_article, fragment=parsed_location.fragment)
