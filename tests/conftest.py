@@ -5,7 +5,7 @@ import tempfile
 import collections
 import importlib
 import pkgutil
-import py
+import py  # type: ignore
 import pytest
 import typing
 

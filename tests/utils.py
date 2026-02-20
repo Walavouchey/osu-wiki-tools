@@ -2,7 +2,7 @@ import os
 from io import StringIO
 import sys
 
-import py
+import py  # type: ignore
 
 from wikitools import git_utils
 
