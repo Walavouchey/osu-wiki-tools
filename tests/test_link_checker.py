@@ -135,6 +135,49 @@ class TestArticleLinks:
         )
         assert isinstance(error, error_types.MalformedLinkError)
 
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "/wiki//Article"},
+            {"link": "/wiki///Article"},
+            {"link": "/wiki////Article"},
+        ]
+    )
+    def test__invalid_link_with_extra_slashes(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Article/en.md', '# Article')
+        )
+
+        link = link_parser.find_link(f"This link [shouldn't include consecutive slashes]({payload["link"]})")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": r"img\image.png"},
+            {"link": r"\wiki\Article"},
+            {"link": r"\wiki\\\Article"},
+            {"link": r"\wiki\\\\Article"},
+        ]
+    )
+    def test__invalid_link_with_backslashes(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Article/en.md', '# Article')
+        )
+
+        link = link_parser.find_link(f"This link [shouldn't include backslashes]({payload["link"]})")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
     def test__valid_reference(self, root):
         utils.create_files(
             root,
