@@ -131,7 +131,7 @@ def parse_args(args):
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
     parser.add_argument("-s", "--separate", action='store_true', help="print errors that appear on the same line separately")
-    parser.add_argument("-f", "--format", choices=["regular", "json"], default="regular", help="specify output format")
+    parser.add_argument("-f", "--format", choices=["regular", "json", "github"], default="regular", help="specify output format")
 
     parser.add_argument(
         "--in-outdated-articles",
@@ -207,6 +207,7 @@ def main(*args):
     link_count = 0
     error_file_count = 0
     file_count = 0
+    separate = args.separate if args.format != "github" else True
 
     for _, article in sorted(articles.items()):
         if not args.in_outdated_articles and (article.front_matter.get("outdated", False) or article.front_matter.get("outdated_translation", False)):
@@ -235,15 +236,15 @@ def main(*args):
         error_file_count += 1
         error_count += sum(len(e) for e in errors.values())
 
-        if exit_code == 0 and args.format == "regular":
+        if exit_code == 0 and args.format != "json":
             print_error(args.case_sensitive)
         exit_code = 1
 
-        match args.format:
-            case "regular":
-                print_errors(errors, article, args.separate)
-            case "json":
-                all_errors.append(error_json(errors, article, args.separate))
+        if args.format != "json":
+            print_errors(errors, article, args.separate)
+            print()
+
+        all_errors.append(error_json(errors, article, separate))
 
     if exit_code == 0:
         print_clean()
@@ -254,7 +255,20 @@ def main(*args):
             print(json.dumps(list(itertools.chain(*all_errors))))
         else:
             print(json.dumps(all_errors))
-    else:
+
+    if args.format == "github":
+        print("::group::Annotations")
+        for error in list(itertools.chain(*all_errors)):
+            print("::error file={},line={},col={},title={}::{}".format(
+                error["path"],
+                error["lineno"],
+                error["column"],
+                error["type"],
+                error["text"]
+            ))
+        print("::endgroup::")
+
+    if args.format != "json":
         print_count(error_count, link_count, error_file_count, file_count)
 
     if args.root:
