@@ -4,7 +4,7 @@ import argparse
 import sys
 import typing
 import json
-import itertools
+from itertools import chain, islice
 
 from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
@@ -252,13 +252,13 @@ def main(*args):
 
     if args.format == "json":
         if args.separate:
-            print(json.dumps(list(itertools.chain(*all_errors))))
+            print(json.dumps(list(chain(*all_errors))))
         else:
             print(json.dumps(all_errors))
 
     if args.format == "github":
         print("::group::Annotations")
-        for error in list(itertools.chain(*all_errors)):
+        for error in islice(chain(*all_errors), 10):
             print("::error file={},line={},col={},title={}::{}".format(
                 error["path"],
                 error["lineno"],
