@@ -4,9 +4,16 @@ import argparse
 import sys
 import typing
 from pathlib import Path
+import json
 
 from wikitools import console, errors as error_types, file_utils
 from wikitools.file_utils import exists_case_sensitive
+
+
+def print_error(error: error_types.FileError):
+    print(error.pretty_location())
+    print(error.pretty())
+    print()
 
 
 def print_clean():
@@ -31,10 +38,24 @@ def check_missing_english_version(file_path: Path) -> typing.Optional[error_type
     return None
 
 
+def errors_json(errors: typing.List[error_types.FileError]) -> str:
+    return json.dumps(
+        [
+            {
+                "path": error.path,
+                "type": type(error).__name__,
+                "text": repr(error),
+            }
+            for error in errors
+        ]
+    )
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s check-files [options]")
     parser.add_argument("-t", "--target", nargs='*', help="paths to the articles you want to check, relative to the repository root")
     parser.add_argument("-a", "--all", action='store_true', help="check all articles")
+    parser.add_argument("-f", "--format", choices=["regular", "json", "github"], default="regular", help="specify output format")
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
 
@@ -55,24 +76,44 @@ def main(*args):
         filenames = list(filter(lambda x: file_utils.is_article(x) or file_utils.is_newspost(x), args.target))
 
     exit_code = 0
-
     error_count = 0
     file_count = 0
+    all_errors = []
 
     for filename in filenames:
         file_count += 1
-        maybe_error = check_missing_english_version(filename)
-        if maybe_error:
+
+        error = check_missing_english_version(filename)
+
+        if error:
             exit_code = 1
             error_count += 1
-            print(maybe_error.pretty_location())
-            print(maybe_error.pretty())
-            print()
+            all_errors.append(error)
 
     if exit_code == 0:
         print_clean()
-    else:
-        print_count(error_count, file_count)
+        return exit_code
+
+    match args.format:
+        case "regular":
+            for error in all_errors:
+                print_error(error)
+
+            print_count(error_count, file_count)
+
+        case "json":
+            print(errors_json(all_errors))
+
+        case "github":
+            print("::group::Annotations")
+            for article, lineno, column, error in all_errors[:10]:
+                print(f"::error file={error.path},title={type(error).__name__}::{repr(error)}")
+            print("::endgroup::\n")
+
+            for error in all_errors:
+                print_error(error)
+
+            print_count(error_count, file_count)
 
     if args.root:
         del changed_cwd

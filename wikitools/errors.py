@@ -172,6 +172,10 @@ class FileError():
     def pretty_location(self):
         raise NotImplementedError()
 
+    @property
+    def path(self):
+        raise NotImplementedError()
+
 
 class MissingEnglishVersionError(
     FileError,
@@ -186,7 +190,11 @@ class MissingEnglishVersionError(
     file: Path
 
     def __repr__(self):
-        return f"{self.file} is missing a corresponding en.md file in the same folder"
+        return f"\"{self.file}\" is missing a corresponding en.md file in the same folder"
 
     def pretty_location(self):
         return console.yellow(self.file)
+
+    @property
+    def path(self):
+        return self.file
