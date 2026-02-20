@@ -93,6 +93,12 @@ def get_repo_path(
     if parsed_location.scheme:
         return None
 
+    if "//" in link.parsed_location.path:
+        return errors.MalformedLinkError(link, "remove consecutive slashes")
+
+    if "\\" in link.parsed_location.path:
+        return errors.MalformedLinkError(link, "use regular slashes instead of backslashes")
+
     if is_article(parsed_location.path):
         return errors.MalformedLinkError(link, "wiki links must not include the article file name")
 
