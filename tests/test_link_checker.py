@@ -122,62 +122,6 @@ class TestArticleLinks:
             )
             assert isinstance(error, error_types.LinkNotFoundError)
 
-    def test__invalid_link_with_filename(self, root):
-        utils.create_files(
-            root,
-            ('wiki/Another_article/en.md', '# Another article')
-        )
-
-        link = link_parser.find_link("This link [shouldn't include the filename](/wiki/Another_article/en.md).")
-        assert link
-        error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
-        )
-        assert isinstance(error, error_types.MalformedLinkError)
-
-    @pytest.mark.parametrize(
-        "payload",
-        [
-            {"link": "/wiki//Article"},
-            {"link": "/wiki///Article"},
-            {"link": "/wiki////Article"},
-        ]
-    )
-    def test__invalid_link_with_extra_slashes(self, root, payload):
-        utils.create_files(
-            root,
-            ('wiki/Article/en.md', '# Article')
-        )
-
-        link = link_parser.find_link(f"This link [shouldn't include consecutive slashes]({payload["link"]})")
-        assert link
-        error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
-        )
-        assert isinstance(error, error_types.MalformedLinkError)
-
-    @pytest.mark.parametrize(
-        "payload",
-        [
-            {"link": r"img\image.png"},
-            {"link": r"\wiki\Article"},
-            {"link": r"\wiki\\\Article"},
-            {"link": r"\wiki\\\\Article"},
-        ]
-    )
-    def test__invalid_link_with_backslashes(self, root, payload):
-        utils.create_files(
-            root,
-            ('wiki/Article/en.md', '# Article')
-        )
-
-        link = link_parser.find_link(f"This link [shouldn't include backslashes]({payload["link"]})")
-        assert link
-        error = link_checker.check_link(
-            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
-        )
-        assert isinstance(error, error_types.MalformedLinkError)
-
     def test__valid_reference(self, root):
         utils.create_files(
             root,
@@ -422,30 +366,6 @@ class TestNewspostLinks:
         assert error
         assert isinstance(error, error_types.LinkNotFoundError)
 
-    def test__invalid_relative_newspost_link(self, root):
-        path = 'news/2007/2007-01-01-newspost.md'
-        utils.create_files(
-            root,
-            (
-                path, textwrap.dedent('''
-                    ---
-                    layout: post
-                    title: News!!!
-                    date: 2007-01-01 12:00:00 +0000
-                    ---
-
-                    Today we have big news!!!!
-                ''').strip()
-            ),
-        )
-        link = link_parser.find_link('Please read the [forum post](PLACEHOLDER).')
-        assert link
-        error = link_checker.check_link(
-            article=article_parser.parse(path), link=link, redirects={}, references={}, all_articles={}
-        )
-        assert error
-        assert isinstance(error, error_types.MalformedLinkError)
-
 
 class TestNewspostSectionLinks:
     @pytest.mark.parametrize(
@@ -685,6 +605,113 @@ class TestMalformedLink:
         )
         assert isinstance(error, error_types.MalformedLinkError)
         assert error.link.raw_location == '//example.com'
+
+    def test__wiki_link_with_filename(self, root):
+        utils.create_files(
+            root,
+            ('wiki/Another_article/en.md', '# Another article')
+        )
+
+        link = link_parser.find_link("This link [shouldn't include the filename](/wiki/Another_article/en.md).")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "/wiki//Article"},
+            {"link": "/wiki///Article"},
+            {"link": "/wiki////Article"},
+        ]
+    )
+    def test__link_with_extra_slashes(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Article/en.md', '# Article')
+        )
+
+        link = link_parser.find_link(f"This link [shouldn't include consecutive slashes]({payload["link"]})")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": r"img\image.png"},
+            {"link": r"\wiki\Article"},
+            {"link": r"\wiki\\\Article"},
+            {"link": r"\wiki\\\\Article"},
+        ]
+    )
+    def test__link_with_backslashes(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Article/en.md', '# Article')
+        )
+
+        link = link_parser.find_link(f"This link [shouldn't include backslashes]({payload["link"]})")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": ""},
+            {"link": " /wiki/Article"},
+            {"link": "  /wiki/Article"},
+            {"link": " /wiki/Article "},
+            {"link": "/wiki/Article "},
+            {"link": "\t/wiki/Article"},
+            {"link": "\t/wiki/Article\t"},
+            {"link": "/wiki/Article\t"},
+            {"link": " https://github.com/ppy/osu-wiki/tree/master/news"}
+        ]
+    )
+    def test__link_with_whitespace(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Article/en.md', '# Article')
+        )
+
+        link = link_parser.find_link(f"This link [shouldn't contain surrounding whitespace]({payload["link"]})")
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.MalformedLinkError)
+
+    def test__relative_newspost_link(self, root):
+        path = 'news/2007/2007-01-01-newspost.md'
+        utils.create_files(
+            root,
+            (
+                path, textwrap.dedent('''
+                    ---
+                    layout: post
+                    title: News!!!
+                    date: 2007-01-01 12:00:00 +0000
+                    ---
+
+                    Today we have big news!!!!
+                ''').strip()
+            ),
+        )
+        link = link_parser.find_link('Please read the [forum post](PLACEHOLDER).')
+        assert link
+        error = link_checker.check_link(
+            article=article_parser.parse(path), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert error
+        assert isinstance(error, error_types.MalformedLinkError)
 
 
 class TestSectionLinks:
