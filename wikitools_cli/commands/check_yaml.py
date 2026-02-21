@@ -9,6 +9,8 @@ import yamllint.cli  # type: ignore
 import yamllint.config  # type: ignore
 import yamllint.linter  # type: ignore
 import yamllint.rules  # type: ignore
+from yamllint.linter import PROBLEM_LEVELS
+from yamllint.linter import LintProblem
 
 from wikitools import console
 from wikitools import yaml_rules
@@ -17,6 +19,26 @@ FRONT_MATTER_DELIMITER = "---"
 MARKDOWN_EXTENSION = ".md"
 
 DEFAULT_CONFIG_CONTENT = 'extends: default'
+
+
+def rewrite_problem(problem: LintProblem, path: str) -> LintProblem:
+    """
+    Rewrites a yamllint error to be less confusing and more consistent with other osu-wiki-tools errors
+    """
+
+    # yamllint: yamllint/linter.py:180
+    if problem.desc.startswith("syntax error: ") and problem.desc.endswith(" (syntax)"):
+        problem.desc = problem.desc[14:-9]
+        problem.rule = "syntax"
+
+        # pyyaml: lib/yaml/scanner.py
+        if problem.desc == "could not find expected ':'" and path == "wiki/redirect.yaml":
+            problem.desc += " between redirect and its destination"
+
+    if not problem.rule:
+        problem.rule = "unknown"
+
+    return problem
 
 
 def install_custom_checks(config: yamllint.config.YamlLintConfig):
@@ -91,6 +113,10 @@ def main(*args):
     install_custom_checks(config)
 
     max_level = 0
+
+    warnings = []
+    errors = []
+
     for path in file_iterator(args.target, config):
         try:
             path = path[2:] if path.startswith('./') else path
@@ -99,10 +125,31 @@ def main(*args):
         except EnvironmentError as e:
             print(e, file=sys.stderr)
             sys.exit(-1)
-        current_level = yamllint.cli.show_problems(problems, path, args_format=args.format, no_warn=False)
-        max_level = max(max_level, current_level)
 
-    if max_level == yamllint.linter.PROBLEM_LEVELS["error"]:
+        # current_level = yamllint.cli.show_problems(problems, path, args_format=args.format, no_warn=False)
+
+        for problem in problems:
+            max_level = max(max_level, PROBLEM_LEVELS[problem.level])
+            if problem.level == "error":
+                errors.append((path, problem))
+            elif problem.level == "warning":
+                warnings.append((path, problem))
+
+    match args.format:
+        case "github":
+            for path, error in errors:
+                error = rewrite_problem(error, path)
+                print("::error file={},line={},col={},title={}::{}".format(
+                    path,
+                    error.line,
+                    error.column,
+                    "yamllint:" + error.rule,
+                    error.desc,
+                ))
+        case _:
+            raise NotImplementedError
+
+    if max_level == PROBLEM_LEVELS["error"]:
         sys.exit(1)
 
     print(f"{console.grey('Notice:')} No errors in YAML files detected.")

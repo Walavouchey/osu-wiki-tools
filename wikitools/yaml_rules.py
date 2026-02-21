@@ -130,7 +130,7 @@ class NestedStructureRule(_FrontMatterRule):
         ):
             return self._make_problem(
                 next_token,
-                "bad front matter: lists or dictionaries cannot contain other similarly complex objects"
+                "lists or dictionaries must not contain other similarly complex objects"
             )
 
 
@@ -142,7 +142,7 @@ class TopLevelRule(_FrontMatterRule):
         next_token: yaml.Token, next_next_token: yaml.Token
     ):
         if self._is_start_of_sequence(token) and len(state) == 0:
-            return self._make_problem(next_token, "bad front matter: the top level must be a dictionary, not a list")
+            return self._make_problem(next_token, "the top level of front matter must be a dictionary, not a list")
 
 
 class AllowedTagsRule(_FrontMatterRule):
@@ -155,7 +155,7 @@ class AllowedTagsRule(_FrontMatterRule):
         if self._is_mapping_key(prev_token, token, next_token):
             value = token.value  # type: ignore
             if value not in ALLOWED_FRONT_MATTER_TAGS:
-                return self._make_problem(token, f"bad front matter: {value!r} is not in the list of allowed tags")
+                return self._make_problem(token, f"{value!r} is not in the list of allowed tags")
 
 
 OSU_WIKI_RULES: typing.List[typing.Type[_FrontMatterRule]] = [
