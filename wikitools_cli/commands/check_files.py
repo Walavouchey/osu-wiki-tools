@@ -54,7 +54,7 @@ def errors_json(errors: typing.List[error_types.FileError]) -> str:
         [
             {
                 "path": error.path.as_posix(),
-                "type": type(error).__name__,
+                "type": "file-checker:" + error.id,
                 "text": repr(error),
             }
             for error in errors
@@ -117,7 +117,7 @@ def main(*args):
         case "github":
             print("::group::Annotations")
             for error in all_errors[:10]:
-                print(f"::error file={error.file},title={type(error).__name__}::{repr(error)}")
+                print(f"::error file={error.file},title={"file-checker:" + error.id}::{repr(error)}")
             print("::endgroup::\n")
 
             for error in all_errors:
