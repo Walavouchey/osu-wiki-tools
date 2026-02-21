@@ -127,6 +127,8 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     location = -1
     extra = None
 
+    in_leading_whitespace = True
+
     bracket_depth = 0
     paren_depth = 0
 
@@ -188,9 +190,10 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
             continue
 
         if state == _STATE_INLINE:
-            if c == ' ':
-                if extra is None:
-                    extra = i
+            if c == ' ' and not in_leading_whitespace and extra is None:
+                extra = i
+            elif c != ' ' and in_leading_whitespace and paren_depth > 0:
+                in_leading_whitespace = False
 
             if c == '(':
                 paren_depth += 1
@@ -204,7 +207,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
                 raw_location = s[location: extra]
                 return Link(
                     raw_location=raw_location,
-                    parsed_location=_urlparse(raw_location),
+                    parsed_location=_urlparse(raw_location.strip()),
                     alt_text=s[start + 1: location - 2],
                     title=s[extra: i],
                     start=start,
