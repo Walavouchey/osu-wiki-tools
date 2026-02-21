@@ -6,11 +6,13 @@ from wikitools import console, link_parser, reference_parser
 
 
 class LinkError:
-    _colourise_fragment_only: bool = False
-    link: link_parser.Link
     """
     Base class for errors specific to links
     """
+
+    _colourise_fragment_only: bool = False
+    link: link_parser.Link
+    id: str
 
     def pretty(self):
         return f'{console.blue("Note:")} ' + repr(self).replace("\n", "\n      ")
@@ -18,7 +20,7 @@ class LinkError:
     def pretty_location(self, article_path, lineno):
         return "{}: {}".format(
             console.yellow(":".join((article_path, str(lineno), str(self.pos)))),
-            self.link.colourise_location(fragment_only=self._colourise_fragment_only)
+            self.id,
         )
 
     @property
@@ -38,6 +40,7 @@ class MalformedLinkError(
     An error indicating an erroneous link (for example, with several leading slashes, or including the wiki article file name).
     """
 
+    id = "malformed-link"
     link: link_parser.Link
     reason: str
 
@@ -53,6 +56,7 @@ class BrokenLinkError(
     An error indicating a plain broken link: a text or binary file does not exist, and there is no redirect for it.
     """
 
+    id = "broken-link"
     link: link_parser.Link
     reference: typing.Optional[reference_parser.Reference]
     resolved_location: str
@@ -74,6 +78,7 @@ class BrokenRedirectError(
     An error indicating broken redirect: the redirect either points to a non-existent article, or another redirect (which is not allowed).
     """
 
+    id = "broken-redirect"
     link: link_parser.Link
     resolved_location: str
     redirect_lineno: int
@@ -99,6 +104,7 @@ class MissingReferenceError(
     [link][link_ref] exists, but [link_ref]: /wiki/Path/To/Article does not.
     """
 
+    id = "missing-reference"
     link: link_parser.Link
 
     def __repr__(self):
@@ -114,6 +120,7 @@ class MissingIdentifierError(
     that would produce #such-reference.
     """
 
+    id = "missing-identifier"
     _colourise_fragment_only = True
 
     link: link_parser.Link
@@ -148,6 +155,7 @@ class BrokenRedirectIdentifierError(
     that would produce such #identifier
     """
 
+    id = "broken-redirect-identifier"
     link: link_parser.Link
     resolved_location: str
     redirect_lineno: int
@@ -178,6 +186,8 @@ class FileError():
     Base class for errors specific to files and folder structure
     """
 
+    id: str
+
     def pretty(self):
         return f'{console.blue("Note:")} ' + repr(self).replace("\n", "\n      ")
 
@@ -200,6 +210,8 @@ class MissingEnglishVersionError(
     """
     An error indicating that the `en.md` file is missing in a wiki folder with other markdown files
     """
+
+    id = "missing-english-version"
 
     # for now this spits errors per file, with the idea of using github annotations
     # (which can't be folder-specific afaik)
