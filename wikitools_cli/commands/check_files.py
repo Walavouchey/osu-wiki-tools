@@ -38,11 +38,22 @@ def check_missing_english_version(file_path: Path) -> typing.Optional[error_type
     return None
 
 
+def files_deduplicated(file_paths: typing.List[Path]) -> typing.List[Path]:
+    seen = set()
+    deduplicated = []
+    for file in sorted(file_paths):
+        dir = file.parent
+        if dir not in seen:
+            deduplicated.append(file)
+            seen.add(dir)
+    return deduplicated
+
+
 def errors_json(errors: typing.List[error_types.FileError]) -> str:
     return json.dumps(
         [
             {
-                "path": error.path,
+                "path": error.path.as_posix(),
                 "type": type(error).__name__,
                 "text": repr(error),
             }
@@ -69,7 +80,6 @@ def main(*args):
     if args.root:
         changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change  # noqa: F841
 
-    filenames = []
     if args.all:
         filenames = file_utils.list_all_articles()
     else:
@@ -80,7 +90,7 @@ def main(*args):
     file_count = 0
     all_errors = []
 
-    for filename in filenames:
+    for filename in files_deduplicated([Path(f) for f in filenames]):
         file_count += 1
 
         error = check_missing_english_version(filename)
@@ -106,8 +116,8 @@ def main(*args):
 
         case "github":
             print("::group::Annotations")
-            for article, lineno, column, error in all_errors[:10]:
-                print(f"::error file={error.path},title={type(error).__name__}::{repr(error)}")
+            for error in all_errors[:10]:
+                print(f"::error file={error.file},title={type(error).__name__}::{repr(error)}")
             print("::endgroup::\n")
 
             for error in all_errors:
