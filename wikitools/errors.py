@@ -42,7 +42,7 @@ class MalformedLinkError(
     reason: str
 
     def __repr__(self):
-        return f'"{self.link.raw_location}": {self.reason}'
+        return f'{self.link.truncated_coloured_link}: {self.reason}'
 
 
 class BrokenLinkError(
@@ -58,7 +58,8 @@ class BrokenLinkError(
     resolved_location: str
 
     def __repr__(self):
-        return '"{}" doesn\'t exist {}'.format(
+        return '{}: "{}" doesn\'t exist {}'.format(
+            self.link.truncated_coloured_link,
             self.resolved_location,
             f"(reference at line {self.reference.lineno})"
             if self.reference else ''
@@ -81,7 +82,8 @@ class BrokenRedirectError(
     _colourise_fragment_only_in_redirect: bool = False
 
     def __repr__(self):
-        return 'Broken redirect (redirect.yaml:{}: {} --> {})'.format(
+        return '{}: Broken redirect (redirect.yaml:{}: {} --> {})'.format(
+            self.link.truncated_coloured_link,
             self.redirect_lineno,
             self.resolved_location.lower(),
             link_parser.Link.colourise_location_static(*self.redirect_destination.split("#"), fragment_only=self._colourise_fragment_only_in_redirect)
@@ -100,7 +102,7 @@ class MissingReferenceError(
     link: link_parser.Link
 
     def __repr__(self):
-        return f'No corresponding reference found for "{self.link.raw_location}"'
+        return f'{self.link.truncated_coloured_link}: No corresponding reference found for "{self.link.raw_location}"'
 
 
 class MissingIdentifierError(
@@ -122,7 +124,8 @@ class MissingIdentifierError(
     translation_outdated: bool
 
     def __repr__(self):
-        return 'There is no heading or tag with identifier "{}" in "{}"{}'.format(
+        return '{}: There is no heading or tag with identifier "{}" in "{}"{}'.format(
+            self.link.truncated_coloured_link_fragment,
             self.identifier, self.path,
             ' (no translation available)' if self.no_translation_available
             else ' (outdated translation)' if self.translation_outdated
@@ -158,7 +161,8 @@ class BrokenRedirectIdentifierError(
     _colourise_fragment_only_in_redirect: bool = True
 
     def __repr__(self):
-        return 'Broken redirect identifier (redirect.yaml:{}: {} --> {}), no heading or tag with identifier "{}" in "{}"{}'.format(
+        return '{}: Broken redirect identifier (redirect.yaml:{}: {} --> {}), no heading or tag with identifier "{}" in "{}"{}'.format(
+            self.link.truncated_coloured_link,
             self.redirect_lineno,
             self.resolved_location.lower(),
             link_parser.Link.colourise_location_static(*self.redirect_destination.split("#"), fragment_only=self._colourise_fragment_only_in_redirect),
@@ -202,7 +206,7 @@ class MissingEnglishVersionError(
     _file: Path
 
     def __repr__(self):
-        return f"\"{self.file}\": missing en.md file in article folder"
+        return f"{self.file}: missing en.md file in article folder"
 
     def pretty_location(self):
         return console.yellow(self.file)

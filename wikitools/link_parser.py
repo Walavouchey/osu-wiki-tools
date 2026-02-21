@@ -1,6 +1,7 @@
 import typing
 from functools import lru_cache
 from urllib import parse
+import textwrap
 
 from wikitools import console, reference_parser
 
@@ -12,6 +13,10 @@ _STATE_IDLE = 0  # IDLE: jump to next '[' using optimized str.find
 _STATE_START = 1  # START: tracking bracket depth inline
 _STATE_INLINE = 2  # INLINE: tracking paren depth inline
 _STATE_REFERENCE = 3  # REFERENCE: tracking bracket depth inline
+
+
+def _shorten(s):
+    return textwrap.shorten(s, 20, placeholder="...")
 
 
 class Link(typing.NamedTuple):
@@ -63,6 +68,26 @@ class Link(typing.NamedTuple):
             return f"[{self.alt_text}][{self.content}]"
         else:
             return f"[{self.alt_text}]({self.content})"
+
+    @property
+    def truncated_coloured_link(self, fragment_only=False):
+        return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+            alt_text_in_braces=console.green(f"[{_shorten(self.alt_text)}]"),
+            left_brace=console.green('[') if self.is_reference else console.green('('),
+            location=self.colourise_location(),
+            extra=" " + console.blue("\"...\"") if self.title else "",
+            right_brace=console.green(']') if self.is_reference else console.green(')'),
+        )
+
+    @property
+    def truncated_coloured_link_fragment(self, fragment_only=False):
+        return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+            alt_text_in_braces=console.green(f"[{_shorten(self.alt_text)}]"),
+            left_brace=console.green('[') if self.is_reference else console.green('('),
+            location=self.colourise_location(fragment_only=True),
+            extra=" " + console.blue("\"...\"") if self.title else "",
+            right_brace=console.green(']') if self.is_reference else console.green(')'),
+        )
 
     @property
     def fragment_start(self):
