@@ -50,6 +50,12 @@ def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
 
 
 def print_errors(article: article_parser.Article, errors: typing.Dict[int, typing.List[error_types.LinkError]], separate: bool, articles: typing.Dict[str, article_parser.Article]):
+    if separate:
+        for lineno, errors_on_line in sorted(errors.items()):
+            for error in errors_on_line:
+                print_errors(article, {lineno: [error]}, False, articles)
+        return
+
     for lineno, errors_on_line in sorted(errors.items()):
         for error in errors_on_line:
             print(error.pretty_location(article.path, lineno))
@@ -67,11 +73,7 @@ def print_errors(article: article_parser.Article, errors: typing.Dict[int, typin
                     )
 
         print()
-        if separate:
-            for error in errors_on_line:
-                print(highlight_links(article.lines[lineno].raw_line, [error]), end="\n\n")
-        else:
-            print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
+        print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
 
 
 ErrorList = typing.List[typing.Tuple[article_parser.Article, typing.Dict[int, typing.List[error_types.LinkError]]]]
