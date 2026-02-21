@@ -176,6 +176,10 @@ class FileError():
     def path(self):
         raise NotImplementedError()
 
+    @property
+    def dir(self):
+        raise NotImplementedError()
+
 
 class MissingEnglishVersionError(
     FileError,
@@ -187,10 +191,10 @@ class MissingEnglishVersionError(
 
     # for now this spits errors per file, with the idea of using github annotations
     # (which can't be folder-specific afaik)
-    file: Path
+    _file: Path
 
     def __repr__(self):
-        return f"\"{self.file}\" is missing a corresponding en.md file in the same folder"
+        return f"\"{self.file}\": missing en.md file in article folder"
 
     def pretty_location(self):
         return console.yellow(self.file)
@@ -198,3 +202,7 @@ class MissingEnglishVersionError(
     @property
     def path(self):
         return self.file
+
+    @property
+    def dir(self):
+        return self.file.parent
