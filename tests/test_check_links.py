@@ -1,10 +1,20 @@
 import tests.utils as utils
 
+import pytest
+
 from wikitools_cli.commands import check_links as link_checker
 
 
 class TestCheckLinks:
-    def test__check_links_all_valid(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_links_all_valid(self, root, format):
         article_paths = [
             'wiki/redirect.yaml',
             'wiki/Article/en.md',
@@ -19,10 +29,18 @@ class TestCheckLinks:
 
         utils.create_files(root, *((path, '[good link](/wiki/Article)') for path in article_paths))
 
-        exit_code = link_checker.main("--all")
+        exit_code = link_checker.main("--all", "--format", format)
         assert exit_code == 0
 
-    def test__check_links_all_invalid(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_links_all_invalid(self, root, format):
         article_paths = [
             'wiki/redirect.yaml',
             'wiki/Article/en.md',
@@ -37,10 +55,18 @@ class TestCheckLinks:
 
         utils.create_files(root, *((path, '[bad link](/wiki/Not_an_article)') for path in article_paths))
 
-        exit_code = link_checker.main("--all")
+        exit_code = link_checker.main("--all", "--format", format)
         assert exit_code == 1
 
-    def test__check_links_all_valid_with_changed_root(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_links_all_valid_with_changed_root(self, root, format):
         article_paths = [
             'root/wiki/redirect.yaml',
             'root/wiki/Article/en.md',
@@ -55,10 +81,18 @@ class TestCheckLinks:
 
         utils.create_files(root, *((path, '[good link](/wiki/Article)') for path in article_paths))
 
-        exit_code = link_checker.main("--all", "--root", "root")
+        exit_code = link_checker.main("--all", "--root", "root", "--format", format)
         assert exit_code == 0
 
-    def test__check_links_all_invalid_with_changed_root(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_links_all_invalid_with_changed_root(self, root, format):
         article_paths = [
             'root/wiki/redirect.yaml',
             'root/wiki/Article/en.md',
@@ -73,7 +107,7 @@ class TestCheckLinks:
 
         utils.create_files(root, *((path, '[bad link](/wiki/Not_an_article)') for path in article_paths))
 
-        exit_code = link_checker.main("--all", "--root", "root")
+        exit_code = link_checker.main("--all", "--root", "root", "--format", format)
         assert exit_code == 1
 
     def test__check_specific_target_all_invalid(self, root):
@@ -90,7 +124,15 @@ class TestCheckLinks:
             exit_code = link_checker.main("--target", article)
             assert exit_code == 1
 
-    def test__check_specific_target_all_valid(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_specific_target_all_valid(self, root, format):
         article_paths = [
             'wiki/redirect.yaml',
             'wiki/Article/en.md',
@@ -101,5 +143,5 @@ class TestCheckLinks:
 
         for article in article_paths[1:]:
             print(article)
-            exit_code = link_checker.main("--target", article)
+            exit_code = link_checker.main("--target", article, "--format", format)
             assert exit_code == 0
