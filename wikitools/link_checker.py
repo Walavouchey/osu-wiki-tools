@@ -256,13 +256,15 @@ def check_link(
                 return errors.MissingIdentifierError(link, raw_path, repo_path.fragment, False, False)
         case PathType.WIKI:
             # directory -> need to find the target article; it could be a translation
-            # XXX(TicClick): this part assumes there is always an English version of the article in a folder
             target_file = target_path / article.filename
             translation = target_file  # verified to be the case later
             no_translation_available = article.filename != 'en.md' and not target_file.is_file()
 
             if no_translation_available:
                 target_file = target_path / 'en.md'
+
+            if not exists(target_file):
+                return errors.LinkNotFoundError(link, reference, target_file.as_posix())
 
             raw_path = target_file.as_posix()
             if raw_path not in all_articles:
