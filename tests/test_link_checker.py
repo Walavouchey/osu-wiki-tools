@@ -317,28 +317,38 @@ class TestRedirectedLinks:
         )
         assert error is None
 
-    def test__invalid_link(self, root):
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "/wiki/Old_link", "location": "Old_link", "destination": "Wrong_redirect", "lineno": 2},
+            {"link": "/wiki/osu!", "location": "osu!", "destination": "Disambiguation/osu!", "lineno": 3},
+            {"link": "/wiki/osu!:rules", "location": "osu!:rules", "destination": "Rules", "lineno": 4},
+        ]
+    )
+    def test__invalid_link(self, root, payload):
         utils.create_files(
             root,
             (
                 'wiki/redirect.yaml', textwrap.dedent('''
                     # junk comment to fill the lines
                     "old_link": "Wrong_redirect"
+                    "osu!": "Disambiguation/osu!"
+                    "osu!:rules": "Rules"
                 ''').strip()
             ),
             ('wiki/New_article/en.md', '# New article'),
         )
 
         redirects = redirect_parser.load_redirects('wiki/redirect.yaml')
-        link = link_parser.find_link('Please read the [old article](/wiki/Old_link).')
+        link = link_parser.find_link(f'Please read the [old article]({payload["link"]}).')
         assert link
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
         )
         assert isinstance(error, error_types.BrokenRedirectError)
-        assert error.redirect_lineno == 2
-        assert error.resolved_location == 'Old_link'
-        assert error.redirect_destination == 'Wrong_redirect'
+        assert error.redirect_lineno == payload["lineno"]
+        assert error.resolved_location == payload["location"]
+        assert error.redirect_destination == payload["destination"]
 
 
 class TestNewspostLinks:
