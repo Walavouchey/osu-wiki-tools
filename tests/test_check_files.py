@@ -1,10 +1,20 @@
 import tests.utils as utils
 
+import pytest
+
 from wikitools_cli.commands import check_files as file_checker
 
 
 class TestCheckFiles:
-    def test__check_files_all_valid(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_files_all_valid(self, root, format):
         article_paths = [
             'wiki/redirect.yaml',
             'wiki/Article/en.md',
@@ -19,15 +29,23 @@ class TestCheckFiles:
 
         utils.create_files(root, *((path, '') for path in article_paths))
 
-        exit_code = file_checker.main("--all")
+        exit_code = file_checker.main("--all", "--format", format)
         assert exit_code == 0
 
-    def test__check_files_missing_english_version(self, root):
+    @pytest.mark.parametrize(
+        "format",
+        [
+            "regular",
+            "json",
+            "github",
+        ]
+    )
+    def test__check_files_missing_english_version(self, root, format):
         article_paths = [
             'wiki/Article/pt-br.md',
         ]
 
         utils.create_files(root, *((path, '') for path in article_paths))
 
-        exit_code = file_checker.main("--all")
+        exit_code = file_checker.main("--all", "--format", format)
         assert exit_code == 1
