@@ -158,7 +158,15 @@ class BrokenRedirectIdentifierError(
     _colourise_fragment_only_in_redirect: bool = True
 
     def __repr__(self):
-        return BrokenRedirectError.__repr__(self) + "\n" + MissingIdentifierError.__repr__(self)
+        return 'Broken redirect identifier (redirect.yaml:{}: {} --> {}), no heading or tag with identifier "{}" in "{}"{}'.format(
+            self.redirect_lineno,
+            self.resolved_location.lower(),
+            link_parser.Link.colourise_location_static(*self.redirect_destination.split("#"), fragment_only=self._colourise_fragment_only_in_redirect),
+            self.identifier, self.path,
+            ' (no translation available)' if self.no_translation_available
+            else ' (outdated translation)' if self.translation_outdated
+            else ''
+        )
 
 
 class FileError():
