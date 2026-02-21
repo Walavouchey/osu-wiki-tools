@@ -18,7 +18,7 @@ def load_redirects(path: str) -> Redirects:
     redirects = {}
     with open(path, 'r', encoding='utf-8') as fd:
         for line_number, line in enumerate(fd, start=1):
-            split = line.split(':')
+            split = line.rsplit(':', 1)
             try:
                 redirects[unquote_and_trim(split[0])] = (unquote_and_trim(split[1]), line_number)
             except IndexError:

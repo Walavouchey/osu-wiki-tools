@@ -17,6 +17,8 @@ class TestRedirectParser:
             unquoted_key1:  unquoted/value1
             "quoted_key": unquoted/value2
             unquoted_key2:    "quoted/value"
+            osu!:    "Disambiguation/osu!"
+            osu!:rules:    "Rules"
         ''').strip())
 
         redirects = redirect_parser.load_redirects(str(path))
@@ -28,4 +30,6 @@ class TestRedirectParser:
             'unquoted_key1':  ('unquoted/value1', 8),
             'quoted_key':  ('unquoted/value2', 9),
             'unquoted_key2':  ('quoted/value', 10),
+            'osu!':  ('Disambiguation/osu!', 11),
+            'osu!:rules':  ('Rules', 12),
         }
