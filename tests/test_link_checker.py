@@ -41,7 +41,7 @@ class TestArticleLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.LinkNotFoundError)
+            assert isinstance(error, error_types.BrokenLinkError)
         else:
             assert error is None
 
@@ -71,7 +71,7 @@ class TestArticleLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.LinkNotFoundError)
+            assert isinstance(error, error_types.BrokenLinkError)
         else:
             assert error is None
 
@@ -101,7 +101,7 @@ class TestArticleLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.LinkNotFoundError)
+            assert isinstance(error, error_types.BrokenLinkError)
         else:
             assert error is None
 
@@ -120,7 +120,7 @@ class TestArticleLinks:
             error = link_checker.check_link(
                 article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
             )
-            assert isinstance(error, error_types.LinkNotFoundError)
+            assert isinstance(error, error_types.BrokenLinkError)
 
     def test__valid_reference(self, root):
         utils.create_files(
@@ -183,7 +183,7 @@ class TestArticleLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Existing_article/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
 
     @pytest.mark.parametrize(
         "article",
@@ -204,7 +204,7 @@ class TestArticleLinks:
         error = link_checker.check_link(
             article=dummy_article(article), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
 
 
 class TestImageLinks:
@@ -234,7 +234,7 @@ class TestImageLinks:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
 
     def test__valid_relative_link(self, root):
         utils.create_files(
@@ -277,7 +277,7 @@ class TestImageLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Difficulty/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
 
     def test__invalid_reference_link(self, root):
         utils.create_files(
@@ -292,7 +292,7 @@ class TestImageLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/OWC_2030/en.md'), link=link, redirects={}, references=references, all_articles={}
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
         assert isinstance(error.link, link_parser.Link)
         assert error.link.is_reference
         assert error.link.raw_location == 'flag_XX'
@@ -385,7 +385,7 @@ class TestNewspostLinks:
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
         assert error
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
 
 
 class TestNewspostSectionLinks:
@@ -413,7 +413,7 @@ class TestNewspostSectionLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.LinkNotFoundError)
+            assert isinstance(error, error_types.BrokenLinkError)
         else:
             assert error is None
 
@@ -557,12 +557,12 @@ class TestGitHubLinks:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}, case_sensitive=False
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
         assert error.resolved_location == payload["resolved_location"]
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}, case_sensitive=True
         )
-        assert isinstance(error, error_types.LinkNotFoundError)
+        assert isinstance(error, error_types.BrokenLinkError)
         assert error.resolved_location == payload["resolved_location"]
 
     @pytest.mark.parametrize(
@@ -1106,13 +1106,13 @@ class TestArticleChecker:
 
         broken_link_error = flattened_errors[0][1]
         broken_link = flattened_errors[0][1].link
-        assert isinstance(broken_link_error, error_types.LinkNotFoundError)
+        assert isinstance(broken_link_error, error_types.BrokenLinkError)
         assert broken_link_error.resolved_location == 'wiki/Broken_link'
         assert (flattened_errors[0][0], broken_link.start) == (7, 0)
 
         broken_rel_link_error = flattened_errors[1][1]
         broken_rel_link = flattened_errors[1][1].link
-        assert isinstance(broken_rel_link_error, error_types.LinkNotFoundError)
+        assert isinstance(broken_rel_link_error, error_types.BrokenLinkError)
         assert broken_rel_link_error.resolved_location == 'wiki/Article/Bad_relative_link'
         assert (flattened_errors[1][0], broken_rel_link.start) == (9, 14)
 
@@ -1130,7 +1130,7 @@ class TestArticleChecker:
 
         broken_image_error = flattened_errors[4][1]
         broken_image = flattened_errors[4][1].link
-        assert isinstance(broken_image_error, error_types.LinkNotFoundError)
+        assert isinstance(broken_image_error, error_types.BrokenLinkError)
         assert broken_image_error.resolved_location == 'wiki/Article/img/you_tried.jpeg'
         assert (flattened_errors[4][0], broken_image.start) == (12, 10)
 

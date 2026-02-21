@@ -147,7 +147,7 @@ def resolve_redirect(
     try:
         redirect_destination, redirect_line_no = redirects[redirect_source.lower()]
     except KeyError:
-        return errors.LinkNotFoundError(link, reference, repo_path.path.as_posix())
+        return errors.BrokenLinkError(link, reference, repo_path.path.as_posix())
 
     split = redirect_destination.split('#')
     path = pathlib.Path('wiki') / split[0]
@@ -209,7 +209,7 @@ def check_link(
         # if the article doesn't exist, check if it has a redirect
         if repo_path.path_type == PathType.NEWS or repo_path.path_type == PathType.GITHUB:
             # except news and github links don't support redirects
-            return errors.LinkNotFoundError(link, reference, repo_path.path.as_posix())
+            return errors.BrokenLinkError(link, reference, repo_path.path.as_posix())
 
         redirect_result = resolve_redirect(repo_path, link, reference, redirects, exists)
         if isinstance(redirect_result, errors.LinkError):
@@ -264,7 +264,7 @@ def check_link(
                 target_file = target_path / 'en.md'
 
             if not exists(target_file):
-                return errors.LinkNotFoundError(link, reference, target_file.as_posix())
+                return errors.BrokenLinkError(link, reference, target_file.as_posix())
 
             raw_path = target_file.as_posix()
             if raw_path not in all_articles:

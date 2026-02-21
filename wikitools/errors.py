@@ -45,12 +45,12 @@ class MalformedLinkError(
         return f'"{self.link.raw_location}": {self.reason}'
 
 
-class LinkNotFoundError(
+class BrokenLinkError(
     LinkError,
-    collections.namedtuple('LinkNotFound', 'link reference resolved_location')
+    collections.namedtuple('BrokenLink', 'link reference resolved_location')
 ):
     """
-    An error indicating a missing link: a text or binary file does not exist, and there is no redirect for it.
+    An error indicating a plain broken link: a text or binary file does not exist, and there is no redirect for it.
     """
 
     link: link_parser.Link
