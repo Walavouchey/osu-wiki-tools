@@ -4,6 +4,7 @@ import argparse
 import sys
 import typing
 import json
+import Levenshtein
 
 from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
@@ -49,21 +50,26 @@ def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
     return highlighted_line
 
 
-def print_errors(article: article_parser.Article, errors: typing.Dict[int, typing.List[error_types.LinkError]], separate: bool):
+def print_errors(article: article_parser.Article, errors: typing.Dict[int, typing.List[error_types.LinkError]], separate: bool, articles: typing.Dict[str, article_parser.Article]):
     for lineno, errors_on_line in sorted(errors.items()):
-        for e in errors_on_line:
-            print(e.pretty_location(article.path, lineno))
-        for e in errors_on_line:
-            print(e.pretty())
-            if isinstance(e, error_types.MissingIdentifierError) or isinstance(e, error_types.BrokenRedirectIdentifierError):
-                suggestions = identifier_suggestions(e, article)
+        for error in errors_on_line:
+            print(error.pretty_location(article.path, lineno))
+        for error in errors_on_line:
+            print(error.pretty() + filtered_identifier_suggestions(error, articles))
+            if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
+                suggestions = identifier_suggestions(error, articles)
                 if suggestions:
-                    print('{}\n\t{}'.format(console.blue('Suggestions:'), suggestions))
-
+                    print(
+                        console.blue("Possible values:") + "\n\t"
+                        + "\n\t".join((
+                            f"line {suggestion["lineno"]}: {suggestion["identifier"]}"
+                            for suggestion in suggestions
+                        ))
+                    )
         print()
         if separate:
-            for e in errors_on_line:
-                print(highlight_links(article.lines[lineno].raw_line, [e]), end="\n\n")
+            for error in errors_on_line:
+                print(highlight_links(article.lines[lineno].raw_line, [error]), end="\n\n")
         else:
             print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
 
@@ -81,7 +87,7 @@ def errors_flattened(error_list: ErrorList) -> FlatErrorList:
     return flat_error_list
 
 
-def errors_json(error_list: ErrorList, flatten: bool, articles: typing.List[article_parser.Article]) -> str:
+def errors_json(error_list: ErrorList, flatten: bool, articles: typing.Dict[str, article_parser.Article]) -> str:
     if flatten:
         flat_error_list = errors_flattened(error_list)
 
@@ -93,8 +99,8 @@ def errors_json(error_list: ErrorList, flatten: bool, articles: typing.List[arti
                 "column": error.pos,
                 "link": error.link.raw_location,
                 "type": type(error).__name__,
-                "text": repr(error),
-                "identifier_suggestions": identifier_suggestions_json(error, articles),
+                "text": repr(error) + filtered_identifier_suggestions(error, articles),
+                "identifier_suggestions": identifier_suggestions(error, articles),
                 "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
             }
             for article, lineno, column, error in flat_error_list
@@ -111,8 +117,8 @@ def errors_json(error_list: ErrorList, flatten: bool, articles: typing.List[arti
                                 "column": error.pos,
                                 "link": error.link.raw_location,
                                 "type": type(error).__name__,
-                                "text": repr(error),
-                                "identifier_suggestions": identifier_suggestions_json(error, articles),
+                                "text": repr(error) + filtered_identifier_suggestions(error, articles),
+                                "possible_identifiers": identifier_suggestions(error, articles),
                                 "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
                             }
                             for error in errors_on_line
@@ -156,16 +162,26 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def identifier_suggestions(e, articles):
-    return '\n\t'.join((
-        'line {}: {}'.format(lineno, identifier)
-        for identifier, lineno in sorted(
-            articles[e.path].identifiers.items(), key=lambda tuple_: tuple_[1]
-        )
-    ))
+def filtered_identifier_suggestions(error: error_types.LinkError, articles: typing.Dict[str, article_parser.Article]) -> str:
+    if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
+        suggestions = [
+            (identifier, lineno, Levenshtein.ratio(error.identifier, identifier))
+            for identifier, lineno in articles[error.path].identifiers.items()
+        ]
+
+        suggestions = sorted(suggestions, key=lambda x: x[2], reverse=True)[:5]
+
+        if suggestions:
+            return " (did you mean: {})".format(
+                ", ".join((
+                    f"\"{identifier}\" (line {lineno})"
+                    for identifier, lineno, score in suggestions
+                ))
+            )
+    return ""
 
 
-def identifier_suggestions_json(error: error_types.LinkError, articles: typing.List[article_parser.Article]):
+def identifier_suggestions(error: error_types.LinkError, articles: typing.Dict[str, article_parser.Article]):
     if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
         return [
             {
@@ -259,7 +275,7 @@ def main(*args):
             print_header(args.case_sensitive)
 
             for article, errors in all_errors:
-                print_errors(article, errors, args.separate)
+                print_errors(article, errors, args.separate, articles)
 
             print_count(error_count, link_count, error_file_count, file_count)
 
@@ -269,13 +285,20 @@ def main(*args):
         case "github":
             print("::group::Annotations")
             for article, lineno, column, error in errors_flattened(all_errors)[:10]:
-                print(f"::error file={article.path},line={lineno},col={column},title={type(error).__name__}::{repr(error)}")
+                print("::error file={},line={},col={},title={}::{}{}".format(
+                    article.path,
+                    lineno,
+                    column,
+                    type(error).__name__,
+                    repr(error),
+                    filtered_identifier_suggestions(error, articles),
+                ))
             print("::endgroup::\n")
 
             print_header(args.case_sensitive)
 
             for article, errors in all_errors:
-                print_errors(article, errors, args.separate)
+                print_errors(article, errors, args.separate, articles)
 
             print_count(error_count, link_count, error_file_count, file_count)
 
