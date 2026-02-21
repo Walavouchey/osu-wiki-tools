@@ -185,6 +185,27 @@ class TestArticleLinks:
         )
         assert isinstance(error, error_types.LinkNotFoundError)
 
+    @pytest.mark.parametrize(
+        "article",
+        [
+            "wiki/Somewhere_else/en.md",
+            "wiki/Somewhere_else/es.md",
+            "news/2026/2026-01-01-news-post.md",
+        ]
+    )
+    def test__invalid_translation_link(self, root, article):
+        utils.create_files(
+            root,
+            ('wiki/Missing_English/pt-br.md', '# Portuguese article')
+        )
+
+        link = link_parser.find_link('This link [does not work](/wiki/Missing_English#fragment).')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article(article), link=link, redirects={}, references={}, all_articles={}
+        )
+        assert isinstance(error, error_types.LinkNotFoundError)
+
 
 class TestImageLinks:
     def test__valid_absolute_link(self, root):
