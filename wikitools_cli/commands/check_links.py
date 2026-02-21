@@ -81,7 +81,7 @@ def errors_flattened(error_list: ErrorList) -> FlatErrorList:
     return flat_error_list
 
 
-def errors_json(error_list: ErrorList, flatten: bool) -> str:
+def errors_json(error_list: ErrorList, flatten: bool, articles: typing.List[article_parser.Article]) -> str:
     if flatten:
         flat_error_list = errors_flattened(error_list)
 
@@ -94,7 +94,7 @@ def errors_json(error_list: ErrorList, flatten: bool) -> str:
                 "link": error.link.raw_location,
                 "type": type(error).__name__,
                 "text": repr(error),
-                "identifier_suggestions": identifier_suggestions_json(error, article),
+                "identifier_suggestions": identifier_suggestions_json(error, articles),
                 "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
             }
             for article, lineno, column, error in flat_error_list
@@ -112,7 +112,7 @@ def errors_json(error_list: ErrorList, flatten: bool) -> str:
                                 "link": error.link.raw_location,
                                 "type": type(error).__name__,
                                 "text": repr(error),
-                                "identifier_suggestions": identifier_suggestions_json(error, article),
+                                "identifier_suggestions": identifier_suggestions_json(error, articles),
                                 "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
                             }
                             for error in errors_on_line
@@ -165,14 +165,14 @@ def identifier_suggestions(e, articles):
     ))
 
 
-def identifier_suggestions_json(error: error_types.LinkError, article: article_parser.Article):
+def identifier_suggestions_json(error: error_types.LinkError, articles: typing.List[article_parser.Article]):
     if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
         return [
             {
                 "lineno": lineno,
                 "identifier": identifier
             }
-            for identifier, lineno in sorted(article.identifiers.items(), key=lambda tuple_: tuple_[1])
+            for identifier, lineno in sorted(articles[error.path].identifiers.items(), key=lambda tuple_: tuple_[1])
         ]
 
 
@@ -264,7 +264,7 @@ def main(*args):
             print_count(error_count, link_count, error_file_count, file_count)
 
         case "json":
-            print(errors_json(all_errors, args.separate))
+            print(errors_json(all_errors, args.separate, articles))
 
         case "github":
             print("::group::Annotations")
