@@ -4,7 +4,6 @@ import argparse
 import sys
 import typing
 import json
-import Levenshtein
 
 from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
 
@@ -61,17 +60,18 @@ def print_errors(article: article_parser.Article, errors: typing.Dict[int, typin
         for error in errors_on_line:
             print(error.pretty_location(article.path, lineno))
         for error in errors_on_line:
-            print(error.pretty() + filtered_identifier_suggestions(error, articles))
+            print(error.pretty())
             if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
                 suggestions = identifier_suggestions(error, articles)
                 if suggestions:
                     print(
-                        console.blue("Possible values:") + "\n\t"
-                        + "\n\t".join((
+                        console.blue('Possible identifiers:') + "\n\t"
+                        + "\n\t".join(
                             f"line {suggestion["lineno"]}: {suggestion["identifier"]}"
                             for suggestion in suggestions
-                        ))
+                        )
                     )
+
         print()
         print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
 
@@ -101,7 +101,7 @@ def errors_json(error_list: ErrorList, flatten: bool, articles: typing.Dict[str,
                 "column": error.pos,
                 "link": error.link.raw_location,
                 "type": "link-checker:" + error.id,
-                "text": repr(error) + filtered_identifier_suggestions(error, articles),
+                "text": repr(error),
                 "identifier_suggestions": identifier_suggestions(error, articles),
                 "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
             }
@@ -119,7 +119,7 @@ def errors_json(error_list: ErrorList, flatten: bool, articles: typing.Dict[str,
                                 "column": error.pos,
                                 "link": error.link.raw_location,
                                 "type": "link-checker:" + error.id,
-                                "text": repr(error) + filtered_identifier_suggestions(error, articles),
+                                "text": repr(error),
                                 "possible_identifiers": identifier_suggestions(error, articles),
                                 "highlighted_line": highlight_links(article.lines[lineno].raw_line, [error]),
                             }
@@ -162,25 +162,6 @@ def parse_args(args):
 
     parser.add_argument("-r", "--root", help="specify repository root, current working directory assumed otherwise")
     return parser.parse_args(args)
-
-
-def filtered_identifier_suggestions(error: error_types.LinkError, articles: typing.Dict[str, article_parser.Article]) -> str:
-    if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
-        suggestions = [
-            (identifier, lineno, Levenshtein.ratio(error.identifier, identifier))
-            for identifier, lineno in articles[error.path].identifiers.items()
-        ]
-
-        suggestions = sorted(suggestions, key=lambda x: x[2], reverse=True)[:5]
-
-        if suggestions:
-            return " (did you mean: {})".format(
-                ", ".join((
-                    f"\"{identifier}\" (line {lineno})"
-                    for identifier, lineno, score in suggestions
-                ))
-            )
-    return ""
 
 
 def identifier_suggestions(error: error_types.LinkError, articles: typing.Dict[str, article_parser.Article]):
@@ -287,13 +268,12 @@ def main(*args):
         case "github":
             print("::group::Annotations")
             for article, lineno, column, error in errors_flattened(all_errors)[:10]:
-                print("::error file={},line={},col={},title={}::{}{}".format(
+                print("::error file={},line={},col={},title={}::{}".format(
                     article.path,
                     lineno,
                     column,
                     "link-checker:" + error.id,
                     repr(error),
-                    filtered_identifier_suggestions(error, articles),
                 ))
             print("::endgroup::\n")
 
