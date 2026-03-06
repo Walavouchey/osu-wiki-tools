@@ -36,7 +36,7 @@ def set_up_theme():
     plt.style.use('meta/osu-matplotlib-theme/osu-wiki.mplstyle')
 
 
-def plot_originals_over_time():
+def plot_originals_over_time(language="en", translation_keys=None):
     set_up_theme()
 
 # data
@@ -66,16 +66,36 @@ def plot_originals_over_time():
 
 #data_tournament_community = [row['Community tournaments'] for row in data]
 
+    label_keys = {
+        "title": "Bespoke music over time",
+        "xlabel": "Year",
+        "ylabel": "Count",
+        "tournament_community": "Official tournaments",
+        "tournament_official": "Community contests",
+        "contest_community": "Official contests",
+        "contest_official": "Community contests",
+        "fa_release": "Featured Artist releases",
+        "beatmap": "Standalone beatmaps",
+        "ost": "osu! original soundtrack",
+        "other": "Other osu!-related releases",
+    }
+
+    if translation_keys:
+        translated_keys = translation_keys.get("graph")
+        if translated_keys:
+            for key, value in translated_keys.items():
+                label_keys[key] = value
+
+
     labels = [
-        "Community tournaments",
-#    "Global Taiko Showdown",
-        "Official tournaments",
-        "Community contests",
-        "Official contests",
-        "Featured Artist releases",
-        "Standalone beatmaps",
-        "osu! original soundtrack",
-        "Other osu!-related releases",
+        label_keys["tournament_community"],
+        label_keys["tournament_official"],
+        label_keys["contest_community"],
+        label_keys["contest_official"],
+        label_keys["fa_release"],
+        label_keys["beatmap"],
+        label_keys["ost"],
+        label_keys["other"],
     ]
 
     years = list(range(2007, 2025))
@@ -118,9 +138,9 @@ def plot_originals_over_time():
 #plt.plot(years, community_counts, linewidth=2, color=colours[0], zorder=5)
 #plt.rcParams["axes.prop_cycle"] = plt.cycler("color", reversed(colours))
 
-    plt.title("bespoke music over time")
-    plt.xlabel('Year')
-    plt.ylabel('Count')
+    plt.title(label_keys["title"])
+    plt.xlabel(label_keys["xlabel"])
+    plt.ylabel(label_keys["ylabel"])
     plt.legend(loc='upper left')
     legend = ax.get_legend()
     for legend, colour in zip(legend.legend_handles, colours):
@@ -131,4 +151,5 @@ def plot_originals_over_time():
 #ax.set_yticks(list(range(0, 176, 25)))
 
 
-    plt.savefig("wiki/Community/Bespoke_music/img/bespoke-music-over-time.png", transparent=True)
+    language_suffix = "" if language == "en" else f"-{language.upper()}"
+    plt.savefig(f"wiki/Community/Bespoke_music/img/bespoke-music-over-time{language_suffix}.png", transparent=True)

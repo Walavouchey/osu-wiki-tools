@@ -134,12 +134,12 @@ def list_all_article_dirs() -> typing.Generator[str, None, None]:
             yield root.replace("\\", "/")
 
 
-def list_all_articles() -> typing.Generator[str, None, None]:
+def list_all_articles(article_dirs: typing.Iterable[str] = ["wiki"]) -> typing.Generator[str, None, None]:
     """
-    List ALL article files in the wiki
+    List all articles in the directories specified, or ALL article files in the wiki if omitted
     """
 
-    for filepath in list_all_files(["wiki"]):
+    for filepath in list_all_files(article_dirs):
         if is_article(filepath):
             yield filepath.replace("\\", "/")
 

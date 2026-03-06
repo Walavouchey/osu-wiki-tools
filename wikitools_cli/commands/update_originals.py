@@ -17,11 +17,30 @@ from copy import copy
 import io
 from collections import Counter
 
-from wikitools import console, errors as error_types, file_utils, online_data, plotting
+from wikitools import console, errors as error_types, file_utils, online_data, plotting, article_parser
+
+from pathlib import Path
 
 
 TOTAL_ROWS = 0
 TRACKS_SEEN: Counter = Counter()
+TABLE_HEADERS_ENGLISH = {
+  "links": "Links",
+  "song": "Song",
+  "beatmap": "Beatmap",
+  "notes": "Notes",
+};
+TABLE_HEADERS = TABLE_HEADERS_ENGLISH
+
+
+def translate(translation_keys: typing.Optional[typing.Dict[typing.Any]], path: str, default: str):
+    translation = translation_keys
+    for key in path.split("."):
+        try:
+            translation = translation[key]
+        except KeyError:
+            return default
+    return translation
 
 
 class Table():
@@ -262,13 +281,13 @@ def create_table_ost(data):
     return Table(
         [
             {
-                "Links": link_icons(row),
+                TABLE_HEADERS["links"]: link_icons(row),
                 "": link_icon(row['FA listing']),
-                "Song": row['Track'] + footnote(row['FA status']),
-                "Notes": row['Note']
+                TABLE_HEADERS["song"]: row['Track'] + footnote(row['FA status']),
+                TABLE_HEADERS["notes"]: row['Note']
             } for row in data
         ],
-        ["Links", "", "Song", "Notes"],
+        [TABLE_HEADERS["links"], "", TABLE_HEADERS["song"], TABLE_HEADERS["notes"]],
         ["--:", ":-:", ":--", ":--"]
     )
 
@@ -281,12 +300,12 @@ def create_table_fa_release(data):
     return Table(
         [
             {
-                "Links": link_icons(row),
+                TABLE_HEADERS["links"]: link_icons(row),
                 "": link_icon(row['FA listing']),
-                "Song": row['Track'],
+                TABLE_HEADERS["song"]: row['Track'],
             } for row in data
         ],
-        ["Links", "", "Song"],
+        [TABLE_HEADERS["links"], "", TABLE_HEADERS["song"]],
         ["--:", ":-:", ":--"]
     )
 
@@ -299,14 +318,14 @@ def create_table_tournament(data):
     return Table(
         [
             {
-                "Links": link_icons(row),
+                TABLE_HEADERS["links"]: link_icons(row),
                 "": link_icon(row['FA listing']),
-                "Song": row['Track'] + footnote(row['FA status']),
-                "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
-                "Notes": first([row['Mappool slot'], row['Note']])
+                TABLE_HEADERS["song"]: row['Track'] + footnote(row['FA status']),
+                TABLE_HEADERS["beatmap"]: ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
+                TABLE_HEADERS["notes"]: first([row['Mappool slot'], row['Note']])
             } for row in data
         ],
-        ["Links", "", "Song", "Beatmap", "Notes"],
+        [TABLE_HEADERS["links"], "", TABLE_HEADERS["song"], TABLE_HEADERS["beatmap"], TABLE_HEADERS["notes"]],
         ["--:", ":-:", ":--", ":-:", ":--"]
     )
 
@@ -319,13 +338,13 @@ def create_table_contest(data):
     return Table(
         [
             {
-                "Links": link_icons(row),
+                TABLE_HEADERS["links"]: link_icons(row),
                 "": link_icon(row['FA listing']),
-                "Song": row['Track'] + footnote(row['FA status']),
-                "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
+                TABLE_HEADERS["song"]: row['Track'] + footnote(row['FA status']),
+                TABLE_HEADERS["beatmap"]: ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Links", "", "Song", "Beatmap"],
+        [TABLE_HEADERS["links"], "", TABLE_HEADERS["song"], TABLE_HEADERS["beatmap"]],
         ["--:", ":-:", ":--", ":-:"]
     )
 
@@ -338,13 +357,13 @@ def create_table_standalone_beatmap(data):
     return Table(
         [
             {
-                "Links": link_icons(row),
+                TABLE_HEADERS["links"]: link_icons(row),
                 "": link_icon(row['FA listing']),
-                "Song": row['Track'] + footnote(row['FA status']),
-                "Beatmap": ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
+                TABLE_HEADERS["song"]: row['Track'] + footnote(row['FA status']),
+                TABLE_HEADERS["beatmap"]: ", ".join([maybe_link(f"#{i}", beatmap, True) for i, beatmap in enumerate(row['Beatmap'].split(", "), start=1)]),
             } for row in data
         ],
-        ["Links", "", "Song", "Beatmap"],
+        [TABLE_HEADERS["links"], "", TABLE_HEADERS["song"], TABLE_HEADERS["beatmap"]],
         ["--:", ":-:", ":--", ":-:"]
     )
 
@@ -416,6 +435,8 @@ def parse_args(args):
 
 
 def main(*args):
+    global TABLE_HEADERS
+
     args = parse_args(args)
 
     if args.csv_file:
@@ -425,83 +446,131 @@ def main(*args):
     else:
         csv_unsanitised = online_data.get_spreadsheet_range("1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrzh-E", "raw!A:U")
 
-    csv_unsorted = []
-    for row in csv_unsanitised:
-        row['Track'] = sanitise(row['Track'])
-        csv_unsorted.append(row)
+    csv_sorted = sorted(csv_unsanitised, key=lambda row: row['Track'].lower())
 
-    csv = sorted(csv_unsorted, key=lambda row: row['Track'].lower())
+    for article_file in file_utils.list_all_articles(["wiki/Community/Bespoke_music"]):
 
-    table_ost = str(create_table_ost([row for row in csv if row['Type'] == "OST"]))
+        with open(article_file, encoding="utf-8") as file:
+            front_matter = article_parser.load_front_matter(file)
+        translation_keys = front_matter.get("translation_keys")
 
-    table_fa_cysmix = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`cYsmix`:2" in row['Artists']]))
-    table_fa_drazically = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Drazically`:496" in row['Artists']]))
-    table_fa_happy30 = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`happy30`:317" in row['Artists']]))
-    table_fa_james_landino = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`James Landino`:39" in row['Artists']]))
-    table_fa_kiraku = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`kiraku`:101" in row['Artists']]))
-    table_fa_kitazawa_kyouhei = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Kitazawa Kyouhei`:165" in row['Artists']]))
-    table_fa_rabbit_house = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Rabbit House`:242" in row['Artists']]))
-    table_fa_tomspicy = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`tomspicy`:437" in row['Artists']]))
-    table_fa_yuki = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`yuki.`:4" in row['Artists']]))
-    table_fa_zxnx = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`ZxNX`:288" in row['Artists']]))
+        if not translation_keys:
+            continue
 
-    section_tournament_official = populate_section(csv, "TOURNAMENT_OFFICIAL", create_table_tournament)
-    section_tournament_community = populate_section(csv, "TOURNAMENT_COMMUNITY", create_table_tournament)
-    section_contest_official = ""
-    section_contest_community = populate_section(csv, "CONTEST_COMMUNITY", create_table_contest)
-    section_other = ""
+        language = Path(article_file).stem
 
-    data_contest_official = [row for row in csv if row['Type'] == "CONTEST_OFFICIAL"]
-    for contest in sorted(list(set(row['Event'] for row in data_contest_official))):
-        data = [row for row in csv if row['Event'] == contest]
-        section_contest_official += f"#### {maybe_link(contest, data[0]['Event link'])}"
-        section_contest_official += "\n\n"
-        section_contest_official += str(create_table_contest(data)) + "\n"
+        csv_translated = csv_sorted
+        if translation_keys and language != "en":
+            note_regexes = translation_keys.get("table_note")
+            if note_regexes:
+                regexes = []
+                try:
+                    for regex, replacement in note_regexes.items():
+                        try:
+                            regex_compiled = re.compile(regex)
+                        except re.PatternError as e:
+                            print(f"error in regex \"{regex}\": {e}")
+                            raise e
+                        regexes.append((regex_compiled, replacement))
+                except re.PatternError:
+                    break
+                for i, row in enumerate(csv_translated):
+                    for regex, replacement in regexes:
+                        csv_translated[i]["Note"] = regex.sub(replacement, csv_translated[i]["Note"])
+                        csv_translated[i]["Mappool slot"] = regex.sub(replacement, csv_translated[i]["Mappool slot"])
+                        # multiple regexes may match in sequence
 
-    table_standalone = str(create_table_standalone_beatmap([row for row in csv if row['Type'] == "BEATMAP"]))
+        csv = []
+        for row in csv_translated:
+            row['Track'] = sanitise(row['Track'])
+            csv.append(row)
 
-    data_other = [row for row in csv if row['Type'] == "OTHER"]
-    for event in sorted(list(set(row['Event'] for row in data_other))):
-        data = [row for row in csv if row['Event'] == event]
-        section_other += f"#### {maybe_link(event, data[0]['Event link'])}"
-        section_other += "\n\n"
-        section_other += str(create_table_fa_release(data)) + "\n"
+        table_header_translations = translation_keys.get("table_headers")
+        if table_header_translations:
+            for key, value in table_header_translations.items():
+                TABLE_HEADERS[key] = value
 
-    with open('wiki/Community/Bespoke_music/en.md', "r", encoding="utf-8", newline="\n") as file:
-        contents = file.read()
+        if language == "en":
+            TABLE_HEADERS = TABLE_HEADERS_ENGLISH
 
-    tree = MarkdownSection(contents)
+        table_ost = str(create_table_ost([row for row in csv if row['Type'] == "OST"]))
 
-    tree[0][1][0].nodes[1] = table_ost.strip()
+        table_fa_cysmix = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`cYsmix`:2" in row['Artists']]))
+        table_fa_drazically = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Drazically`:496" in row['Artists']]))
+        table_fa_happy30 = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`happy30`:317" in row['Artists']]))
+        table_fa_james_landino = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`James Landino`:39" in row['Artists']]))
+        table_fa_kiraku = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`kiraku`:101" in row['Artists']]))
+        table_fa_kitazawa_kyouhei = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Kitazawa Kyouhei`:165" in row['Artists']]))
+        table_fa_rabbit_house = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`Rabbit House`:242" in row['Artists']]))
+        table_fa_tomspicy = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`tomspicy`:437" in row['Artists']]))
+        table_fa_yuki = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`yuki.`:4" in row['Artists']]))
+        table_fa_zxnx = str(create_table_fa_release([row for row in csv if row['Type'] == "FA_RELEASE" and "`ZxNX`:288" in row['Artists']]))
 
-    tree[0][1][1][0].nodes[2] = table_fa_cysmix.strip()
-    tree[0][1][1][1].nodes[2] = table_fa_drazically.strip()
-    tree[0][1][1][2].nodes[2] = table_fa_happy30.strip()
-    tree[0][1][1][3].nodes[3] = table_fa_james_landino.strip()
-    tree[0][1][1][4].nodes[2] = table_fa_kiraku.strip()
-    tree[0][1][1][5].nodes[2] = table_fa_kitazawa_kyouhei.strip()
-    tree[0][1][1][6].nodes[2] = table_fa_rabbit_house.strip()
-    tree[0][1][1][7].nodes[3] = table_fa_tomspicy.strip()
-    tree[0][1][1][8].nodes[2] = table_fa_yuki.strip()
-    tree[0][1][1][9].nodes[2] = table_fa_zxnx.strip()
+        section_tournament_official = populate_section(csv, "TOURNAMENT_OFFICIAL", create_table_tournament)
+        section_tournament_community = populate_section(csv, "TOURNAMENT_COMMUNITY", create_table_tournament)
+        section_contest_official = ""
+        section_contest_community = populate_section(csv, "CONTEST_COMMUNITY", create_table_contest)
+        section_other = ""
 
-    tree[0][1][2] = tree[0][1][2].nodes[0] + "\n\n" + section_tournament_official.strip()
-    tree[0][1][3] = tree[0][1][3].nodes[0] + "\n\n" + section_tournament_community.strip()
-    tree[0][1][4] = tree[0][1][4].nodes[0] + "\n\n" + section_contest_official.strip()
-    tree[0][1][5] = tree[0][1][5].nodes[0] + "\n\n" + section_contest_community.strip()
+        data_contest_official = [row for row in csv if row['Type'] == "CONTEST_OFFICIAL"]
+        for contest in sorted(list(set(row['Event'] for row in data_contest_official))):
+            data = [row for row in csv if row['Event'] == contest]
+            section_contest_official += f"#### {maybe_link(contest, data[0]['Event link'])}"
+            section_contest_official += "\n\n"
+            section_contest_official += str(create_table_contest(data)) + "\n"
 
-    tree[0][1][6].nodes[2] = table_standalone.strip()
+        table_standalone = str(create_table_standalone_beatmap([row for row in csv if row['Type'] == "BEATMAP"]))
 
-    tree[0][1][7] = tree[0][1][7].nodes[0] + "\n\n" + section_other.strip()
+        data_other = [row for row in csv if row['Type'] == "OTHER"]
+        for event in sorted(list(set(row['Event'] for row in data_other))):
+            data = [row for row in csv if row['Event'] == event]
+            section_other += f"#### {maybe_link(event, data[0]['Event link'])}"
+            section_other += "\n\n"
+            section_other += str(create_table_fa_release(data)) + "\n"
 
-    time_string = datetime.datetime.now().strftime("%Y%m%d")
-    tree[0][0].nodes[1] = f"There is currently a total of **{len(csv):,}** documented songs made within osu!."
-    tree[0][0].nodes[2] = f"![Graph of bespoke music over time](img/bespoke-music-over-time.png?{time_string})"
+        with open(article_file, "r", encoding="utf-8", newline="\n") as file:
+            contents = file.read()
 
-    plotting.plot_originals_over_time()
+        tree = MarkdownSection(contents)
 
-    with open('wiki/Community/Bespoke_music/en.md', "w", encoding="utf-8", newline="\n") as file:
-        file.write(str(tree))
+        tree[0][1][0].nodes[1] = table_ost.strip()
+
+        tree[0][1][1][0].nodes[2] = table_fa_cysmix.strip()
+        tree[0][1][1][1].nodes[2] = table_fa_drazically.strip()
+        tree[0][1][1][2].nodes[2] = table_fa_happy30.strip()
+        tree[0][1][1][3].nodes[3] = table_fa_james_landino.strip()
+        tree[0][1][1][4].nodes[2] = table_fa_kiraku.strip()
+        tree[0][1][1][5].nodes[2] = table_fa_kitazawa_kyouhei.strip()
+        tree[0][1][1][6].nodes[2] = table_fa_rabbit_house.strip()
+        tree[0][1][1][7].nodes[3] = table_fa_tomspicy.strip()
+        tree[0][1][1][8].nodes[2] = table_fa_yuki.strip()
+        tree[0][1][1][9].nodes[2] = table_fa_zxnx.strip()
+
+        tree[0][1][2] = tree[0][1][2].nodes[0] + "\n\n" + section_tournament_official.strip()
+        tree[0][1][3] = tree[0][1][3].nodes[0] + "\n\n" + section_tournament_community.strip()
+        tree[0][1][4] = tree[0][1][4].nodes[0] + "\n\n" + section_contest_official.strip()
+        tree[0][1][5] = tree[0][1][5].nodes[0] + "\n\n" + section_contest_community.strip()
+
+        tree[0][1][6].nodes[2] = table_standalone.strip()
+
+        tree[0][1][7] = tree[0][1][7].nodes[0] + "\n\n" + section_other.strip()
+
+        time_string = datetime.datetime.now().strftime("%Y%m%d")
+
+        tree[0][0].nodes[1] = translate(
+            translation_keys,
+            "text.total_count",
+            "There is currently a total of **{total:,}** documented songs made within osu!."
+        ).format(total=len(csv))
+
+        alt_text = translate(translation_keys, "graph.alt_text", "Graph of bespoke music over time")
+        language_suffix = "" if language == "en" else f"-{language.upper()}"
+        tree[0][0].nodes[2] = f"![{alt_text}](img/bespoke-music-over-time{language_suffix}.png?{time_string})"
+
+        plotting.plot_originals_over_time(language, translation_keys)
+
+        with open(article_file, "w", encoding="utf-8", newline="\n") as file:
+            file.write(str(tree))
 
     unique_tracks  = set(row['Track'] for row in csv)
     duplicates = [(track, count) for track, count in TRACKS_SEEN.items() if count > 1]
@@ -514,7 +583,7 @@ def main(*args):
         print(f"Duplicates written ({len(duplicates)}):" + ("".join([f"\n- {track} ({count} times)" for track, count in duplicates]) or " none"))
         print(f"Missing ({len(missing)}):" + ("".join([f"\n- {track}" for track in list(missing)]) or " none"))
 
-    print_new_tracks(csv_unsorted)
+    print_new_tracks(csv_unsanitised)
 
     return 0
 
