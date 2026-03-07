@@ -4,12 +4,13 @@ import argparse
 import os
 import sys
 import typing
+import json
+from itertools import chain
 
 import yamllint.cli  # type: ignore
 import yamllint.config  # type: ignore
 import yamllint.linter  # type: ignore
 import yamllint.rules  # type: ignore
-from yamllint.linter import PROBLEM_LEVELS
 from yamllint.linter import LintProblem
 
 from wikitools import console
@@ -19,6 +20,10 @@ FRONT_MATTER_DELIMITER = "---"
 MARKDOWN_EXTENSION = ".md"
 
 DEFAULT_CONFIG_CONTENT = 'extends: default'
+
+
+def print_clean():
+    print(f"{console.grey('Notice:')} No errors in YAML files detected.", file=sys.stderr)
 
 
 def rewrite_problem(problem: LintProblem, path: str) -> LintProblem:
@@ -87,6 +92,22 @@ def file_iterator(roots: list, config: yamllint.config.YamlLintConfig):
             yield item
 
 
+def errors_json(errors: typing.List[typing.Tuple[str, LintProblem]]) -> str:
+    return json.dumps(
+        [
+            {
+                "level": error.level,
+                "path": path,
+                "line": error.line,
+                "column": error.column,
+                "type": "yamllint:" + error.rule,
+                "text": error.desc,
+            }
+            for path, error in errors
+        ]
+    )
+
+
 def parse_args(args: list):
     parser = argparse.ArgumentParser(
         description="Check YAML files and front matter of the Markdown documents for common mistakes"
@@ -97,7 +118,7 @@ def parse_args(args: list):
         help="files or directories to lint (by default, assumes current working directory)"
     )
     parser.add_argument(
-        "--format", choices=("parsable", "standard", "colored", "github", "auto"),
+        "--format", choices=("parsable", "standard", "colored", "github", "auto", "json"),
         default="colored", help="output format (see yamllint docs for details)"
     )
     return parser.parse_args(args)
@@ -112,10 +133,10 @@ def main(*args):
 
     install_custom_checks(config)
 
-    max_level = 0
-
+    exit_code = 0
     warnings = []
     errors = []
+    problems_grouped = []
 
     for path in file_iterator(args.target, config):
         try:
@@ -124,20 +145,26 @@ def main(*args):
             problems = yamllint.linter.run(payload, config, path)
         except EnvironmentError as e:
             print(e, file=sys.stderr)
-            sys.exit(-1)
+            return -1
 
-        # current_level = yamllint.cli.show_problems(problems, path, args_format=args.format, no_warn=False)
+        problems = [rewrite_problem(problem, path) for problem in problems]
+        problems_grouped.append((path, problems))
 
         for problem in problems:
-            max_level = max(max_level, PROBLEM_LEVELS[problem.level])
             if problem.level == "error":
                 errors.append((path, problem))
+                exit_code = 1
             elif problem.level == "warning":
                 warnings.append((path, problem))
 
+    if exit_code == 0:
+        print_clean()
+        return exit_code
+
     match args.format:
         case "github":
-            for path, error in errors:
+            print("::group::Annotations")
+            for path, error in errors[:10]:
                 error = rewrite_problem(error, path)
                 print("::error file={},line={},col={},title={}::{}".format(
                     path,
@@ -146,13 +173,19 @@ def main(*args):
                     "yamllint:" + error.rule,
                     error.desc,
                 ))
+            print("::endgroup::\n")
+
+            for path, problems in problems_grouped:
+                yamllint.cli.show_problems(problems, path, args_format="colored", no_warn=False)
+
+        case "json":
+            print(errors_json(chain(errors, warnings)))
+
         case _:
-            raise NotImplementedError
+            for path, problems in problems_grouped:
+                yamllint.cli.show_problems(problems, path, args_format=args.format, no_warn=False)
 
-    if max_level == PROBLEM_LEVELS["error"]:
-        sys.exit(1)
-
-    print(f"{console.grey('Notice:')} No errors in YAML files detected.")
+    return exit_code
 
 
 if __name__ == '__main__':

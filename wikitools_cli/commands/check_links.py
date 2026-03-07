@@ -27,7 +27,7 @@ def print_header(case_sensitive: bool):
 
 
 def print_clean():
-    print("Notice: No broken wiki or image links detected.")
+    print(f"{console.grey('Notice:')} No broken wiki or image links detected.", file=sys.stderr)
 
 
 def s(i: int, s: str) -> str:

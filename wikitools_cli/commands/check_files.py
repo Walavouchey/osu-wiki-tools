@@ -17,7 +17,7 @@ def print_error(error: error_types.FileError):
 
 
 def print_clean():
-    print("Notice: No file or folder structure errors detected.")
+    print(f"{console.grey('Notice:')} No file or folder structure errors detected.", file=sys.stderr)
 
 
 def s(i: int, s: str) -> str:
@@ -74,7 +74,7 @@ def parse_args(args):
 def main(*args):
     args = parse_args(args)
     if not args.target and not args.all:
-        print(f"{console.grey('Notice:')} No articles to check.")
+        print(f"{console.grey('Notice:')} No articles to check.", file=sys.stderr)
         sys.exit(0)
 
     if args.root:
