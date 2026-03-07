@@ -1,3 +1,4 @@
+import abc
 import collections
 import typing
 from pathlib import Path
@@ -191,16 +192,19 @@ class FileError():
     def pretty(self):
         return f'{console.blue("Note:")} ' + repr(self).replace("\n", "\n      ")
 
+    @abc.abstractmethod
     def pretty_location(self):
-        raise NotImplementedError()
+        pass
 
     @property
+    @abc.abstractmethod
     def path(self):
-        raise NotImplementedError()
+        pass
 
     @property
+    @abc.abstractmethod
     def dir(self):
-        raise NotImplementedError()
+        pass
 
 
 class MissingEnglishVersionError(
