@@ -1,5 +1,6 @@
 import abc
 import typing
+from copy import copy
 
 import yaml
 import yamllint.rules  # type: ignore
@@ -18,6 +19,7 @@ ALLOWED_FRONT_MATTER_TAGS = frozenset({
     "translate_from",  # https://github.com/ppy/osu-wiki/pull/7865/commits/ba6a169add4f3cac620e0147e81323a28cd27376
     "no_native_review",
     "no_native_review_since",
+    "translation_keys",
 
     # Newspost tags
     "date",
@@ -33,12 +35,31 @@ class _JunkMatcher:
         return not p.endswith(".md")
 
 
-class _State(list):
-    def start_sequence(self):
-        self.append(yaml.SequenceStartEvent(None, None, False))
+_TokenList = list[yaml.Token]
 
-    def start_mapping(self):
-        self.append(yaml.MappingStartEvent(None, None, False))
+
+class _State(list):
+    def start_sequence(self, name: typing.Optional[str] = None):
+        sequence = yaml.SequenceStartEvent(None, None, False)
+
+        # SequenceStartEvent indicates that we're inside a "value, ..." array,
+        # but if it's nested inside another parent object "parent: [value, ...]"
+        # (which is not the case for top-level sequences), then we're interested in
+        # the name of that parent item too. however, SequenceStartEvent is not the
+        # "key" token itself, meaning it doesn't have any actual associated text
+        sequence.__setattr__("name", name)
+        self.append(sequence)
+
+    def start_mapping(self, name: typing.Optional[str] = None):
+        mapping = yaml.MappingStartEvent(None, None, False)
+
+        # MappingStartEvent indicates that we're inside a "key: value, ..." dictionary,
+        # but if it's nested inside another parent object "parent: {key: value, ...}"
+        # (which is not the case for top-level mappings), then we're interested in
+        # the name of that parent item too. however, MappingStartEvent is not the
+        # "key" token itself, meaning it doesn't have any actual associated text
+        mapping.__setattr__("name", name)
+        self.append(mapping)
 
     def end_nested_object(self):
         if len(self) > 0:
@@ -102,34 +123,57 @@ class _FrontMatterRule(dict, metaclass=abc.ABCMeta):
         prev_token: yaml.Token, next_token: yaml.Token, next_next_token: yaml.Token, context: dict
     ):
         state = context.setdefault("state", _State())
+        prev_tokens = context.setdefault("prev_tokens", _TokenList())
+
+        name = None
+        try:
+            if isinstance(prev_tokens[-2], yaml.ScalarToken):
+                name = prev_tokens[-2].value
+        except IndexError:
+            pass
+
+        if self._is_start_of_mapping(token):
+            state.start_mapping(name)
+        elif self._is_start_of_sequence(token):
+            state.start_sequence(name)
+        elif self._is_end_of_nested_block(token):
+            state.end_nested_object()
+
         error = self.inner_check(state, prev_token, token, next_token, next_next_token)
         if error is not None:
             yield error
 
-        if self._is_start_of_mapping(token):
-            state.start_mapping()
-        elif self._is_start_of_sequence(token):
-            state.start_sequence()
-        elif self._is_end_of_nested_block(token):
-            state.end_nested_object()
+        prev_tokens.append(token)
 
 
 class NestedStructureRule(_FrontMatterRule):
     ID = "osu-wiki-nested-structure"
 
+    exceptions = [
+        "translation_keys"
+    ]
+
     def inner_check(
-        self, state: _State, prev_token: yaml.Token, token: yaml.Token,
+        self, _state: _State, prev_token: yaml.Token, token: yaml.Token,
         next_token: yaml.Token, next_next_token: yaml.Token
     ):
+        state = copy(_state)
+        state.end_nested_object()
+
         # "tags", the top-level list of article tags, is the only field allowed to contain lists
-        allowed_combination = state.inside_mapping() and self._is_start_of_sequence(token)
+        allowed_combination = state.inside_mapping() and self._is_start_of_sequence(prev_token)
+
         if (
             (state.inside_mapping() or state.inside_sequence()) and
-            (self._is_start_of_mapping(token) or self._is_start_of_sequence(token)) and
+            (self._is_start_of_mapping(prev_token) or self._is_start_of_sequence(prev_token)) and
             not allowed_combination
         ):
+            for exception in self.exceptions:
+                if exception in [e.name for e in _state]:
+                    return
+
             return self._make_problem(
-                next_token,
+                token,
                 "lists or dictionaries must not contain other similarly complex objects"
             )
 
@@ -138,9 +182,12 @@ class TopLevelRule(_FrontMatterRule):
     ID = "osu-wiki-top-level"
 
     def inner_check(
-        self, state: _State, prev_token: yaml.Token, token: yaml.Token,
+        self, _state: _State, prev_token: yaml.Token, token: yaml.Token,
         next_token: yaml.Token, next_next_token: yaml.Token
     ):
+        state = copy(_state)
+        state.end_nested_object()
+
         if self._is_start_of_sequence(token) and len(state) == 0:
             return self._make_problem(next_token, "the top level of front matter must be a dictionary, not a list")
 
@@ -148,13 +195,22 @@ class TopLevelRule(_FrontMatterRule):
 class AllowedTagsRule(_FrontMatterRule):
     ID = "osu-wiki-allowed-tags"
 
+    exceptions = [
+        "translation_keys"
+    ]
+
     def inner_check(
         self, state: _State, prev_token: yaml.Token, token: yaml.Token,
         next_token: yaml.Token, next_next_token: yaml.Token
     ):
         if self._is_mapping_key(prev_token, token, next_token):
             value = token.value  # type: ignore
+
             if value not in ALLOWED_FRONT_MATTER_TAGS:
+                for exception in self.exceptions:
+                    if exception in (mapping.name for mapping in state):
+                        return
+
                 return self._make_problem(token, f"{value!r} is not in the list of allowed tags")
 
 
