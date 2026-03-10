@@ -469,15 +469,19 @@ def main(*args):
                         try:
                             regex_compiled = re.compile(regex)
                         except re.PatternError as e:
-                            print(f"error in regex \"{regex}\": {e}")
-                            raise e
+                            print(f"{article_file}: error in regex \"{regex.pattern}\": {e}")
+                            return 1
                         regexes.append((regex_compiled, replacement))
                 except re.PatternError:
                     break
                 for i, row in enumerate(csv_translated):
                     for regex, replacement in regexes:
-                        csv_translated[i]["Note"] = regex.sub(replacement, csv_translated[i]["Note"])
-                        csv_translated[i]["Mappool slot"] = regex.sub(replacement, csv_translated[i]["Mappool slot"])
+                        try:
+                            csv_translated[i]["Note"] = regex.sub(replacement, csv_translated[i]["Note"])
+                            csv_translated[i]["Mappool slot"] = regex.sub(replacement, csv_translated[i]["Mappool slot"])
+                        except re.PatternError as e:
+                            print(f"{article_file}: error in regex substitution \"{regex.pattern}\" -> \"{replacement}\": {e}")
+                            return 1
                         # multiple regexes may match in sequence
 
         csv = []
