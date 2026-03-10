@@ -13,7 +13,7 @@ import typing
 import os
 import re
 from csv import DictReader
-from copy import copy
+from copy import copy, deepcopy
 import io
 from collections import Counter
 
@@ -30,10 +30,10 @@ TABLE_HEADERS_ENGLISH = {
   "beatmap": "Beatmap",
   "notes": "Notes",
 };
-TABLE_HEADERS = TABLE_HEADERS_ENGLISH
+TABLE_HEADERS = None
 
 
-def translate(translation_keys: typing.Optional[typing.Dict[typing.Any]], path: str, default: str):
+def translate(translation_keys: typing.Optional[typing.Dict[str, typing.Any]], path: str, default: str):
     translation = translation_keys
     for key in path.split("."):
         try:
@@ -275,6 +275,7 @@ def footnote(fa_status: str) -> str:
 
 def create_table_ost(data):
     global TOTAL_ROWS
+    global TRACKS_SEEN
     TOTAL_ROWS += len(data)
     for row in data:
         TRACKS_SEEN[row['Track']] += 1
@@ -294,6 +295,7 @@ def create_table_ost(data):
 
 def create_table_fa_release(data):
     global TOTAL_ROWS
+    global TRACKS_SEEN
     TOTAL_ROWS += len(data)
     for row in data:
         TRACKS_SEEN[row['Track']] += 1
@@ -312,6 +314,7 @@ def create_table_fa_release(data):
 
 def create_table_tournament(data):
     global TOTAL_ROWS
+    global TRACKS_SEEN
     TOTAL_ROWS += len(data)
     for row in data:
         TRACKS_SEEN[row['Track']] += 1
@@ -332,6 +335,7 @@ def create_table_tournament(data):
 
 def create_table_contest(data):
     global TOTAL_ROWS
+    global TRACKS_SEEN
     TOTAL_ROWS += len(data)
     for row in data:
         TRACKS_SEEN[row['Track']] += 1
@@ -351,6 +355,7 @@ def create_table_contest(data):
 
 def create_table_standalone_beatmap(data):
     global TOTAL_ROWS
+    global TRACKS_SEEN
     TOTAL_ROWS += len(data)
     for row in data:
         TRACKS_SEEN[row['Track']] += 1
@@ -435,6 +440,8 @@ def parse_args(args):
 
 
 def main(*args):
+    global TOTAL_ROWS
+    global TRACKS_SEEN
     global TABLE_HEADERS
 
     args = parse_args(args)
@@ -449,6 +456,8 @@ def main(*args):
     csv_sorted = sorted(csv_unsanitised, key=lambda row: row['Track'].lower())
 
     for article_file in file_utils.list_all_articles(["wiki/Community/Bespoke_music"]):
+        TOTAL_ROWS = 0
+        TRACKS_SEEN = Counter()
 
         with open(article_file, encoding="utf-8") as file:
             front_matter = article_parser.load_front_matter(file)
@@ -459,7 +468,7 @@ def main(*args):
 
         language = Path(article_file).stem
 
-        csv_translated = csv_sorted
+        csv_translated = deepcopy(csv_sorted)
         if translation_keys and language != "en":
             note_regexes = translation_keys.get("table_note")
             if note_regexes:
@@ -489,13 +498,11 @@ def main(*args):
             row['Track'] = sanitise(row['Track'])
             csv.append(row)
 
+        TABLE_HEADERS = copy(TABLE_HEADERS_ENGLISH)
         table_header_translations = translation_keys.get("table_headers")
         if table_header_translations:
             for key, value in table_header_translations.items():
                 TABLE_HEADERS[key] = value
-
-        if language == "en":
-            TABLE_HEADERS = TABLE_HEADERS_ENGLISH
 
         table_ost = str(create_table_ost([row for row in csv if row['Type'] == "OST"]))
 
@@ -576,16 +583,16 @@ def main(*args):
         with open(article_file, "w", encoding="utf-8", newline="\n") as file:
             file.write(str(tree))
 
-    unique_tracks  = set(row['Track'] for row in csv)
-    duplicates = [(track, count) for track, count in TRACKS_SEEN.items() if count > 1]
-    missing = unique_tracks - set(TRACKS_SEEN.keys())
-    if len(unique_tracks) != TOTAL_ROWS or TOTAL_ROWS != len(csv) or duplicates or missing:
-        print(f"{console.red('Error:')} Data mismatch detected. This could be due to either an issue with the spreadsheet/csv or a bug in the program.")
-        print(f"Total tracks read: {len(csv)}")
-        print(f"Unique tracks read: {len(unique_tracks)}")
-        print(f"Tracks written: {TOTAL_ROWS}")
-        print(f"Duplicates written ({len(duplicates)}):" + ("".join([f"\n- {track} ({count} times)" for track, count in duplicates]) or " none"))
-        print(f"Missing ({len(missing)}):" + ("".join([f"\n- {track}" for track in list(missing)]) or " none"))
+        unique_tracks  = set(row['Track'] for row in csv)
+        duplicates = [(track, count) for track, count in TRACKS_SEEN.items() if count > 1]
+        missing = unique_tracks - set(TRACKS_SEEN.keys())
+        if len(unique_tracks) != TOTAL_ROWS or TOTAL_ROWS != len(csv) or duplicates or missing:
+            print(f"{console.red('Error:')} Data mismatch detected. This could be due to either an issue with the spreadsheet/csv or a bug in the program.")
+            print(f"Total tracks read: {len(csv)}")
+            print(f"Unique tracks read: {len(unique_tracks)}")
+            print(f"Tracks written: {TOTAL_ROWS}")
+            print(f"Duplicates written ({len(duplicates)}):" + ("".join([f"\n- {track} ({count} times)" for track, count in duplicates]) or " none"))
+            print(f"Missing ({len(missing)}):" + ("".join([f"\n- {track}" for track in list(missing)]) or " none"))
 
     print_new_tracks(csv_unsanitised)
 
