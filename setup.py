@@ -24,6 +24,8 @@ setuptools.setup(
     ],
     license="MIT",
     packages=setuptools.find_packages(exclude=["tests", "tests.visual"]),
+    package_data={'': ['*.ttf', '*.txt']},
+    include_package_data=True,
     entry_points={
         "console_scripts": [
             "osu-wiki-tools=wikitools_cli.osu_wiki_tools:console_main",

@@ -7,12 +7,14 @@ from itertools import chain
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib import font_manager
 import numpy as np
 
 import importlib
 import sys
 
 from wikitools import online_data
+from wikitools.fonts import noto_sans_sc
 
 OSU_CMAP = None
 COLOURS = None
@@ -38,6 +40,13 @@ def set_up_theme():
 
 def plot_originals_over_time(language="en", translation_keys=None):
     set_up_theme()
+
+    if language in ("zh", "ja", "ko"):
+        with importlib.resources.path(noto_sans_sc, "NotoSansSC-Regular.ttf") as font_path:
+            font_manager.fontManager.addfont(font_path)
+            font_prop = font_manager.FontProperties(fname=font_path)
+            plt.rcParams["font.family"] = font_prop.get_name()
+            plt.rcParams["axes.unicode_minus"] = False
 
 # data
     data = online_data.get_spreadsheet_range("1o--KQKvNF9JtmZmTGuzN6KyBpFwoQDr98TWRHhrzh-E", "statistics!AK:AT")
