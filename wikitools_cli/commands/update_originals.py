@@ -501,8 +501,8 @@ def main(*args):
             row['Track'] = sanitise(row['Track'])
             csv.append(row)
 
+        TABLE_HEADERS = copy(TABLE_HEADERS_ENGLISH)
         if translation_keys and language != "en":
-            TABLE_HEADERS = copy(TABLE_HEADERS_ENGLISH)
             table_header_translations = translation_keys.get("table_headers")
             if table_header_translations:
                 for key, value in table_header_translations.items():
