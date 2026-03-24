@@ -35,11 +35,12 @@ TABLE_HEADERS = None
 
 def translate(translation_keys: typing.Optional[typing.Dict[str, typing.Any]], path: str, default: str):
     translation = translation_keys
-    for key in path.split("."):
-        try:
-            translation = translation[key]
-        except KeyError:
-            return default
+    if translation:
+        for key in path.split("."):
+            try:
+                translation = translation[key]
+            except KeyError:
+                return default
     return translation
 
 
@@ -79,7 +80,7 @@ class Table():
             return string.center(length, " ")
         elif alignment == "--:":
             return string.rjust(length, " ")
-        raise NotImplemented
+        raise NotImplementedError
 
     @staticmethod
     def _expand_alignment(alignment: str, length: int) -> str:
