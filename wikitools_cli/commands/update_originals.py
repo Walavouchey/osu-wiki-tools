@@ -35,7 +35,9 @@ TABLE_HEADERS = None
 
 def translate(translation_keys: typing.Optional[typing.Dict[str, typing.Any]], path: str, default: str):
     translation = translation_keys
-    if translation:
+    if not translation:
+        return default
+    else:
         for key in path.split("."):
             try:
                 translation = translation[key]
@@ -464,10 +466,10 @@ def main(*args):
             front_matter = article_parser.load_front_matter(file)
         translation_keys = front_matter.get("translation_keys")
 
-        if not translation_keys:
-            continue
-
         language = Path(article_file).stem
+
+        if not translation_keys and language != "en":
+            continue
 
         csv_translated = deepcopy(csv_sorted)
         if translation_keys and language != "en":
@@ -499,11 +501,12 @@ def main(*args):
             row['Track'] = sanitise(row['Track'])
             csv.append(row)
 
-        TABLE_HEADERS = copy(TABLE_HEADERS_ENGLISH)
-        table_header_translations = translation_keys.get("table_headers")
-        if table_header_translations:
-            for key, value in table_header_translations.items():
-                TABLE_HEADERS[key] = value
+        if translation_keys and language != "en":
+            TABLE_HEADERS = copy(TABLE_HEADERS_ENGLISH)
+            table_header_translations = translation_keys.get("table_headers")
+            if table_header_translations:
+                for key, value in table_header_translations.items():
+                    TABLE_HEADERS[key] = value
 
         table_ost = str(create_table_ost([row for row in csv if row['Type'] == "OST"]))
 
