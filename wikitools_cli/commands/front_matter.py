@@ -22,7 +22,7 @@ class KeyValueAction(argparse.Action):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(usage="%(prog)s front-matter [options]")
-    parser.add_argument("file", type=argparse.FileType("r", encoding="utf-8"), help="Markdown file to edit")
+    parser.add_argument("file", help="Markdown file to edit")
     parser.add_argument("-p", "--print", nargs="*", help="front matter items to print in JSON (or everything by default)")
     parser.add_argument("-s", "--set", nargs="+", action=KeyValueAction, metavar="KEY:VALUE", help="front matter items to add or edit")
     parser.add_argument("-r", "--remove", nargs="+", metavar="KEY", help="front matter items to remove if they exist")
@@ -31,7 +31,8 @@ def parse_args(args):
 
 def main(*args):
     args = parse_args(args)
-    old_front_matter = load_front_matter(args.file)
+    with open(args.file, "r", encoding="utf-8") as file:
+        old_front_matter = load_front_matter(file)
     front_matter = dict(old_front_matter)
 
     if args.print is not None:
@@ -52,7 +53,7 @@ def main(*args):
             del front_matter[item]
 
     if front_matter != old_front_matter:
-        save_front_matter(args.file.name, front_matter)
+        save_front_matter(args.file, front_matter)
 
     return 0
 
