@@ -2,6 +2,7 @@ import collections
 import textwrap
 from urllib import parse
 
+import pytest
 import tests.utils as utils
 
 from wikitools import article_parser, reference_parser
@@ -346,3 +347,88 @@ class TestFrontMatter:
 
                 Lorem (ipsum).
             ''').format(test_case).strip()
+
+    @pytest.mark.parametrize(
+        "input,output",
+        [
+            pytest.param(
+                '"Summer 2023 ": "2023 年夏季 "',
+                '"Summer 2023 ": "2023 年夏季 "',
+                id="preserved double quotes for trailing whitespace",
+            ),
+            pytest.param(
+                '"[key": "[value"',
+                '"[key": "[value"',
+                id="preserved double quotes for leading [",
+            ),
+            pytest.param(
+                '"{key": "{value"',
+                '"{key": "{value"',
+                id="preserved double quotes for leading {",
+            ),
+            pytest.param(
+                '"&key": "&value"',
+                '"&key": "&value"',
+                id="preserved double quotes for leading &",
+            ),
+            pytest.param(
+                '"key #": "#value"',
+                '"key #": "#value"',
+                id="preserved double quotes for ' #'",
+            ),
+            pytest.param(
+                'key#: v#alue',
+                'key#: v#alue',
+                id="no double quotes for #",
+            ),
+            pytest.param(
+                '# comment\n  key: value',
+                'key: value',
+                id="stripped comment",
+            ),
+            pytest.param(
+                'key: value  # comment',
+                'key: value',
+                id="stripped inline comment",
+            ),
+            pytest.param(
+                'total_count: Actualmente, hay un total de **{total}** canciones documentadas hechas dentro de osu!.',
+                'total_count: Actualmente, hay un total de **{total}** canciones documentadas hechas dentro de osu!.',
+                id="preserved long line",
+            ),
+        ]
+    )
+    def test__read_write_front_matter_roundtrip(self, root, input, output):
+        article_path = root.join("en.md")
+
+        article_text = textwrap.dedent('''
+            ---
+            translation_keys:
+              {}
+            ---
+
+            # Test
+
+            Lorem (ipsum).
+        ''').format(input).strip()
+
+        expected_text = textwrap.dedent('''
+            ---
+            translation_keys:
+              {}
+            ---
+
+            # Test
+
+            Lorem (ipsum).
+        ''').format(output).strip()
+
+        article_path.write_text(article_text, encoding='utf-8')
+
+        with article_path.open("r", encoding='utf-8') as fd:
+            fm = article_parser.load_front_matter(fd)
+
+        article_parser.save_front_matter(str(article_path), fm)
+
+        new_contents = article_path.read_text(encoding='utf-8')
+        assert new_contents == expected_text

@@ -1,17 +1,16 @@
 import collections
 import io
 import pathlib
-import re
 import shutil
 import typing
 
 import yaml
+from yamllint.rules.quoted_strings import _quotes_are_needed  # type: ignore
 
 from wikitools import code_block_parser, link_parser, comment_parser, identifier_parser, reference_parser
 
 FRONT_MATTER_DELIMITER = '---'
 TITLE_INDICATOR = '# '
-REQUIRES_QUOTES = re.compile(r".*((: )|(#))")
 
 
 class Dumper(yaml.Dumper):
@@ -39,8 +38,12 @@ class Dumper(yaml.Dumper):
             node_key = self.represent_data(item_key)
             node_value = self.represent_data(item_value)
 
-            # double quotes instead of single quotes (when required)
-            if isinstance(item_value, str) and REQUIRES_QUOTES.match(item_value) is not None:
+            # double quotes for the key instead of single quotes (when required)
+            if isinstance(item_key, str) and _quotes_are_needed(node_key, False):
+                node_key.style = '"'
+
+            # double quotes for the value instead of single quotes (when required)
+            if isinstance(item_value, str) and _quotes_are_needed(node_value, False):
                 node_value.style = '"'
 
             if not (isinstance(node_key, yaml.ScalarNode) and not node_key.style):
@@ -137,8 +140,17 @@ def save_front_matter(filepath: str, fm: dict):
     with open(new_path, 'w', encoding='utf-8') as new_file:
         if fm:
             new_file.write(FRONT_MATTER_DELIMITER + '\n')
+            # yamllint can be supplied with style configuration via a
+            # .yamllint.yaml file, but pyYAML of course can't use that, so
+            # the style used in the wiki needs to be redefined here
             new_file.write(yaml.dump(
-                fm, Dumper=Dumper, default_flow_style=False, indent=2, sort_keys=False, allow_unicode=True,
+                fm,
+                Dumper=Dumper,
+                default_flow_style=False,
+                indent=2,
+                sort_keys=False,
+                allow_unicode=True,
+                width=float("inf")
             ))
             new_file.write(FRONT_MATTER_DELIMITER + '\n\n')
 
