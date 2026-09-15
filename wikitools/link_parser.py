@@ -279,5 +279,12 @@ def find_links(line: str) -> typing.List[Link]:
     match = find_link(line)
     while match:
         results.append(match)
+
+        # one nesting level is enough
+        nested_match = find_link(line[:match.start + 1 + len(match.alt_text)], index=match.start + 1)
+        while nested_match:
+            results.append(nested_match)
+            nested_match = find_link(line[:match.start + len(match.alt_text) + 1], index=match.start + nested_match.end + 2)
+
         match = find_link(line, match.end + 1)
     return results
