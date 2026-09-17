@@ -19,8 +19,9 @@ class Dumper(yaml.Dumper):
     def increase_indent(self, flow=False, *args, **kwargs):
         return super().increase_indent(flow=flow, indentless=False)
 
-    # very complicated way to tell pyYAML to use double quotes and not single quotes
+    # patching pyYAML to use double quotes and not single quotes
     # (taken from https://github.com/yaml/pyyaml/blob/main/lib/yaml/representer.py)
+    # this is for mappings, i.e. `key: value` syntax
     def represent_mapping(self, tag, mapping, flow_style=None):
         value = []
         node = yaml.MappingNode(tag, value, flow_style=flow_style)
@@ -51,6 +52,32 @@ class Dumper(yaml.Dumper):
             if not (isinstance(node_value, yaml.ScalarNode) and not node_value.style):
                 best_style = False
             value.append((node_key, node_value))
+        if flow_style is None:
+            if self.default_flow_style is not None:
+                node.flow_style = self.default_flow_style
+            else:
+                node.flow_style = best_style
+        return node
+
+    # patching pyYAML to use double quotes and not single quotes
+    # (taken from https://github.com/yaml/pyyaml/blob/main/lib/yaml/representer.py)
+    # this is for sequences, i.e. `- item` syntax
+    def represent_sequence(self, tag, sequence, flow_style=None):
+        value = []
+        node = yaml.SequenceNode(tag, value, flow_style=flow_style)
+        if self.alias_key is not None:
+            self.represented_objects[self.alias_key] = node
+        best_style = True
+        for item in sequence:
+            node_item = self.represent_data(item)
+
+            # double quotes for the item instead of single quotes (when required)
+            if isinstance(item, str) and _quotes_are_needed(node_item, False):
+                node_item.style = '"'
+
+            if not (isinstance(node_item, yaml.ScalarNode) and not node_item.style):
+                best_style = False
+            value.append(node_item)
         if flow_style is None:
             if self.default_flow_style is not None:
                 node.flow_style = self.default_flow_style

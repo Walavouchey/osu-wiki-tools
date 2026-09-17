@@ -352,6 +352,11 @@ class TestFrontMatter:
         "input,output",
         [
             pytest.param(
+                '- "rank #1"',
+                '- "rank #1"',
+                id="preserved double quotes for list items",
+            ),
+            pytest.param(
                 '"Summer 2023 ": "2023 年夏季 "',
                 '"Summer 2023 ": "2023 年夏季 "',
                 id="preserved double quotes for trailing whitespace",
