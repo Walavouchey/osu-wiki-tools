@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# noqa: EXE001
+# noqa: EXE001, RUF100
 """
 This script does the following:
 
