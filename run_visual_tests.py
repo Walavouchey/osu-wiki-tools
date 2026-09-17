@@ -10,10 +10,10 @@ Press Esc to quit.
 """
 
 import argparse
-from pynput.keyboard import Key, Listener  # type: ignore
 import sys
 from traceback import format_exc
 
+from pynput.keyboard import Key, Listener  # type: ignore
 
 from tests.conftest import get_visual_tests
 from wikitools import console
@@ -37,7 +37,7 @@ def run_test(test_list, test_index, case_index):
     except SystemExit as e:
         print()
         print(f"Program exited with {console.red(e.code) if e.code != 0 else console.green(e.code)}")
-    except Exception:
+    except Exception:  # noqa: BLE001
         print()
         print(console.red("Exception raised:"), format_exc())
 

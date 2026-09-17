@@ -1,7 +1,5 @@
 from tests.conftest import VisualTest, VisualTestCase
-
 from wikitools_cli.commands import check_links
-
 
 test = VisualTest(
     name="Check links",

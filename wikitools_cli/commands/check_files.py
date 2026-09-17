@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-
+# noqa: EXE001
 import argparse
-import sys
-import typing
-from pathlib import Path
 import json
+import sys
+from pathlib import Path
 
-from wikitools import console, errors as error_types, file_utils
+from wikitools import console, file_utils
+from wikitools.errors import FileError, MissingEnglishVersionError
 from wikitools.file_utils import exists_case_sensitive
 
 
-def print_error(error: error_types.FileError):
+def print_error(error: FileError):
     print(error.pretty_location())
     print(error.pretty())
     print()
@@ -28,17 +28,17 @@ def print_count(errors: int, files: int):
     print(f"{console.blue('Note:')} Found {s(errors, 'error')} ({s(files, 'file')} checked).")
 
 
-def check_missing_english_version(file_path: Path) -> typing.Optional[error_types.MissingEnglishVersionError]:
+def check_missing_english_version(file_path: Path) -> MissingEnglishVersionError | None:
     path = Path(file_path)
     dir_name = path.parent
     english_path = dir_name / "en.md"
     if not exists_case_sensitive(english_path):
-        return error_types.MissingEnglishVersionError(file_path)
+        return MissingEnglishVersionError(file_path)
 
     return None
 
 
-def files_deduplicated(file_paths: typing.List[Path]) -> typing.List[Path]:
+def files_deduplicated(file_paths: list[Path]) -> list[Path]:
     seen = set()
     deduplicated = []
     for file in sorted(file_paths):
@@ -49,7 +49,7 @@ def files_deduplicated(file_paths: typing.List[Path]) -> typing.List[Path]:
     return deduplicated
 
 
-def errors_json(errors: typing.List[error_types.FileError]) -> str:
+def errors_json(errors: list[FileError]) -> str:
     return json.dumps(
         [
             {
@@ -78,7 +78,7 @@ def main(*args):
         sys.exit(0)
 
     if args.root:
-        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change  # noqa: F841
+        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change
 
     if args.all:
         filenames = file_utils.list_all_articles()
@@ -117,7 +117,7 @@ def main(*args):
         case "github":
             print("::group::Annotations")
             for error in all_errors[:10]:
-                print(f"::error file={error.file},title={"file-checker:" + error.id}::{repr(error)}")
+                print(f"::error file={error.file},title={"file-checker:" + error.id}::{error!r}")
             print("::endgroup::\n")
 
             for error in all_errors:

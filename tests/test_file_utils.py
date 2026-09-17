@@ -1,8 +1,7 @@
-from collections import Counter as multiset
 import os
+from collections import Counter as multiset
 
-import tests.utils as utils
-
+from tests import utils
 from wikitools import file_utils
 
 
@@ -59,7 +58,7 @@ class TestFileUtils:
 
         utils.create_files(root, *((path, '# Article') for path in article_paths))
 
-        assert multiset(file_utils.list_all_article_dirs()) == multiset(set(os.path.dirname(path) for path in article_paths))
+        assert multiset(file_utils.list_all_article_dirs()) == multiset({os.path.dirname(path) for path in article_paths})
 
     def test__list_all_translations(self, root):
         article_paths = [

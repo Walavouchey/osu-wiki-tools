@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-
+# noqa: EXE001
 import argparse
+import json
 import sys
 import typing
-import json
 
-from wikitools import article_parser, console, link_checker, redirect_parser, errors as error_types, file_utils
+from wikitools import article_parser, console, file_utils, link_checker, redirect_parser
+from wikitools.errors import (
+    BrokenRedirectIdentifierError,
+    LinkError,
+    MissingIdentifierError,
+)
 
 
 def print_header(case_sensitive: bool):
@@ -38,7 +43,7 @@ def print_count(errors: int, matches: int, error_files: int, files: int):
     print(f"{console.blue('Note:')} Found {s(errors, 'error')} in {s(error_files, 'file')} ({s(matches, 'link')} in {s(files, 'file')} checked).")
 
 
-def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
+def highlight_links(s: str, errors: list[LinkError]) -> str:
     highlighted_line = ""
     prev_index = 0
     for error in errors:
@@ -49,7 +54,7 @@ def highlight_links(s: str, errors: typing.List[error_types.LinkError]) -> str:
     return highlighted_line
 
 
-def print_errors(article: article_parser.Article, errors: typing.Dict[int, typing.List[error_types.LinkError]], separate: bool, articles: typing.Dict[str, article_parser.Article]):
+def print_errors(article: article_parser.Article, errors: dict[int, list[LinkError]], separate: bool, articles: dict[str, article_parser.Article]):
     if separate:
         for lineno, errors_on_line in sorted(errors.items()):
             for error in errors_on_line:
@@ -61,7 +66,7 @@ def print_errors(article: article_parser.Article, errors: typing.Dict[int, typin
             print(error.pretty_location(article.path, lineno))
         for error in errors_on_line:
             print(error.pretty())
-            if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
+            if isinstance(error, (MissingIdentifierError, BrokenRedirectIdentifierError)):
                 suggestions = identifier_suggestions(error, articles)
                 if suggestions:
                     print(
@@ -76,8 +81,8 @@ def print_errors(article: article_parser.Article, errors: typing.Dict[int, typin
         print(highlight_links(article.lines[lineno].raw_line, errors_on_line), end="\n\n")
 
 
-ErrorList = typing.List[typing.Tuple[article_parser.Article, typing.Dict[int, typing.List[error_types.LinkError]]]]
-FlatErrorList = typing.List[typing.Tuple[article_parser.Article, int, int, error_types.LinkError]]
+ErrorList = list[tuple[article_parser.Article, dict[int, list[LinkError]]]]
+FlatErrorList = list[tuple[article_parser.Article, int, int, LinkError]]
 
 
 def errors_flattened(error_list: ErrorList) -> FlatErrorList:
@@ -89,7 +94,7 @@ def errors_flattened(error_list: ErrorList) -> FlatErrorList:
     return flat_error_list
 
 
-def errors_json(error_list: ErrorList, flatten: bool, articles: typing.Dict[str, article_parser.Article]) -> str:
+def errors_json(error_list: ErrorList, flatten: bool, articles: dict[str, article_parser.Article]) -> str:
     if flatten:
         flat_error_list = errors_flattened(error_list)
 
@@ -164,8 +169,8 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def identifier_suggestions(error: error_types.LinkError, articles: typing.Dict[str, article_parser.Article]):
-    if isinstance(error, error_types.MissingIdentifierError) or isinstance(error, error_types.BrokenRedirectIdentifierError):
+def identifier_suggestions(error: LinkError, articles: dict[str, article_parser.Article]):
+    if isinstance(error, (MissingIdentifierError, BrokenRedirectIdentifierError)):
         return [
             {
                 "lineno": lineno,
@@ -176,9 +181,9 @@ def identifier_suggestions(error: error_types.LinkError, articles: typing.Dict[s
 
 
 def filter_errors(
-    filter_function: typing.Callable[[error_types.LinkError], typing.Dict[int, typing.List[error_types.LinkError]]],
-    errors: typing.Dict[int, typing.List[error_types.LinkError]]
-) -> typing.Dict[int, typing.List[error_types.LinkError]]:
+    filter_function: typing.Callable[[LinkError], dict[int, list[LinkError]]],
+    errors: dict[int, list[LinkError]]
+) -> dict[int, list[LinkError]]:
     return {
         a: b for a, b in {
             i: [
@@ -197,7 +202,7 @@ def main(*args):
         sys.exit(0)
 
     if args.root:
-        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change  # noqa: F841
+        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change
 
     filenames = []
     if args.all:
@@ -230,14 +235,12 @@ def main(*args):
 
         if not args.to_sections_in_outdated_translations:
             errors = filter_errors(
-                lambda e: not ((isinstance(e, error_types.MissingIdentifierError) or
-                               isinstance(e, error_types.BrokenRedirectIdentifierError)) and
+                lambda e: not ((isinstance(e, (MissingIdentifierError, BrokenRedirectIdentifierError))) and
                                e.translation_outdated), errors)
 
         if not args.to_sections_in_missing_translations:
             errors = filter_errors(
-                lambda e: not ((isinstance(e, error_types.MissingIdentifierError) or
-                               isinstance(e, error_types.BrokenRedirectIdentifierError)) and
+                lambda e: not ((isinstance(e, (MissingIdentifierError, BrokenRedirectIdentifierError))) and
                                e.no_translation_available), errors)
 
         if not errors:

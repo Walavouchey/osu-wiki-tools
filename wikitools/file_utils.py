@@ -1,8 +1,8 @@
 import fnmatch
 import itertools
 import os
-import typing
 import pathlib
+import typing
 
 
 class ChangeDirectory:
@@ -18,8 +18,7 @@ class ChangeDirectory:
 
 def normalised(path: str) -> str:
     normalised = os.path.normpath(path).replace("\\", "/")
-    if normalised.startswith("./"):
-        normalised = normalised[2:]
+    normalised = normalised.removeprefix("./")
     return normalised
 
 
@@ -33,8 +32,8 @@ def file_tree():
     # this cache would only become invalid when the current working directory changes, which only happens in tests and not during normal execution
     if not hasattr(file_tree, "cache"):
         tree = {normalised(article_path.lower()): normalised(article_path) for article_path in itertools.chain(list_all_dirs(["."]), list_all_files(["."]))}
-        setattr(file_tree, "cache", tree)
-    return getattr(file_tree, "cache")
+        file_tree.cache = tree
+    return file_tree.cache
 
 
 def get_canonical_path_casing(path: pathlib.Path) -> pathlib.Path:

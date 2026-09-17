@@ -1,6 +1,5 @@
 import abc
 import collections
-import typing
 from pathlib import Path
 
 from wikitools import console, link_parser, reference_parser
@@ -59,7 +58,7 @@ class BrokenLinkError(
 
     id = "broken-link"
     link: link_parser.Link
-    reference: typing.Optional[reference_parser.Reference]
+    reference: reference_parser.Reference | None
     resolved_location: str
 
     def __repr__(self):
@@ -182,7 +181,7 @@ class BrokenRedirectIdentifierError(
         )
 
 
-class FileError():
+class FileError:
     """
     Base class for errors specific to files and folder structure
     """

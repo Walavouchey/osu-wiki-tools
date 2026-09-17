@@ -1,17 +1,14 @@
 import textwrap
+import unittest.mock
 
+import pytest
 import yaml
 import yamllint.config  # type: ignore
 from yamllint import linter  # type: ignore
 from yamllint.rules import key_duplicates  # type: ignore
 
-import pytest
-import unittest.mock
-
-import tests.utils as utils
-
-from wikitools import article_parser
-from wikitools import yaml_rules
+from tests import utils
+from wikitools import article_parser, yaml_rules
 from wikitools_cli.commands import check_yaml
 
 
@@ -29,7 +26,7 @@ def front_matter():
             yaml.dump(d, default_flow_style=False, sort_keys=True, indent=2, Dumper=article_parser.Dumper)
             for d in dicts
         )
-        return "---\n{}---\n".format(dumps)
+        return f"---\n{dumps}---\n"
 
     yield front_matter_maker
 
@@ -37,15 +34,15 @@ def front_matter():
 class TestYamlRules:
     def test__duplicate_keys(self, linter_config, front_matter):
         fm = front_matter(
-            dict(outdated=True, tags=[1, 2, 3]),
-            dict(outdated=True, outdated_translation=True)
+            {"outdated": True, "tags": [1, 2, 3]},
+            {"outdated": True, "outdated_translation": True}
         )
         issue = next(linter.run(fm, linter_config))
         assert issue.rule == key_duplicates.ID
 
     def test__unknown_tags(self, linter_config, front_matter):
         fm = front_matter(
-            dict(outdate=True, needs_cleanup=True, taggs=[1, 2])
+            {"outdate": True, "needs_cleanup": True, "taggs": [1, 2]}
         )
         first_issue, second_issue = list(linter.run(fm, linter_config))
 
@@ -79,7 +76,7 @@ class TestYamlRules:
         rule = linter_config.rules[yaml_rules.NestedStructureRule.ID]
         rule.inner_check = mocker.Mock(side_effect=rule.inner_check)
 
-        fm = front_matter(dict(tags=[1, 2, 3]))
+        fm = front_matter({"tags": [1, 2, 3]})
         with pytest.raises(StopIteration):
             _ = next(linter.run(fm, linter_config))
 

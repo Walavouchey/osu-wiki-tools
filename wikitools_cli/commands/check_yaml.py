@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
+# noqa: EXE001
 import argparse
+import json
 import os
 import sys
 import typing
-import json
 from itertools import chain
 
 import yamllint.cli  # type: ignore
@@ -13,8 +13,7 @@ import yamllint.linter  # type: ignore
 import yamllint.rules  # type: ignore
 from yamllint.linter import LintProblem
 
-from wikitools import console
-from wikitools import yaml_rules
+from wikitools import console, yaml_rules
 
 FRONT_MATTER_DELIMITER = "---"
 MARKDOWN_EXTENSION = ".md"
@@ -92,7 +91,7 @@ def file_iterator(roots: list, config: yamllint.config.YamlLintConfig):
             yield item
 
 
-def errors_json(errors: typing.List[typing.Tuple[str, LintProblem]]) -> str:
+def errors_json(errors: list[tuple[str, LintProblem]]) -> str:
     return json.dumps(
         [
             {
@@ -140,10 +139,10 @@ def main(*args):
 
     for path in file_iterator(args.target, config):
         try:
-            path = path[2:] if path.startswith('./') else path
+            path = path.removeprefix('./')
             payload = read_yaml(path)
             problems = yamllint.linter.run(payload, config, path)
-        except EnvironmentError as e:
+        except OSError as e:
             print(e, file=sys.stderr)
             return -1
 

@@ -1,10 +1,9 @@
 import abc
-import typing
 from copy import copy
+from typing import ClassVar
 
 import yaml
 import yamllint.rules  # type: ignore
-
 
 ALLOWED_FRONT_MATTER_TAGS = frozenset({
     # Article tags
@@ -23,7 +22,6 @@ ALLOWED_FRONT_MATTER_TAGS = frozenset({
 
     # Newspost tags
     "date",
-    "layout",
     "title",
     "series",
     "tumblr_url",
@@ -39,7 +37,7 @@ _TokenList = list[yaml.Token]
 
 
 class _State(list):
-    def start_sequence(self, name: typing.Optional[str] = None):
+    def start_sequence(self, name: str | None = None):
         sequence = yaml.SequenceStartEvent(None, None, False)
 
         # SequenceStartEvent indicates that we're inside a "value, ..." array,
@@ -50,7 +48,7 @@ class _State(list):
         sequence.__setattr__("name", name)
         self.append(sequence)
 
-    def start_mapping(self, name: typing.Optional[str] = None):
+    def start_mapping(self, name: str | None = None):
         mapping = yaml.MappingStartEvent(None, None, False)
 
         # MappingStartEvent indicates that we're inside a "key: value, ..." dictionary,
@@ -149,7 +147,7 @@ class _FrontMatterRule(dict, metaclass=abc.ABCMeta):
 class NestedStructureRule(_FrontMatterRule):
     ID = "osu-wiki-nested-structure"
 
-    exceptions = [
+    exceptions: ClassVar = [
         "translation_keys"
     ]
 
@@ -195,7 +193,7 @@ class TopLevelRule(_FrontMatterRule):
 class AllowedTagsRule(_FrontMatterRule):
     ID = "osu-wiki-allowed-tags"
 
-    exceptions = [
+    exceptions: ClassVar = [
         "translation_keys"
     ]
 
@@ -214,7 +212,7 @@ class AllowedTagsRule(_FrontMatterRule):
                 return self._make_problem(token, f"{value!r} is not in the list of allowed tags")
 
 
-OSU_WIKI_RULES: typing.List[typing.Type[_FrontMatterRule]] = [
+OSU_WIKI_RULES: list[type[_FrontMatterRule]] = [
     NestedStructureRule,
     TopLevelRule,
     AllowedTagsRule,

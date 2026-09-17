@@ -3,10 +3,19 @@ import pathlib
 import typing
 import urllib
 
-from wikitools import redirect_parser, reference_parser, errors, link_parser, article_parser
-from wikitools.file_utils import exists_case_sensitive, exists_case_insensitive
-from wikitools.file_utils import get_canonical_path_casing
-from wikitools.file_utils import is_article
+from wikitools import (
+    article_parser,
+    errors,
+    link_parser,
+    redirect_parser,
+    reference_parser,
+)
+from wikitools.file_utils import (
+    exists_case_insensitive,
+    exists_case_sensitive,
+    get_canonical_path_casing,
+    is_article,
+)
 
 
 class PathType:
@@ -29,7 +38,7 @@ class RepositoryPath(typing.NamedTuple):
 
     path_type: int
     path: pathlib.Path
-    fragment: typing.Optional[str]
+    fragment: str | None
 
 
 def is_fragment_only(parsed_location: urllib.parse.ParseResult):
@@ -63,7 +72,7 @@ def get_repo_path(
     current_article: pathlib.Path,
     link: link_parser.Link,
     parsed_location: urllib.parse.ParseResult
-) -> typing.Union[RepositoryPath, errors.LinkError, None]:
+) -> RepositoryPath | errors.LinkError | None:
     """
     Converts a wild link of into a osu-wiki repository path with an optional fragment, if possible
 
@@ -129,10 +138,10 @@ def get_repo_path(
 def resolve_redirect(
     repo_path: RepositoryPath,
     link: link_parser.Link,
-    reference: typing.Optional[reference_parser.Reference],
+    reference: reference_parser.Reference | None,
     redirects: redirect_parser.Redirects,
     exists: typing.Callable[[pathlib.Path], bool]
-) -> typing.Union[typing.Tuple[RepositoryPath, str, int, str], errors.LinkError]:
+) -> tuple[RepositoryPath, str, int, str] | errors.LinkError:
     """
     Resolves a wiki article path according to redirects.
 
@@ -169,9 +178,9 @@ def resolve_redirect(
 def check_link(
     article: article_parser.Article, link: link_parser.Link,
     redirects: redirect_parser.Redirects, references: reference_parser.References,
-    all_articles: typing.Dict[str, article_parser.Article],
+    all_articles: dict[str, article_parser.Article],
     case_sensitive: bool = False
-) -> typing.Optional[errors.LinkError]:
+) -> errors.LinkError | None:
     """
     Verifies that the link is valid:
         - External links are always assumed valid, since we can't just issue HTTP requests left and right
@@ -304,9 +313,9 @@ def check_link(
 
 def check_article(
     article: article_parser.Article, redirects: redirect_parser.Redirects,
-    all_articles: typing.Dict[str, article_parser.Article],
+    all_articles: dict[str, article_parser.Article],
     case_sensitive: bool = False
-) -> typing.Dict[int, typing.List[errors.LinkError]]:
+) -> dict[int, list[errors.LinkError]]:
     """
     Try resolving links in the article to other articles or files.
     """

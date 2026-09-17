@@ -1,9 +1,9 @@
 import json
 
 import pytest
-import tests.utils as utils
-from tests.utils import OutputCapture
 
+from tests import utils
+from tests.utils import OutputCapture
 from wikitools_cli.commands import front_matter
 
 

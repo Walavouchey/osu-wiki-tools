@@ -1,5 +1,5 @@
-import typing
 import re
+import typing
 
 
 class CodeBlock(typing.NamedTuple):
@@ -52,8 +52,8 @@ class CodeBlockParser:
             tag_len += 1
         return tag_len
 
-    def parse(self, line: str) -> typing.List[CodeBlock]:
-        blocks: typing.List[CodeBlock] = []
+    def parse(self, line: str) -> list[CodeBlock]:
+        blocks: list[CodeBlock] = []
         line_len = len(line)
 
         if line.startswith('```'):
@@ -96,7 +96,7 @@ class CodeBlockParser:
         return blocks
 
 
-def is_in_code_block(link_start: int, code_blocks: typing.List[CodeBlock]) -> bool:
+def is_in_code_block(link_start: int, code_blocks: list[CodeBlock]) -> bool:
     if (
         not code_blocks or
         link_start < code_blocks[0].start or

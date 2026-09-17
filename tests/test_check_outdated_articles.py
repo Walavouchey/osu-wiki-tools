@@ -1,11 +1,10 @@
-from collections import Counter as multiset
 import textwrap
+from collections import Counter as multiset
 
 import pytest
-import tests.utils as utils
 
-from wikitools import article_parser, git_utils, file_utils
-
+from tests import utils
+from wikitools import article_parser, file_utils, git_utils
 from wikitools_cli.commands import check_outdated_articles as outdater
 
 
@@ -717,7 +716,7 @@ class TestCheckOutdatedArticles:
         )
 
         assert exit_code == 0
-        assert set(utils.get_changed_files()) == set((
+        assert set(utils.get_changed_files()) == {
             'wiki/Beatmap/Difficulty/fr.md',
             'wiki/Beatmap/Difficulty/pt-br.md',
             'wiki/Beatmap/Difficulty/zh-tw.md',
@@ -725,4 +724,4 @@ class TestCheckOutdatedArticles:
             'wiki/Beatmap/Difficulty/Tiny_speck/fr.md',
             'wiki/Beatmap/Difficulty/Tiny_speck/pt-br.md',
             'wiki/Beatmap/Difficulty/Tiny_speck/zh-tw.md',
-        ))
+        }

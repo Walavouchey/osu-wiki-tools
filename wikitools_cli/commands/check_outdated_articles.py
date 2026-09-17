@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+# noqa: EXE001
 """
 This script does the following:
 
@@ -18,9 +18,9 @@ import os
 import os.path
 import sys
 
-from wikitools import article_parser, console, git_utils, file_utils
-
 import braceexpand
+
+from wikitools import article_parser, console, file_utils, git_utils
 
 # A pull request string which disables the check (has no effect here, listed for informational purposes only)
 PULL_REQUEST_TAG = "SKIP_OUTDATED_CHECK"
@@ -68,7 +68,7 @@ def print_bad_hash_error(*filenames, outdated_hash=None):
             console.red("Error:"),
             console.red(OUTDATED_HASH_TAG),
             "" if outdated_hash is None else " Did you mean to use {} instead?".format(
-                console.green("{}: {}".format(OUTDATED_HASH_TAG, outdated_hash))
+                console.green(f"{OUTDATED_HASH_TAG}: {outdated_hash}")
             )
         )
     )
@@ -181,10 +181,10 @@ def main(*args):
     exit_code = 0
 
     if args.root:
-        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change  # noqa: F841
+        changed_cwd = file_utils.ChangeDirectory(args.root)  # Keep alive to maintain directory change
 
     modified_translations = set()
-    with_bad_hashes = list()
+    with_bad_hashes = []
 
     if args.all:
         all_translations = file_utils.list_all_translations(file_utils.list_all_article_dirs())
@@ -209,12 +209,9 @@ def main(*args):
         translations_to_outdate = []
         if args.exclude:
             excluded_count = 0
-            masks = list(itertools.chain(*map(
-                lambda single_argument: list(
+            masks = list(itertools.chain(*(list(
                     braceexpand.braceexpand(single_argument.lower())
-                ),
-                args.exclude
-            )))
+                ) for single_argument in args.exclude)))
 
             for translation in temp_translations_to_outdate:
                 if path_match(translation.lower(), masks):
@@ -231,7 +228,7 @@ def main(*args):
             should_autofix = getattr(args, AUTOFIX_FLAG[2:], False)
             should_autocommit = getattr(args, AUTOCOMMIT_FLAG[2:], False)
             if should_autofix:
-                print(console.green('{} specified, outdating translations...'.format(AUTOFIX_FLAG)))
+                print(console.green(f'{AUTOFIX_FLAG} specified, outdating translations...'))
 
                 if outdated_hash:
                     outdate_translations(*translations_to_outdate, outdated_hash=outdated_hash)
@@ -241,7 +238,7 @@ def main(*args):
                             " ".join(translations_to_outdate)
                         )))
                     else:
-                        print(console.green('{} specified, committing changes...'.format(AUTOCOMMIT_FLAG)))
+                        print(console.green(f'{AUTOCOMMIT_FLAG} specified, committing changes...'))
                         git_utils.git("add", *translations_to_outdate)
                         git_utils.git("commit", "-m", "outdate translations")
                         print(console.green('Done! The changes have been committed for you.'))

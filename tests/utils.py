@@ -1,20 +1,19 @@
 import os
-from io import StringIO
 import sys
-
-import py  # type: ignore
+from io import StringIO
+from pathlib import Path
 
 from wikitools import git_utils
 
 
-def create_files(root: py.path.local, *articles):
+def create_files(root, *articles):
     for path, contents in articles:
-        article_folder = root.join(os.path.dirname(path))
-        article_folder.ensure(dir=1)
+        article_folder = (Path(root) / path).parent
+        article_folder.mkdir(parents=True, exist_ok=True)
         if isinstance(contents, bytes):
-            article_folder.join(os.path.basename(path)).write_binary(contents)
+            (article_folder / os.path.basename(path)).write_binary(contents)
         else:
-            article_folder.join(os.path.basename(path)).write_text(contents, encoding='utf-8')
+            (article_folder / os.path.basename(path)).write_text(contents, encoding='utf-8')
 
 
 def stage_all_and_commit(commit_message):
@@ -46,7 +45,7 @@ def remove(the_list, *may_not_contain):
     return list(filter(lambda item: all(thing not in item for thing in may_not_contain), the_list))
 
 
-class OutputCapture():
+class OutputCapture:
     def __enter__(self):
         self._originals = sys.stdout, sys.stderr
         self.stdout, self.stderr = StringIO(), StringIO()

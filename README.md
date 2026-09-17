@@ -37,3 +37,11 @@ pytest --mypy
 ```sh
 ./run_visual_tests.py
 ```
+
+### Linting
+
+Install [ruff](https://docs.astral.sh/ruff/installation/), then run:
+
+```sh
+ruff check
+````

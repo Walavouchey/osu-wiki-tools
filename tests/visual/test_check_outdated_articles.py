@@ -1,7 +1,5 @@
-from tests.conftest import VisualTest, VisualTestCase
-from tests.conftest import DummyRepository
-import tests.utils as utils
-
+from tests import utils
+from tests.conftest import DummyRepository, VisualTest, VisualTestCase
 from wikitools_cli.commands import check_outdated_articles as outdater
 
 

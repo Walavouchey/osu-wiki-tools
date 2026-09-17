@@ -1,6 +1,4 @@
-from tests.conftest import get_visual_tests
-from tests.conftest import run_visual_test
-
+from tests.conftest import get_visual_tests, run_visual_test
 
 tests = get_visual_tests()
 

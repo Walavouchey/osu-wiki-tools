@@ -7,7 +7,13 @@ import typing
 import yaml
 from yamllint.rules.quoted_strings import _quotes_are_needed  # type: ignore
 
-from wikitools import code_block_parser, link_parser, comment_parser, identifier_parser, reference_parser
+from wikitools import (
+    code_block_parser,
+    comment_parser,
+    identifier_parser,
+    link_parser,
+    reference_parser,
+)
 
 FRONT_MATTER_DELIMITER = '---'
 TITLE_INDICATOR = '# '
@@ -88,7 +94,7 @@ class Dumper(yaml.Dumper):
 
 class ArticleLine(typing.NamedTuple):
     raw_line: str
-    links: typing.List[link_parser.Link]
+    links: list[link_parser.Link]
 
 
 class Article:
@@ -101,16 +107,16 @@ class Article:
 
     directory: str
     filename: str
-    lines: typing.Dict[int, ArticleLine]
+    lines: dict[int, ArticleLine]
     references: reference_parser.References
-    identifiers: typing.Dict[str, int]
+    identifiers: dict[str, int]
     front_matter: dict
 
     def __init__(
         self, path: pathlib.Path,
-        lines: typing.Dict[int, ArticleLine],
+        lines: dict[int, ArticleLine],
         references: reference_parser.References,
-        identifiers: typing.Dict[str, int],
+        identifiers: dict[str, int],
         front_matter: dict
     ):
         self.filename = path.name
@@ -122,7 +128,7 @@ class Article:
 
     @property
     def path(self) -> str:
-        return '/'.join((self.directory, self.filename))
+        return f'{self.directory}/{self.filename}'
 
 
 def load_front_matter(fileobj: typing.TextIO) -> dict:
@@ -141,10 +147,10 @@ def load_front_matter(fileobj: typing.TextIO) -> dict:
 
     if delimiters == 2:
         return yaml.safe_load(buffer.getvalue())
-    return dict()
+    return {}
 
 
-class FrontMatterDetector():
+class FrontMatterDetector:
     """
     Helper class for keeping track of whether a line is part of front matter.
     Includes delimiter lines.
@@ -195,7 +201,7 @@ def save_front_matter(filepath: str, fm: dict):
     shutil.move(new_path, filepath)
 
 
-def parse(path: typing.Union[str, pathlib.Path]) -> Article:
+def parse(path: str | pathlib.Path) -> Article:
     """
     Read an article line by line, extracting links, identifiers and references as we go.
     Anything inside <!-- HTML comments -->, both single and multiline, is skipped.
@@ -207,7 +213,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
     saved_lines = {}
     references = {}
     cnt: typing.Counter[str] = collections.Counter()
-    identifiers: typing.Dict[str, int] = {}
+    identifiers: dict[str, int] = {}
 
     comment_reader = comment_parser.CommentParser()
     code_block_reader = code_block_parser.CodeBlockParser()
@@ -240,7 +246,7 @@ def parse(path: typing.Union[str, pathlib.Path]) -> Article:
                 cnt[identifier] += 1
                 # duplicate identifiers get a suffix
                 if identifier in identifiers:
-                    identifier = '{}.{}'.format(identifier, cnt[identifier] - 1)
+                    identifier = f'{identifier}.{cnt[identifier] - 1}'
                 identifiers[identifier] = lineno
 
             if line.startswith('['):

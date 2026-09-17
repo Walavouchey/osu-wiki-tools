@@ -1,9 +1,9 @@
 
-import tests.utils as utils
-
-import pytest
 import textwrap
 
+import pytest
+
+from tests import utils
 from wikitools_cli.commands import check_yaml as yaml_checker
 
 

@@ -9,12 +9,10 @@ def git(*args, expected_code=0):
     err = err.decode("utf-8") if err else ""
     if proc.returncode != expected_code:
         raise RuntimeError(
-            "{} failed:\n"
-            "- exit code: {}\n"
-            "- stdout: {!r}\n"
-            "- stderr: {!r}\n".format(
-                cmd, proc.returncode, out, err
-            )
+            f"{cmd} failed:\n"
+            f"- exit code: {proc.returncode}\n"
+            f"- stdout: {out!r}\n"
+            f"- stderr: {err!r}\n"
         )
     return out
 

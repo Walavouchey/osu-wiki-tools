@@ -1,7 +1,6 @@
-import tests.utils as utils
-
 import pytest
 
+from tests import utils
 from wikitools_cli.commands import check_links as link_checker
 
 

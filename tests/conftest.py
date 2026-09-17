@@ -1,20 +1,19 @@
-import os
-import sys
-import tempfile
-
 import collections
 import importlib
+import os
 import pkgutil
+import sys
+import tempfile
+import typing
+from pathlib import Path
+
 import py  # type: ignore
 import pytest
-import typing
 
-import tests.utils as utils
 import tests.visual
-
+from tests import utils
 from wikitools import console
 from wikitools.file_utils import file_tree
-
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -40,7 +39,7 @@ def root(tmpdir: py.path.local):
     os.chdir(curdir)
 
 
-class DummyRepository():
+class DummyRepository:
     """
     The same exact thing as above but the poor man's non-pytest version (for visual tests)
 
@@ -57,7 +56,7 @@ class DummyRepository():
         utils.set_up_dummy_repo()
 
     def __enter__(self):
-        return py.path.local(self.tmpdir.name)
+        return Path(self.tmpdir.name)
 
     def __exit__(self, exc, value, tb):
         os.chdir(self.curdir)
@@ -74,7 +73,7 @@ class VisualTestCase(collections.namedtuple('VisualTestCase', 'name description 
 class VisualTest(collections.namedtuple('VisualTest', 'name description cases')):
     name: str
     description: str
-    cases: typing.List[VisualTestCase]
+    cases: list[VisualTestCase]
 
 
 def get_visual_tests():

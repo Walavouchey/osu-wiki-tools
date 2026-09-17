@@ -1,7 +1,12 @@
 from tests.conftest import VisualTest, VisualTestCase
-
 from wikitools_cli import osu_wiki_tools
-from wikitools_cli.commands import check_links, check_outdated_articles, check_yaml, check_files, front_matter
+from wikitools_cli.commands import (
+    check_files,
+    check_links,
+    check_outdated_articles,
+    check_yaml,
+    front_matter,
+)
 
 test = VisualTest(
     name="Print help",

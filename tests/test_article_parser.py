@@ -1,10 +1,12 @@
 import collections
 import textwrap
+from functools import reduce
+from operator import iadd
 from urllib import parse
 
 import pytest
-import tests.utils as utils
 
+from tests import utils
 from wikitools import article_parser, reference_parser
 
 
@@ -148,8 +150,8 @@ class TestArticleParser:
         assert len(article.references) == 0  # commented references are also skipped
         assert not article.front_matter
 
-        links = sum((line.links for line in article.lines.values()), start=[])
-        locations = set(_.raw_location for _ in links)
+        links = reduce(iadd, (line.links for line in article.lines.values()), [])
+        locations = {_.raw_location for _ in links}
         assert locations == {'/wiki/Red', 'img/violet.png', 'blue_ref'}
         assert article.identifiers == {}
 

@@ -3,9 +3,22 @@ import textwrap
 
 import pytest
 
-import tests.utils as utils
-
-from wikitools import article_parser, link_checker, link_parser, redirect_parser, errors as error_types, reference_parser
+from tests import utils
+from wikitools import (
+    article_parser,
+    link_checker,
+    link_parser,
+    redirect_parser,
+    reference_parser,
+)
+from wikitools.errors import (
+    BrokenLinkError,
+    BrokenRedirectError,
+    BrokenRedirectIdentifierError,
+    MalformedLinkError,
+    MissingIdentifierError,
+    MissingReferenceError,
+)
 
 
 def dummy_article(path):
@@ -41,7 +54,7 @@ class TestArticleLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.BrokenLinkError)
+            assert isinstance(error, BrokenLinkError)
         else:
             assert error is None
 
@@ -71,7 +84,7 @@ class TestArticleLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.BrokenLinkError)
+            assert isinstance(error, BrokenLinkError)
         else:
             assert error is None
 
@@ -101,7 +114,7 @@ class TestArticleLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.BrokenLinkError)
+            assert isinstance(error, BrokenLinkError)
         else:
             assert error is None
 
@@ -120,7 +133,7 @@ class TestArticleLinks:
             error = link_checker.check_link(
                 article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
             )
-            assert isinstance(error, error_types.BrokenLinkError)
+            assert isinstance(error, BrokenLinkError)
 
     def test__valid_reference(self, root):
         utils.create_files(
@@ -148,7 +161,7 @@ class TestArticleLinks:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references=references, all_articles={}
         )
-        assert isinstance(error, error_types.MissingReferenceError)
+        assert isinstance(error, MissingReferenceError)
         assert error.link.raw_location == 'article_ref'
 
     def test__valid_relative_link(self, root):
@@ -183,7 +196,7 @@ class TestArticleLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Existing_article/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
 
     @pytest.mark.parametrize(
         "article",
@@ -204,7 +217,7 @@ class TestArticleLinks:
         error = link_checker.check_link(
             article=dummy_article(article), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
 
 
 class TestImageLinks:
@@ -234,7 +247,7 @@ class TestImageLinks:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
 
     def test__valid_relative_link(self, root):
         utils.create_files(
@@ -277,7 +290,7 @@ class TestImageLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Difficulty/en.md'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
 
     def test__invalid_reference_link(self, root):
         utils.create_files(
@@ -292,7 +305,7 @@ class TestImageLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/OWC_2030/en.md'), link=link, redirects={}, references=references, all_articles={}
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
         assert isinstance(error.link, link_parser.Link)
         assert error.link.is_reference
         assert error.link.raw_location == 'flag_XX'
@@ -345,7 +358,7 @@ class TestRedirectedLinks:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects=redirects, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.BrokenRedirectError)
+        assert isinstance(error, BrokenRedirectError)
         assert error.redirect_lineno == payload["lineno"]
         assert error.resolved_location == payload["location"]
         assert error.redirect_destination == payload["destination"]
@@ -395,7 +408,7 @@ class TestNewspostLinks:
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
         assert error
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
 
 
 class TestNewspostSectionLinks:
@@ -423,7 +436,7 @@ class TestNewspostSectionLinks:
             case_sensitive=payload["case_sensitive"]
         )
         if payload["should_error"]:
-            assert isinstance(error, error_types.BrokenLinkError)
+            assert isinstance(error, BrokenLinkError)
         else:
             assert error is None
 
@@ -507,7 +520,7 @@ class TestNewspostSectionLinks:
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles=all_articles
         )
         assert error
-        assert isinstance(error, error_types.MissingIdentifierError)
+        assert isinstance(error, MissingIdentifierError)
         assert error.link == link
         assert error.path == "news/2007/2007-01-01-newspost.md"
         assert error.identifier == "the-fake-news"
@@ -567,12 +580,12 @@ class TestGitHubLinks:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}, case_sensitive=False
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
         assert error.resolved_location == payload["resolved_location"]
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}, case_sensitive=True
         )
-        assert isinstance(error, error_types.BrokenLinkError)
+        assert isinstance(error, BrokenLinkError)
         assert error.resolved_location == payload["resolved_location"]
 
     @pytest.mark.parametrize(
@@ -620,7 +633,7 @@ class TestGitHubLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Other_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
-        assert isinstance(error, error_types.MissingIdentifierError)
+        assert isinstance(error, MissingIdentifierError)
         assert error.identifier == 'some-nonexistent-heading'
         assert error.path == payload["resolved_location"]
         assert not error.no_translation_available
@@ -634,7 +647,7 @@ class TestMalformedLink:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.MalformedLinkError)
+        assert isinstance(error, MalformedLinkError)
         assert error.link.raw_location == '//example.com'
 
     def test__wiki_link_with_filename(self, root):
@@ -648,7 +661,7 @@ class TestMalformedLink:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.MalformedLinkError)
+        assert isinstance(error, MalformedLinkError)
 
     @pytest.mark.parametrize(
         "payload",
@@ -669,7 +682,7 @@ class TestMalformedLink:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.MalformedLinkError)
+        assert isinstance(error, MalformedLinkError)
 
     @pytest.mark.parametrize(
         "payload",
@@ -691,7 +704,7 @@ class TestMalformedLink:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.MalformedLinkError)
+        assert isinstance(error, MalformedLinkError)
 
     @pytest.mark.parametrize(
         "payload",
@@ -718,7 +731,7 @@ class TestMalformedLink:
         error = link_checker.check_link(
             article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
         )
-        assert isinstance(error, error_types.MalformedLinkError)
+        assert isinstance(error, MalformedLinkError)
 
     def test__relative_newspost_link(self, root):
         path = 'news/2007/2007-01-01-newspost.md'
@@ -742,7 +755,7 @@ class TestMalformedLink:
             article=article_parser.parse(path), link=link, redirects={}, references={}, all_articles={}
         )
         assert error
-        assert isinstance(error, error_types.MalformedLinkError)
+        assert isinstance(error, MalformedLinkError)
 
 
 class TestSectionLinks:
@@ -799,7 +812,7 @@ class TestSectionLinks:
             ('wiki/New_article/en.md', '# New article'),
             (
                 'wiki/New_article/ru.md',
-                textwrap.dedent(u'''
+                textwrap.dedent('''
                     # New article
 
                     ## Заголовок (translated)
@@ -832,7 +845,7 @@ class TestSectionLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Other_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
-        assert isinstance(error, error_types.MissingIdentifierError)
+        assert isinstance(error, MissingIdentifierError)
         assert error.identifier == 'some-nonexistent-heading'
         assert error.path == 'wiki/New_article/en.md'
         assert not error.no_translation_available
@@ -861,7 +874,7 @@ class TestSectionLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/Some_other_article/fr.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
-        assert isinstance(error, error_types.MissingIdentifierError)
+        assert isinstance(error, MissingIdentifierError)
         assert error.identifier == 'auto-contrôle'
         assert error.path == 'wiki/New_article/en.md'
         assert error.no_translation_available
@@ -919,7 +932,7 @@ class TestSectionLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects={}, references={}, all_articles=all_articles
         )
-        assert isinstance(error, error_types.MissingIdentifierError)
+        assert isinstance(error, MissingIdentifierError)
         assert error.identifier == 'wrong-subheading'
         assert error.path == 'wiki/New_article/Included_article/en.md'
 
@@ -994,7 +1007,7 @@ class TestSectionLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )
-        assert isinstance(error, error_types.BrokenRedirectIdentifierError)
+        assert isinstance(error, BrokenRedirectIdentifierError)
         assert error.identifier == 'totally-wrong-heading'
         assert error.link.parsed_location.fragment == (payload["link"].split("#")[1] if "#" in payload["link"] else "")
         assert error.path == 'wiki/Target_article/en.md'
@@ -1032,7 +1045,7 @@ class TestSectionLinks:
         error = link_checker.check_link(
             article=dummy_article('wiki/New_article/en.md'), link=link, redirects=redirects, references={}, all_articles=all_articles
         )
-        assert isinstance(error, error_types.MissingIdentifierError)
+        assert isinstance(error, MissingIdentifierError)
         assert error.identifier == 'totally-wrong-heading'
         assert error.path == 'wiki/Target_article/en.md'
 
@@ -1106,7 +1119,7 @@ class TestArticleChecker:
             for result in rr:
                 flattened_errors.append((lineno, result))
 
-        assert set(r.link.raw_location for (_, r) in flattened_errors) == {
+        assert {r.link.raw_location for (_, r) in flattened_errors} == {
             '/wiki/Broken_link',
             'Bad_relative_link',
             '/wiki/Broken_redirect',
@@ -1116,31 +1129,31 @@ class TestArticleChecker:
 
         broken_link_error = flattened_errors[0][1]
         broken_link = flattened_errors[0][1].link
-        assert isinstance(broken_link_error, error_types.BrokenLinkError)
+        assert isinstance(broken_link_error, BrokenLinkError)
         assert broken_link_error.resolved_location == 'wiki/Broken_link'
         assert (flattened_errors[0][0], broken_link.start) == (7, 0)
 
         broken_rel_link_error = flattened_errors[1][1]
         broken_rel_link = flattened_errors[1][1].link
-        assert isinstance(broken_rel_link_error, error_types.BrokenLinkError)
+        assert isinstance(broken_rel_link_error, BrokenLinkError)
         assert broken_rel_link_error.resolved_location == 'wiki/Article/Bad_relative_link'
         assert (flattened_errors[1][0], broken_rel_link.start) == (9, 14)
 
         broken_redirect_error = flattened_errors[2][1]
         broken_redirect = flattened_errors[2][1].link
-        assert isinstance(broken_redirect_error, error_types.BrokenRedirectError)
+        assert isinstance(broken_redirect_error, BrokenRedirectError)
         assert broken_redirect_error.resolved_location == 'Broken_redirect'
         assert (flattened_errors[2][0], broken_redirect.start) == (10, 15)
 
         broken_redirect_error = flattened_errors[3][1]
         broken_redirect_2 = flattened_errors[3][1].link
-        assert isinstance(broken_redirect_error, error_types.MissingReferenceError)
+        assert isinstance(broken_redirect_error, MissingReferenceError)
         assert broken_redirect_error.link.raw_location == 'at_all_ref'
         assert (flattened_errors[3][0], broken_redirect_2.start) == (11, 19)
 
         broken_image_error = flattened_errors[4][1]
         broken_image = flattened_errors[4][1].link
-        assert isinstance(broken_image_error, error_types.BrokenLinkError)
+        assert isinstance(broken_image_error, BrokenLinkError)
         assert broken_image_error.resolved_location == 'wiki/Article/img/you_tried.jpeg'
         assert (flattened_errors[4][0], broken_image.start) == (12, 10)
 

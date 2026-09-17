@@ -1,7 +1,7 @@
+import textwrap
 import typing
 from functools import lru_cache
 from urllib import parse
-import textwrap
 
 from wikitools import console, reference_parser
 
@@ -70,7 +70,7 @@ class Link(typing.NamedTuple):
             return f"[{self.alt_text}]({self.content})"
 
     @property
-    def truncated_coloured_link(self, fragment_only=False):
+    def truncated_coloured_link(self):
         return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
             alt_text_in_braces=console.green(f"[{_shorten(self.alt_text)}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
@@ -80,7 +80,7 @@ class Link(typing.NamedTuple):
         )
 
     @property
-    def truncated_coloured_link_fragment(self, fragment_only=False):
+    def truncated_coloured_link_fragment(self):
         return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
             alt_text_in_braces=console.green(f"[{_shorten(self.alt_text)}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
@@ -110,7 +110,7 @@ class Link(typing.NamedTuple):
 
     # provided for convenience, used in `BrokenRedirectError`
     @staticmethod
-    def colourise_location_static(location: str, fragment: typing.Optional[str] = None, fragment_only: bool = False):
+    def colourise_location_static(location: str, fragment: str | None = None, fragment_only: bool = False):
         if fragment_only:
             colourised_location = console.green(location)
             if fragment:
@@ -120,7 +120,7 @@ class Link(typing.NamedTuple):
 
     def resolve(
         self, references: reference_parser.References
-    ) -> typing.Optional[reference_parser.Reference]:
+    ) -> reference_parser.Reference | None:
         if not self.is_reference:
             return None
         return references.get(self.parsed_location.path)
@@ -136,7 +136,7 @@ class Link(typing.NamedTuple):
     is_reference: bool
 
 
-def find_link(s: str, index=0) -> typing.Optional[Link]:
+def find_link(s: str, index=0) -> Link | None:
     """
     Finds the first valid Markdown link found in the string `s`, starting the search from position `index`.
     The following are considered links (title and alt text may be omitted):
@@ -267,7 +267,7 @@ def find_link(s: str, index=0) -> typing.Optional[Link]:
     return None
 
 
-def find_links(line: str) -> typing.List[Link]:
+def find_links(line: str) -> list[Link]:
     """
     Iteratively extract all links from a line.
     """

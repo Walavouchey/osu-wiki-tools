@@ -43,8 +43,8 @@ class CommentParser:
     def in_multiline(self) -> bool:
         return self.__in_multiline
 
-    def parse(self, line: str) -> typing.List[Comment]:
-        comments: typing.List[Comment] = []
+    def parse(self, line: str) -> list[Comment]:
+        comments: list[Comment] = []
         index = 0
         start = -1
 
@@ -82,7 +82,7 @@ class CommentParser:
         return comments
 
 
-def is_in_comment(index: int, comments: typing.List[Comment]) -> bool:
+def is_in_comment(index: int, comments: list[Comment]) -> bool:
     for comment in comments:
         left_bound = comment.start
         right_bound = comment.end

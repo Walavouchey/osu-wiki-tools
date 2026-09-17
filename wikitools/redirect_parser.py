@@ -1,6 +1,5 @@
-import typing
 
-Redirects = typing.Dict[str, typing.Tuple[str, int]]
+Redirects = dict[str, tuple[str, int]]
 
 
 def unquote_and_trim(s):
