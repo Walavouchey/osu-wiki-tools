@@ -187,6 +187,7 @@ def check_link(
         - For Markdown references, there exists a dereferencing line with [reference_name]: /lo/ca/ti/on
         - Direct internal links, as well as redirects, must point to existing article files
         - Relative links are parsed under the assumption that they are located inside the current article's directory
+        - Image links must point to image files
     """
 
     if case_sensitive:
@@ -225,6 +226,9 @@ def check_link(
             return redirect_result
         repo_path, redirect_source, redirect_line_no, redirect_destination = redirect_result
         redirected = True
+
+    if link.is_image and not repo_path.path.suffix and not repo_path.path.suffix.lower() in ("png", "jpg", "jpeg", "gif"):
+        return errors.MalformedLinkError(link, "image link doesn't point to an image (must be a .png, .jpg, .jpeg or .gif)")
 
     # link to an article in general, article exists -> good
     if not repo_path.fragment:

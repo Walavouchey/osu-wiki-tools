@@ -91,6 +91,36 @@ class TestArticleLinks:
     @pytest.mark.parametrize(
         "payload",
         [
+            {"link": "![this image](/wiki/First_article/img/image.png)", "should_error": False, "error": MalformedLinkError},
+            {"link": "[this image](/wiki/First_article/img/image.png)", "should_error": False, "error": MalformedLinkError},
+            {"link": "[this image](/wiki/First_article/img/image.a)", "should_error": True, "error": BrokenLinkError},
+            {"link": "[this image](/wiki/First_article/img/image.b)", "should_error": False, "error": None},
+            {"link": "![this image](/wiki/First_article)", "should_error": True, "error": MalformedLinkError},
+            {"link": r"\![this image](/wiki/First_article)", "should_error": False, "error": MalformedLinkError},
+        ]
+    )
+    def test__image_link_to_non_image(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/First_article/en.md', ''),
+            ('wiki/First_article/img/image.png', ''),
+            ('wiki/First_article/img/image.b', '')
+        )
+
+        link = link_parser.find_link(f'Check {payload["link"]}.')
+        assert link
+        error = link_checker.check_link(
+            article=dummy_article('does/not/matter'),
+            link=link, redirects={}, references={}, all_articles={}
+        )
+        if payload["should_error"]:
+            assert isinstance(error, payload["error"])
+        else:
+            assert error is None
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
             {"case_sensitive": False, "capitalisation_correct": False, "should_error": False},
             {"case_sensitive": False, "capitalisation_correct": True, "should_error": False},
             {"case_sensitive": True, "capitalisation_correct": False, "should_error": True},
