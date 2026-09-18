@@ -74,7 +74,7 @@ def get_repo_path(
     parsed_location: urllib.parse.ParseResult
 ) -> RepositoryPath | errors.LinkError | None:
     """
-    Converts a wild link of into a osu-wiki repository path with an optional fragment, if possible
+    Converts a wild link into an osu-wiki repository path with an optional fragment, if possible
 
     Acceptable links can be in the following formats:
 
@@ -200,7 +200,7 @@ def check_link(
         return errors.MissingReferenceError(link)
 
     current_article_path = pathlib.Path(article.path)
-    if current_article_path.as_posix().startswith("wiki"):
+    if article.path.startswith("wiki"):
         current_article_path = pathlib.Path(os.path.dirname(current_article_path))
 
     repo_path = get_repo_path(current_article_path, link, reference.parsed_location if reference else link.parsed_location)

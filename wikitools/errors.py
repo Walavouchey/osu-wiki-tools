@@ -62,10 +62,10 @@ class BrokenLinkError(
     resolved_location: str
 
     def __repr__(self):
-        return '{}: "{}" doesn\'t exist {}'.format(
+        return '{}: "{}" doesn\'t exist{}'.format(
             self.link.truncated_coloured_link,
             self.resolved_location,
-            f"(reference at line {self.reference.lineno})"
+            f" (reference at line {self.reference.lineno})"
             if self.reference else ''
         )
 
