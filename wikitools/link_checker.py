@@ -104,7 +104,7 @@ def get_repo_path(
         id = parsed_location.path.split("/")[2]
         if id == "" or any(c not in "0123456789" for c in id):
             id = "<user id>"
-        return errors.LinkStyleError(link, f"user link must be written as ::{link.alt_text}::{{ id={id} }}")
+        return errors.LinkStyleError(link, f"user link must be written as ::{link.alt_text}::{{ user={id} }}")
 
     if is_fragment_only(parsed_location):
         path_type = PathType.NEWS if current_article.as_posix().startswith("news") else PathType.WIKI

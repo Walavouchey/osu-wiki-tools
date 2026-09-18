@@ -1133,7 +1133,7 @@ class TestLinkStyle:
             {"link": "[peppy](https://osu.ppy.sh/users/peppy/fruits)", "should_error": True},
             {"link": "[peppy](https://osu.ppy.sh/u/peppy)", "should_error": True},
             {"link": "[peppy](https://osu.ppy.sh/u/peppy/fruits)", "should_error": True},
-            {"link": "::peppy::{ id=2 }", "should_error": False},
+            {"link": "::peppy::{ user=2 }", "should_error": False},
         ]
     )
     def test__user_link(self, root, payload):
