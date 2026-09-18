@@ -1185,7 +1185,7 @@ class TestArticleChecker:
         broken_image = flattened_errors[4][1].link
         assert isinstance(broken_image_error, BrokenLinkError)
         assert broken_image_error.resolved_location == 'wiki/Article/img/you_tried.jpeg'
-        assert (flattened_errors[4][0], broken_image.start) == (12, 10)
+        assert (flattened_errors[4][0], broken_image.start) == (12, 9)
 
         # all lines, even with references, were cached
         assert all(_[0] in article.lines for _ in flattened_errors)

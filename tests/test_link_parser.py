@@ -35,7 +35,7 @@ class TestInlinePlainLinks:
                 is_image=False,
             ),
             link_parser.Link(
-                start=11,
+                start=10,
                 end=40,
                 alt_text="link",
                 raw_location="/wiki/shared/image.png",
@@ -142,7 +142,7 @@ class TestInlineImageLinks:
         example = "Check this out: ![](/wiki/crown.png)"
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
-            start=17,
+            start=16,
             end=35,
             alt_text="",
             raw_location="/wiki/crown.png",
@@ -170,7 +170,7 @@ class TestInlineImageLinks:
         example = "Check this out: ![Crown](/wiki/crown.png)"
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
-            start=17,
+            start=16,
             end=40,
             alt_text="Crown",
             raw_location="/wiki/crown.png",
@@ -184,7 +184,7 @@ class TestInlineImageLinks:
         example = 'Check this out: ![](/wiki/crown.png "Title")'
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
-            start=17,
+            start=16,
             end=43,
             alt_text="",
             raw_location="/wiki/crown.png",
@@ -198,7 +198,7 @@ class TestInlineImageLinks:
         example = 'Check this out: ![Crown](/wiki/crown.png "Title")'
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
-            start=17,
+            start=16,
             end=48,
             alt_text="Crown",
             raw_location="/wiki/crown.png",
@@ -256,7 +256,7 @@ class TestReferenceLinks:
         example = "No crowns here: ![Sweden][SE_flag]"
         link = link_parser.find_link(example)
         assert link == link_parser.Link(
-            start=17,
+            start=16,
             end=33,
             alt_text="Sweden",
             raw_location="SE_flag",

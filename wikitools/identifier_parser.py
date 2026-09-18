@@ -71,8 +71,8 @@ def extract_identifier(
         start = j
         for k, link in enumerate(links_on_line):
             # before link.start, there is an exclamation mark
-            if s[link.start - 1] == '!':
-                heading += s[start: link.start - 1]
+            if link.is_image:
+                heading += s[start: link.start]
             else:
                 # People/The_Team/Account_support_team has e-mail addresses WITH LINKS IN THEM as headings
                 heading += s[start: link.start] + link.alt_text

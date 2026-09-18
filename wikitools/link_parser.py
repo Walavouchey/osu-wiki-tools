@@ -42,18 +42,21 @@ class Link(typing.NamedTuple):
     """
 
     # Link position within the line. Example:
-    #   See also: [Difficulty names](/wiki/Beatmap/Difficulty#naming-conventions)
-    #             ^ start                                                       ^ end
+    #   [Difficulty names](/wiki/Beatmap/Difficulty#naming-conventions)
+    #   ^ start                                                       ^ end
+    #
+    #   ![image](img/image.png)
+    #   ^ start               ^ end
     start: int
     end: int
 
     # Sections of a link. Example:
-    #    ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
-    #      ^ alt_text  ^
-    #                     ^ ----- location ----- ^
-    #                                             ^ ---------- title ---------- ^
-    #                     ^ --------------------- content --------------------- ^
-    #     ^ ------------------ full_link / full_coloured_link ------------------ ^
+    #   ![Player is AFK](img/chat-console-afk.png "Player is away from keyboard")
+    #     ^ alt_text  ^
+    #                    ^ ----- location ----- ^
+    #                                            ^ ---------- title ---------- ^
+    #                    ^ --------------------- content --------------------- ^
+    #   ^ ------------------- full_link / colourise_link ---------------------- ^
     alt_text: str
     raw_location: str
     parsed_location: parse.ParseResult
@@ -65,14 +68,17 @@ class Link(typing.NamedTuple):
 
     @property
     def full_link(self):
+        link = ('!' if self.is_image else '')
         if self.is_reference:
-            return f"[{self.alt_text}][{self.content}]"
+            link += f"[{self.alt_text}][{self.content}]"
         else:
-            return f"[{self.alt_text}]({self.content})"
+            link += f"[{self.alt_text}]({self.content})"
+        return link
 
     @property
     def truncated_coloured_link(self):
-        return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+        return "{exclamation}{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+            exclamation=console.green('!' if self.is_image else ''),
             alt_text_in_braces=console.green(f"[{_shorten(self.alt_text)}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
             location=self.colourise_location(),
@@ -82,7 +88,8 @@ class Link(typing.NamedTuple):
 
     @property
     def truncated_coloured_link_fragment(self):
-        return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+        return "{exclamation}{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+            exclamation=console.green('!' if self.is_image else ''),
             alt_text_in_braces=console.green(f"[{_shorten(self.alt_text)}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
             location=self.colourise_location(fragment_only=True),
@@ -95,10 +102,11 @@ class Link(typing.NamedTuple):
         """
         Position of the link #fragment in the line, if there is one. Otherwise, the same value as the end of the link.
         """
-        return self.start + len(self.alt_text) + 2 + len(self.parsed_location.path) + 1
+        return self.start + (1 if self.is_image else 0) + len(self.alt_text) + 2 + len(self.parsed_location.path) + 1
 
     def colourise_link(self, fragment_only=False):
-        return "{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+        return "{exclamation}{alt_text_in_braces}{left_brace}{location}{extra}{right_brace}".format(
+            exclamation=console.green('!' if self.is_image else ''),
             alt_text_in_braces=console.green(f"[{self.alt_text}]"),
             left_brace=console.green('[') if self.is_reference else console.green('('),
             location=self.colourise_location(fragment_only=fragment_only),
@@ -155,6 +163,7 @@ def find_link(s: str, index=0) -> Link | None:
     state = _STATE_IDLE
 
     start = -1
+    alt_start = -1
     location = -1
     extra = None
 
@@ -178,9 +187,11 @@ def find_link(s: str, index=0) -> Link | None:
             bracket_depth = 1
             state = _STATE_START
             start = i
+            alt_start = i
 
             if i > 0 and s[i - 1] == '!' and not (i > 1 and s[i - 2] == '\\'):
                 is_image = True
+                start = i - 1
 
             i += 1
             continue
@@ -200,7 +211,7 @@ def find_link(s: str, index=0) -> Link | None:
                     i += 1
                     continue
 
-                if s[start + 1] == '^':
+                if s[alt_start + 1] == '^':
                     # found a footnote -> ignore
                     state = _STATE_IDLE
                     is_image = False
@@ -249,7 +260,7 @@ def find_link(s: str, index=0) -> Link | None:
                 return Link(
                     raw_location=raw_location,
                     parsed_location=_urlparse(raw_location.strip()),
-                    alt_text=s[start + 1: location - 2],
+                    alt_text=s[alt_start + 1: location - 2],
                     title=s[extra: i],
                     start=start,
                     end=i,
@@ -270,7 +281,7 @@ def find_link(s: str, index=0) -> Link | None:
                 return Link(
                     raw_location=raw_location,
                     parsed_location=_urlparse(raw_location),
-                    alt_text=s[start + 1: location - 2],
+                    alt_text=s[alt_start + 1: location - 2],
                     title="",
                     start=start,
                     end=i,
