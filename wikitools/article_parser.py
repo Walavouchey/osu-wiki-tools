@@ -133,6 +133,8 @@ class Article:
         The first block image, i.e. the first sole image link on a line. Only relevant in news posts.
         """
         try:
+            # TODO: this doesn't account for an image link nested in another
+            # link, which works but shouldn't be valid
             return next(line.links[0] for lineno, line in sorted(self.lines.items(), key=lambda x: x[0])
                 if len(line.links) == 1
                 and line.links[0].is_image
