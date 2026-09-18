@@ -48,6 +48,22 @@ class MalformedLinkError(
         return f'{self.link.truncated_coloured_link}: {self.reason}'
 
 
+class LinkStyleError(
+    LinkError,
+    collections.namedtuple('LinkStyle', 'link reason')
+):
+    """
+    An error indicating nonadherence to a styling convention
+    """
+
+    id = "link-style"
+    link: link_parser.Link
+    reason: str
+
+    def __repr__(self):
+        return f'{self.link.truncated_coloured_link}: {self.reason}'
+
+
 class BrokenLinkError(
     LinkError,
     collections.namedtuple('BrokenLink', 'link reference resolved_location')
@@ -72,7 +88,7 @@ class BrokenLinkError(
 
 class Missing2xVariantError(
     LinkError,
-    collections.namedtuple('LinkNotFound', 'link reference resolved_location')
+    collections.namedtuple('Missing2xVariant', 'link reference resolved_location')
 ):
     """
     An error indicating a missing `@2x` double-resolution variant of an image

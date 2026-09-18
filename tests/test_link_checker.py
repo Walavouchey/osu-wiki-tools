@@ -15,6 +15,7 @@ from wikitools.errors import (
     BrokenLinkError,
     BrokenRedirectError,
     BrokenRedirectIdentifierError,
+    LinkStyleError,
     MalformedLinkError,
     Missing2xVariantError,
     MissingIdentifierError,
@@ -1118,6 +1119,40 @@ class TestSectionLinks:
         assert isinstance(error, MissingIdentifierError)
         assert error.identifier == 'totally-wrong-heading'
         assert error.path == 'wiki/Target_article/en.md'
+
+
+class TestLinkStyle:
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"link": "[peppy](https://osu.ppy.sh/users/2)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/users/2/fruits)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/u/2)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/u/2/fruits)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/users/peppy)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/users/peppy/fruits)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/u/peppy)", "should_error": True},
+            {"link": "[peppy](https://osu.ppy.sh/u/peppy/fruits)", "should_error": True},
+            {"link": "::peppy::{ id=2 }", "should_error": False},
+        ]
+    )
+    def test__user_link(self, root, payload):
+        utils.create_files(
+            root,
+            ('wiki/Article/en.md', '# Article'),
+        )
+
+        link = link_parser.find_link(payload["link"])
+        if link:
+            error = link_checker.check_link(
+                article=dummy_article('does/not/matter'), link=link, redirects={}, references={}, all_articles={}
+            )
+        else:
+            error = None
+        if payload["should_error"]:
+            assert isinstance(error, LinkStyleError)
+        else:
+            assert error is None
 
 
 class TestArticleChecker:

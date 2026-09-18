@@ -41,6 +41,16 @@ class RepositoryPath(typing.NamedTuple):
     fragment: str | None
 
 
+def is_user_link(raw_location: str):
+    profile_urls = [
+        "https://osu.ppy.sh/users/",
+        "http://osu.ppy.sh/users/",
+        "https://osu.ppy.sh/u/",
+        "http://osu.ppy.sh/u/",
+    ]
+    return any(raw_location.startswith(prefix) for prefix in profile_urls)
+
+
 def is_fragment_only(parsed_location: urllib.parse.ParseResult):
     return parsed_location.fragment and not any((
         parsed_location.scheme,
@@ -89,6 +99,12 @@ def get_repo_path(
 
     if link.content.strip() != link.content:
         return errors.MalformedLinkError(link, "remove surrounding whitespace")
+
+    if is_user_link(link.raw_location):
+        id = parsed_location.path.split("/")[2]
+        if id == "" or any(c not in "0123456789" for c in id):
+            id = "<user id>"
+        return errors.LinkStyleError(link, f"user link must be written as ::{link.alt_text}::{{ id={id} }}")
 
     if is_fragment_only(parsed_location):
         path_type = PathType.NEWS if current_article.as_posix().startswith("news") else PathType.WIKI
@@ -188,6 +204,7 @@ def check_link(
         - Direct internal links, as well as redirects, must point to existing article files
         - Relative links are parsed under the assumption that they are located inside the current article's directory
         - Image links must point to image files
+        - User links must use the format of ::link text::{ id=<user_id> }
     """
 
     if case_sensitive:
