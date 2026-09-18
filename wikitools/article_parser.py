@@ -134,7 +134,10 @@ class Article:
         """
         try:
             return next(line.links[0] for lineno, line in sorted(self.lines.items(), key=lambda x: x[0])
-                if len(line.links) == 1 and line.links[0].start == 0 and line.links[0].is_image)
+                if len(line.links) == 1
+                and line.links[0].is_image
+                and line.raw_line[0:line.links[0].start].strip() == ""
+                and line.raw_line[line.links[0].end + 1:].strip() == "")
         except StopIteration:
             return None
 
