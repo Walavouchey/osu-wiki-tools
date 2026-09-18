@@ -1,1 +1,1 @@
-VERSION = "3.0.0"  # noqa: N999
+VERSION = "3.0.1"  # noqa: N999
