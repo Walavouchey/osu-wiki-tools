@@ -17,6 +17,7 @@ class TestInlinePlainLinks:
             parsed_location=parse.urlparse("/wiki/Example"),
             title="",
             is_reference=False,
+            is_image=False,
         )
 
     def test__nested_link(self):
@@ -31,6 +32,7 @@ class TestInlinePlainLinks:
                 parsed_location=parse.urlparse("/wiki/Example"),
                 title="",
                 is_reference=False,
+                is_image=False,
             ),
             link_parser.Link(
                 start=11,
@@ -40,6 +42,7 @@ class TestInlinePlainLinks:
                 parsed_location=parse.urlparse("/wiki/shared/image.png"),
                 title="",
                 is_reference=False,
+                is_image=True,
             ),
         ]
 
@@ -54,6 +57,7 @@ class TestInlinePlainLinks:
             parsed_location=parse.urlparse("/wiki/Example"),
             title=' "Title"',
             is_reference=False,
+            is_image=False,
         )
 
     @pytest.mark.parametrize(
@@ -80,6 +84,7 @@ class TestInlinePlainLinks:
             parsed_location=parse.urlparse(payload["raw_location"]),
             title=payload["title"],
             is_reference=False,
+            is_image=False,
         )
 
     def test__no_link(self):
@@ -101,6 +106,7 @@ class TestInlinePlainLinks:
                 parsed_location=parse.urlparse("/wiki/[A]"),
                 title="",
                 is_reference=False,
+                is_image=False,
             )
         ]
 
@@ -114,6 +120,7 @@ class TestInlinePlainLinks:
             parsed_location=parse.urlparse("/wiki/M#manual"),
             title="",
             is_reference=False,
+            is_image=False,
         )
 
     def test__link__query_string(self):
@@ -126,6 +133,7 @@ class TestInlinePlainLinks:
             parsed_location=parse.urlparse("https://example.com/?test=1"),
             title="",
             is_reference=False,
+            is_image=False,
         )
 
 
@@ -141,6 +149,21 @@ class TestInlineImageLinks:
             parsed_location=parse.urlparse("/wiki/crown.png"),
             title="",
             is_reference=False,
+            is_image=True,
+        )
+
+    def test__escaped_image_link(self):
+        example = r"osu\![-Schwierigkeitsgrad](/wiki/Beatmap/Difficulty)"
+        link = link_parser.find_link(example)
+        assert link == link_parser.Link(
+            start=5,
+            end=51,
+            alt_text="-Schwierigkeitsgrad",
+            raw_location="/wiki/Beatmap/Difficulty",
+            parsed_location=parse.urlparse("/wiki/Beatmap/Difficulty"),
+            title="",
+            is_reference=False,
+            is_image=False,
         )
 
     def test__image_link__alt_text(self):
@@ -154,6 +177,7 @@ class TestInlineImageLinks:
             parsed_location=parse.urlparse("/wiki/crown.png"),
             title="",
             is_reference=False,
+            is_image=True,
         )
 
     def test__image_link__title(self):
@@ -167,6 +191,7 @@ class TestInlineImageLinks:
             parsed_location=parse.urlparse("/wiki/crown.png"),
             title=' "Title"',
             is_reference=False,
+            is_image=True,
         )
 
     def test__image_link__alt_text__title(self):
@@ -180,6 +205,7 @@ class TestInlineImageLinks:
             parsed_location=parse.urlparse("/wiki/crown.png"),
             title=' "Title"',
             is_reference=False,
+            is_image=True,
         )
 
 
@@ -196,6 +222,7 @@ class TestInlineMultipleLinks:
                 parsed_location=parse.urlparse("/wiki/A"),
                 title="",
                 is_reference=False,
+                is_image=False,
             ),
             link_parser.Link(
                 start=33,
@@ -205,6 +232,7 @@ class TestInlineMultipleLinks:
                 parsed_location=parse.urlparse("/wiki/B"),
                 title="",
                 is_reference=False,
+                is_image=False,
             )
         ]
 
@@ -221,6 +249,7 @@ class TestReferenceLinks:
             parsed_location=parse.urlparse("reference"),
             title="",
             is_reference=True,
+            is_image=False,
         )
 
     def test__image_link(self):
@@ -234,6 +263,7 @@ class TestReferenceLinks:
             parsed_location=parse.urlparse("SE_flag"),
             title="",
             is_reference=True,
+            is_image=True,
         )
 
 
@@ -260,6 +290,7 @@ class TestIgnoredFootnotes:
             parsed_location=parse.urlparse("https://www.example.com/"),
             title="",
             is_reference=False,
+            is_image=False,
         )
         assert len(link_parser.find_links(example)) == 1
 
@@ -274,6 +305,7 @@ class TestIgnoredFootnotes:
             parsed_location=parse.urlparse("https://www.example.com/"),
             title="",
             is_reference=True,
+            is_image=False,
         )
         assert len(link_parser.find_links(example)) == 1
 

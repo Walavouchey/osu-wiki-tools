@@ -38,6 +38,7 @@ class Link(typing.NamedTuple):
     - raw_location: 'img/chat-console-afk.png'
     - parsed_location: urllib.parse.ParseResult with all of its fields
     - title: ' "Player is away from keyboard"'
+    - is_image: True
     """
 
     # Link position within the line. Example:
@@ -135,6 +136,11 @@ class Link(typing.NamedTuple):
     #    [reference]: link
     is_reference: bool
 
+    # Whether the link is an image link. These are simply prepended by an
+    # exclamation mark (`!`) before the first bracket
+    is_image: bool
+
+
 
 def find_link(s: str, index=0) -> Link | None:
     """
@@ -160,6 +166,8 @@ def find_link(s: str, index=0) -> Link | None:
     s_len = len(s)
     i = index
 
+    is_image = False
+
     while i < s_len:
         if state == _STATE_IDLE:
             i = s.find('[', i)
@@ -170,6 +178,10 @@ def find_link(s: str, index=0) -> Link | None:
             bracket_depth = 1
             state = _STATE_START
             start = i
+
+            if i > 0 and s[i - 1] == '!' and not (i > 1 and s[i - 2] == '\\'):
+                is_image = True
+
             i += 1
             continue
 
@@ -184,12 +196,14 @@ def find_link(s: str, index=0) -> Link | None:
                 if s_len <= i + 1:
                     # end of the line
                     state = _STATE_IDLE
+                    is_image = False
                     i += 1
                     continue
 
                 if s[start + 1] == '^':
                     # found a footnote -> ignore
                     state = _STATE_IDLE
+                    is_image = False
                     i += 1
                     continue
 
@@ -203,6 +217,7 @@ def find_link(s: str, index=0) -> Link | None:
                     if i + 2 < s_len and s[i + 2] == '^':
                         # found a footnote after bracket pair -> ignore
                         state = _STATE_IDLE
+                        is_image = False
                         i += 1
                         continue
 
@@ -211,6 +226,7 @@ def find_link(s: str, index=0) -> Link | None:
                     bracket_depth = 0
                 else:
                     state = _STATE_IDLE
+                    is_image = False
             i += 1
             continue
 
@@ -237,7 +253,8 @@ def find_link(s: str, index=0) -> Link | None:
                     title=s[extra: i],
                     start=start,
                     end=i,
-                    is_reference=False
+                    is_reference=False,
+                    is_image=is_image
                 )
             i += 1
             continue
@@ -257,7 +274,8 @@ def find_link(s: str, index=0) -> Link | None:
                     title="",
                     start=start,
                     end=i,
-                    is_reference=True
+                    is_reference=True,
+                    is_image=is_image
                 )
             i += 1
             continue
